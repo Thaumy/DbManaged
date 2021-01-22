@@ -64,19 +64,15 @@ class MySqlManager() {
     }
 
     // 获取单张数据表（适用于参数化查询）
-    fun GetTable(SQL: String, params MySqlParameter[] parameters):ResultSet
-    {
+    fun GetTable(SQL: String, vararg parameters: MySqlParameter): ResultSet {
         DoInConnection { conn ->
-            using DataTable table = new DataTable ();
-            using(MySqlCommand MySqlCommand = new MySqlCommand(SQL, conn))
-            {
-                MySqlCommand.Parameters.AddRange(parameters);//添加参数
-                new MySqlDataAdapter (MySqlCommand).Fill(table);
-            }
-
-            return table;
+            val state = conn.prepareStatement(SQL)
+            for (el in parameters)
+                state.setString(el.Index, el.Value)
+            return state.executeQuery();
         }
     }
 }
 
 data class MySqlConnMsg(val DataSource: String, val Port: Int, val User: String, val PWD: String)
+data class MySqlParameter(val Index: Int, val Value: String)
