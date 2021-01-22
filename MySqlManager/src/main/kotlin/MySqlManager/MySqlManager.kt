@@ -56,6 +56,13 @@ class MySqlManager() {
         return result
     }
 
+    //获取单张数据表
+    fun  GetTable(SQL:String):ResultSet
+    {
+        return DoInConnection { conn ->
+            return@DoInConnection conn.createStatement().executeQuery(SQL)
+        }
+    }
 }
 
 data class MySqlConnMsg(val DataSource: String, val Port: Int, val User: String, val PWD: String)
