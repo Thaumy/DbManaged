@@ -8,6 +8,9 @@ class MySqlManager() {
     private lateinit var ConnectionString: String
     private lateinit var ConnectionPool: MutableList<Connection>
 
+    /**
+     * 数据库连接访问器
+     */
     val Connection: Connection
         get() {
             /* 在连接数超出时检查无用连接并进行清理 */
