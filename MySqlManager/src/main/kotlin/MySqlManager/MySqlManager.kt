@@ -49,7 +49,7 @@ class MySqlManager() {
     }
 
     //一次性连接使用器
-    fun <T> DoInConnection(todo: (Connection) -> T): T {
+    inline fun <T> DoInConnection(todo: (Connection) -> T): T {
         val conn: Connection = Connection;
         val result: T = todo(conn);
         conn.close()
@@ -57,10 +57,24 @@ class MySqlManager() {
     }
 
     //获取单张数据表
-    fun  GetTable(SQL:String):ResultSet
+    fun GetTable(SQL: String): ResultSet {
+        DoInConnection { conn ->
+            return conn.createStatement().executeQuery(SQL)
+        }
+    }
+
+    // 获取单张数据表（适用于参数化查询）
+    fun GetTable(SQL: String, params MySqlParameter[] parameters):ResultSet
     {
-        return DoInConnection { conn ->
-            return@DoInConnection conn.createStatement().executeQuery(SQL)
+        DoInConnection { conn ->
+            using DataTable table = new DataTable ();
+            using(MySqlCommand MySqlCommand = new MySqlCommand(SQL, conn))
+            {
+                MySqlCommand.Parameters.AddRange(parameters);//添加参数
+                new MySqlDataAdapter (MySqlCommand).Fill(table);
+            }
+
+            return table;
         }
     }
 }
