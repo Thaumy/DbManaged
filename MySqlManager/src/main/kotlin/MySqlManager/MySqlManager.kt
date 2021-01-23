@@ -134,7 +134,7 @@ class MySqlManager() {
         return row
     }
 
-    // 从DataTable中提取指定行
+    // 从DataTable中提取指定行//本应伴生
     fun GetRow(DataTable: ResultSet, KeyName: String, KeyValue: Any): MutableMap<String, Any>? {
         while (DataTable.next()) {
             if (DataTable.getString(KeyName) == KeyValue.toString()) {
