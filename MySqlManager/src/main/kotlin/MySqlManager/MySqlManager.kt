@@ -69,10 +69,46 @@ class MySqlManager() {
             val state = conn.prepareStatement(SQL)
             for (el in parameters)
                 state.setString(el.Index, el.Value)
-            return state.executeQuery();
+            return state.executeQuery()
+        }
+    }
+
+    // 取得首个键值（键匹配查询）
+    fun GetKey(SQL: String): Any? {
+        DoInConnection { conn ->
+            /* 如果结果集为空，该方法返回null *///未作考虑
+            val rs = conn.createStatement().executeQuery(SQL)
+            rs.next()
+            return rs.getObject(0)
+        }
+    }
+
+    // 取得首个键值（键匹配查询）
+    fun GetKey(SQL: String, vararg parameters: MySqlParameter): Any? {
+        DoInConnection { conn ->
+            val state = conn.prepareStatement(SQL)
+            for (el in parameters)
+                state.setString(el.Index, el.Value)
+            val rs = state.executeQuery()
+            /* 如果结果集为空，该方法返回null *///未作考虑
+            rs.next()
+            return rs.getObject(0)
+        }
+    }
+
+    // 取得指定键值（键匹配查询）
+    fun GetKey(MySqlKey: MySqlKey, KeyName: String): Any? {
+        DoInConnection { conn ->
+            val SQL = "SELECT $KeyName FROM ${MySqlKey.Table} WHERE ${MySqlKey.Name}='${MySqlKey.Val}';";
+            /* 如果结果集为空，该方法返回null */
+            val state = conn.createStatement()
+            val rs = state.executeQuery(SQL)
+            rs.next()
+            return rs.getObject(0)
         }
     }
 }
 
 data class MySqlConnMsg(val DataSource: String, val Port: Int, val User: String, val PWD: String)
+data class MySqlKey(val Table: String, val Name: String, val Val: Any)
 data class MySqlParameter(val Index: Int, val Value: String)
