@@ -1,6 +1,7 @@
 package MySqlManager
 
 import java.sql.*
+import java.util.*
 
 
 class MySqlManager() {
@@ -106,6 +107,47 @@ class MySqlManager() {
             rs.next()
             return rs.getObject(0)
         }
+    }
+
+    // 获得数据行
+    fun GetRow(SQL: String): MutableMap<String, Any> {
+        /* 数组越界防止 */
+        val rs = GetTable(SQL)
+        rs.next()
+        var rsmd = rs.metaData//rs元信息
+        val row = mutableMapOf<String, Any>()
+        for (i in 0..rsmd.columnCount) {
+            row[rsmd.getColumnLabel(i)] = rs.getObject(i)
+        }
+        return row
+    }
+
+    // 获得数据行（适用于参数化查询）
+    fun GetRow(SQL: String, vararg parameters: MySqlParameter): MutableMap<String, Any> {
+        val rs = GetTable(SQL, *parameters)
+        rs.next()
+        val rsmd = rs.metaData//rs元信息
+        val row = mutableMapOf<String, Any>()
+        for (i in 0..rsmd.columnCount) {
+            row[rsmd.getColumnLabel(i)] = rs.getObject(i)
+        }
+        return row
+    }
+
+    // 从DataTable中提取指定行
+    fun GetRow(DataTable: ResultSet, KeyName: String, KeyValue: Any): MutableMap<String, Any>? {
+        while (DataTable.next()) {
+            if (DataTable.getString(KeyName) == KeyValue.toString()) {
+                /* 返回符合被检索主键的行 */
+                val rsmd = DataTable.metaData//rs元信息
+                val row = mutableMapOf<String, Any>()
+                for (i in 0..rsmd.columnCount) {
+                    row[rsmd.getColumnLabel(i)] = DataTable.getObject(i)
+                }
+                return row
+            }
+        }
+        return null/* 未检索到 */
     }
 }
 
