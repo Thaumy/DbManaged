@@ -110,7 +110,7 @@ class MySqlManager() {
     }
 
     // 获得数据行
-    fun GetRow(SQL: String): MutableMap<String, Any> {
+    fun GetRow(SQL: String): DataRow<String, Any> {
         /* 数组越界防止 */
         val rs = GetTable(SQL)
         rs.next()
@@ -123,7 +123,7 @@ class MySqlManager() {
     }
 
     // 获得数据行（适用于参数化查询）
-    fun GetRow(SQL: String, vararg parameters: MySqlParameter): MutableMap<String, Any> {
+    fun GetRow(SQL: String, vararg parameters: MySqlParameter): DataRow<String, Any> {
         val rs = GetTable(SQL, *parameters)
         rs.next()
         val rsmd = rs.metaData//rs元信息
@@ -136,27 +136,33 @@ class MySqlManager() {
 
 
     // 取得查询结果中的第一列
-    fun <T> GetColumn(SQL: String): MutableList<T> {
+    fun <T> GetColumn(SQL: String): DataColumn<T> {
         return GetColumn(GetTable(SQL))
     }
 
     // 取得查询结果中的指定列
-    fun <T> GetColumn(SQL: String, Key: String): MutableList<T> {
+    fun <T> GetColumn(SQL: String, Key: String): DataColumn<T> {
         return GetColumn(GetTable(SQL), Key)
     }
 
     // 取得查询结果中的第一列
-    fun <T> GetColumn(SQL: String, vararg parameters: MySqlParameter): MutableList<T> {
+    fun <T> GetColumn(SQL: String, vararg parameters: MySqlParameter): DataColumn<T> {
         return GetColumn(GetTable(SQL, *parameters))
     }
 
     // 取得查询结果中的指定列
-    fun <T> GetColumn(SQL: String, Key: String, vararg parameters: MySqlParameter): MutableList<T> {
+    fun <T> GetColumn(SQL: String, Key: String, vararg parameters: MySqlParameter): DataColumn<T> {
         return GetColumn(GetTable(SQL, *parameters), Key)
     }
 
 
-    // 更新单个键值
+    /**
+     * 更新单个键值
+     * @param MySqlKey 目标表
+     * @param Key 要更改的键
+     * @param NewValue 新键值
+     * @return 是否操作成功
+     */
     fun UpdateKey(MySqlKey: MySqlKey, Key: String, NewValue: Any): Boolean {
         DoInConnection { conn ->
             val SQL = "UPDATE ${MySqlKey.Table} SET ${Key}=?NewValue WHERE ${MySqlKey.Name}=?Val"
@@ -179,7 +185,14 @@ class MySqlManager() {
         }
     }
 
-    // 更新单个键值
+    /**
+     * 更新单个键值
+     * @param Table 目标表
+     * @param Key 键名
+     * @param OldValue 旧值
+     * @param NewValue 新值
+     * @return 是否操作成功
+     */
     fun UpdateKey(Table: String, Key: String, OldValue: Any, NewValue: Any): Boolean {
         return DoInConnection { conn ->
             val SQL = "UPDATE ${Table} SET ${Key}=?NewValue WHERE ${Key}=?OldValue"
@@ -205,7 +218,7 @@ class MySqlManager() {
     //static
     companion object {
         // 从DataTable中提取第一列（此方法无空值判断）
-        fun <T> GetColumn(DataTable: ResultSet): MutableList<T> {
+        fun <T> GetColumn(DataTable: ResultSet): DataColumn<T> {
             val List = mutableListOf<T>()
 
             while (DataTable.next()) {
@@ -215,7 +228,7 @@ class MySqlManager() {
         }
 
         // 从DataTable中提取指定列（此方法无空值判断）
-        fun <T> GetColumn(DataTable: ResultSet, Key: String): MutableList<T> {
+        fun <T> GetColumn(DataTable: ResultSet, Key: String): DataColumn<T> {
             val List = mutableListOf<T>()
 
             while (DataTable.next()) {
@@ -246,3 +259,18 @@ class MySqlManager() {
 data class MySqlConnMsg(val DataSource: String, val Port: Int, val User: String, val PWD: String)
 data class MySqlKey(val Table: String, val Name: String, val Val: Any)
 data class MySqlParameter(val Index: Int, val Value: String)
+
+//数据行
+class DataRow<T>() {
+    private val innerList = mutableListOf<T>()
+}
+
+//数据列
+class DataColumn<T>() {
+    private val innerList = mutableListOf<T>()
+}
+
+//数据表
+class DataTable() {
+
+}
