@@ -149,6 +149,94 @@ class MySqlManager() {
         }
         return null/* 未检索到 */
     }
+
+
+    // 取得查询结果中的第一列
+    fun <T> GetColumn(SQL: String): MutableList<T> {
+        return GetColumn(GetTable(SQL))
+    }
+
+    // 取得查询结果中的指定列
+    fun <T> GetColumn(SQL: String, Key: String): MutableList<T> {
+        return GetColumn(GetTable(SQL), Key)
+    }
+
+    // 取得查询结果中的第一列
+    fun <T> GetColumn(SQL: String, vararg parameters: MySqlParameter): MutableList<T> {
+        return GetColumn(GetTable(SQL, *parameters))
+    }
+
+    // 取得查询结果中的指定列
+    fun <T> GetColumn(SQL: String, Key: String, vararg parameters: MySqlParameter): MutableList<T> {
+        return GetColumn(GetTable(SQL, *parameters), Key)
+    }
+
+    // 从DataTable中提取第一列（此方法无空值判断）//本应伴生
+    fun <T> GetColumn(DataTable: ResultSet): MutableList<T> {
+        val List = mutableListOf<T>()
+
+        while (DataTable.next()) {
+            List.add(DataTable.getObject(0) as T)
+        }
+        return List
+    }
+
+    // 从DataTable中提取指定列（此方法无空值判断）//本应伴生
+    fun <T> GetColumn(DataTable: ResultSet, Key: String): MutableList<T> {
+        val List = mutableListOf<T>()
+
+        while (DataTable.next()) {
+            List.add(DataTable.getObject(Key) as T)
+        }
+
+        return List
+    }
+
+    // 更新单个键值
+    fun UpdateKey(MySqlKey: MySqlKey, Key: String, NewValue: Any): Boolean {
+        DoInConnection { conn ->
+            val SQL = "UPDATE ${MySqlKey.Table} SET ${Key}=?NewValue WHERE ${MySqlKey.Name}=?Val"
+            conn.autoCommit = false
+            val state = conn.prepareStatement(SQL)
+
+            state.setObject(0, NewValue)
+            state.setObject(0, MySqlKey.Val)
+
+            return when (state.executeUpdate()) {
+                1 -> {
+                    conn.commit()
+                    true
+                }
+                else -> {
+                    conn.rollback()
+                    false
+                }
+            }
+        }
+    }
+
+    // 更新单个键值
+    fun UpdateKey(Table: String, Key: String, OldValue: Any, NewValue: Any): Boolean {
+        return DoInConnection { conn ->
+            val SQL = "UPDATE ${Table} SET ${Key}=?NewValue WHERE ${Key}=?OldValue"
+            conn.autoCommit = false
+            val state = conn.prepareStatement(SQL)
+
+            state.setObject(0, NewValue)
+            state.setObject(1, OldValue)
+
+            return when (state.executeUpdate()) {
+                1 -> {
+                    conn.commit()
+                    true
+                }
+                else -> {
+                    conn.rollback()
+                    false
+                }
+            }
+        }
+    }
 }
 
 data class MySqlConnMsg(val DataSource: String, val Port: Int, val User: String, val PWD: String)
