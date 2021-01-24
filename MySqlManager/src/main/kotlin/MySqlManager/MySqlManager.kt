@@ -80,7 +80,7 @@ class MySqlManager() {
             /* 如果结果集为空，该方法返回null *///未作考虑
             val rs = conn.createStatement().executeQuery(SQL)
             rs.next()
-            return rs.getObject(0)
+            return rs.getObject(1)//JDBC字段索引从1开始
         }
     }
 
@@ -93,7 +93,7 @@ class MySqlManager() {
             val rs = state.executeQuery()
             /* 如果结果集为空，该方法返回null *///未作考虑
             rs.next()
-            return rs.getObject(0)
+            return rs.getObject(1)
         }
     }
 
@@ -105,7 +105,7 @@ class MySqlManager() {
             val state = conn.createStatement()
             val rs = state.executeQuery(SQL)
             rs.next()
-            return rs.getObject(0)
+            return rs.getObject(1)
         }
     }
 
@@ -134,22 +134,6 @@ class MySqlManager() {
         return row
     }
 
-    // 从DataTable中提取指定行//本应伴生
-    fun GetRow(DataTable: ResultSet, KeyName: String, KeyValue: Any): MutableMap<String, Any>? {
-        while (DataTable.next()) {
-            if (DataTable.getString(KeyName) == KeyValue.toString()) {
-                /* 返回符合被检索主键的行 */
-                val rsmd = DataTable.metaData//rs元信息
-                val row = mutableMapOf<String, Any>()
-                for (i in 0..rsmd.columnCount) {
-                    row[rsmd.getColumnLabel(i)] = DataTable.getObject(i)
-                }
-                return row
-            }
-        }
-        return null/* 未检索到 */
-    }
-
 
     // 取得查询结果中的第一列
     fun <T> GetColumn(SQL: String): MutableList<T> {
@@ -171,26 +155,6 @@ class MySqlManager() {
         return GetColumn(GetTable(SQL, *parameters), Key)
     }
 
-    // 从DataTable中提取第一列（此方法无空值判断）//本应伴生
-    fun <T> GetColumn(DataTable: ResultSet): MutableList<T> {
-        val List = mutableListOf<T>()
-
-        while (DataTable.next()) {
-            List.add(DataTable.getObject(0) as T)
-        }
-        return List
-    }
-
-    // 从DataTable中提取指定列（此方法无空值判断）//本应伴生
-    fun <T> GetColumn(DataTable: ResultSet, Key: String): MutableList<T> {
-        val List = mutableListOf<T>()
-
-        while (DataTable.next()) {
-            List.add(DataTable.getObject(Key) as T)
-        }
-
-        return List
-    }
 
     // 更新单个键值
     fun UpdateKey(MySqlKey: MySqlKey, Key: String, NewValue: Any): Boolean {
@@ -199,8 +163,8 @@ class MySqlManager() {
             conn.autoCommit = false
             val state = conn.prepareStatement(SQL)
 
-            state.setObject(0, NewValue)
-            state.setObject(0, MySqlKey.Val)
+            state.setObject(1, NewValue)
+            state.setObject(2, MySqlKey.Val)
 
             return when (state.executeUpdate()) {
                 1 -> {
@@ -222,8 +186,8 @@ class MySqlManager() {
             conn.autoCommit = false
             val state = conn.prepareStatement(SQL)
 
-            state.setObject(0, NewValue)
-            state.setObject(1, OldValue)
+            state.setObject(1, NewValue)
+            state.setObject(2, OldValue)
 
             return when (state.executeUpdate()) {
                 1 -> {
@@ -235,6 +199,46 @@ class MySqlManager() {
                     false
                 }
             }
+        }
+    }
+
+    //static
+    companion object {
+        // 从DataTable中提取第一列（此方法无空值判断）
+        fun <T> GetColumn(DataTable: ResultSet): MutableList<T> {
+            val List = mutableListOf<T>()
+
+            while (DataTable.next()) {
+                List.add(DataTable.getObject(1) as T)
+            }
+            return List
+        }
+
+        // 从DataTable中提取指定列（此方法无空值判断）
+        fun <T> GetColumn(DataTable: ResultSet, Key: String): MutableList<T> {
+            val List = mutableListOf<T>()
+
+            while (DataTable.next()) {
+                List.add(DataTable.getObject(Key) as T)
+            }
+
+            return List
+        }
+
+        // 从DataTable中提取指定行
+        fun GetRow(DataTable: ResultSet, KeyName: String, KeyValue: Any): MutableMap<String, Any>? {
+            while (DataTable.next()) {
+                if (DataTable.getString(KeyName) == KeyValue.toString()) {
+                    /* 返回符合被检索主键的行 */
+                    val rsmd = DataTable.metaData//rs元信息
+                    val row = mutableMapOf<String, Any>()
+                    for (i in 0..rsmd.columnCount) {
+                        row[rsmd.getColumnLabel(i)] = DataTable.getObject(i)
+                    }
+                    return row
+                }
+            }
+            return null/* 未检索到 */
         }
     }
 }
