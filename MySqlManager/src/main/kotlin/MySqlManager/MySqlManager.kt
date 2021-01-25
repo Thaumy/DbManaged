@@ -110,26 +110,26 @@ class MySqlManager() {
     }
 
     // 获得数据行
-    fun GetRow(SQL: String): DataRow<String, Any> {
+    fun GetRow(SQL: String): DataRow {
         /* 数组越界防止 */
         val rs = GetTable(SQL)
         rs.next()
         var rsmd = rs.metaData//rs元信息
-        val row = mutableMapOf<String, Any>()
+        val row = DataRow()
         for (i in 0..rsmd.columnCount) {
-            row[rsmd.getColumnLabel(i)] = rs.getObject(i)
+            row.add(rsmd.getColumnLabel(i), rs.getObject(i))
         }
         return row
     }
 
     // 获得数据行（适用于参数化查询）
-    fun GetRow(SQL: String, vararg parameters: MySqlParameter): DataRow<String, Any> {
+    fun GetRow(SQL: String, vararg parameters: MySqlParameter): DataRow {
         val rs = GetTable(SQL, *parameters)
         rs.next()
         val rsmd = rs.metaData//rs元信息
-        val row = mutableMapOf<String, Any>()
+        val row = DataRow()
         for (i in 0..rsmd.columnCount) {
-            row[rsmd.getColumnLabel(i)] = rs.getObject(i)
+            row.add(rsmd.getColumnLabel(i), rs.getObject(i))
         }
         return row
     }
@@ -219,7 +219,7 @@ class MySqlManager() {
     companion object {
         // 从DataTable中提取第一列（此方法无空值判断）
         fun <T> GetColumn(DataTable: ResultSet): DataColumn<T> {
-            val List = mutableListOf<T>()
+            val List = DataColumn<T>()
 
             while (DataTable.next()) {
                 List.add(DataTable.getObject(1) as T)
@@ -229,7 +229,7 @@ class MySqlManager() {
 
         // 从DataTable中提取指定列（此方法无空值判断）
         fun <T> GetColumn(DataTable: ResultSet, Key: String): DataColumn<T> {
-            val List = mutableListOf<T>()
+            val List = DataColumn<T>()
 
             while (DataTable.next()) {
                 List.add(DataTable.getObject(Key) as T)
@@ -239,14 +239,14 @@ class MySqlManager() {
         }
 
         // 从DataTable中提取指定行
-        fun GetRow(DataTable: ResultSet, KeyName: String, KeyValue: Any): MutableMap<String, Any>? {
+        fun GetRow(DataTable: ResultSet, KeyName: String, KeyValue: Any): DataRow? {
             while (DataTable.next()) {
                 if (DataTable.getString(KeyName) == KeyValue.toString()) {
                     /* 返回符合被检索主键的行 */
                     val rsmd = DataTable.metaData//rs元信息
-                    val row = mutableMapOf<String, Any>()
+                    val row = DataRow()
                     for (i in 0..rsmd.columnCount) {
-                        row[rsmd.getColumnLabel(i)] = DataTable.getObject(i)
+                        row.add(rsmd.getColumnLabel(i), DataTable.getObject(i))
                     }
                     return row
                 }
@@ -261,13 +261,19 @@ data class MySqlKey(val Table: String, val Name: String, val Val: Any)
 data class MySqlParameter(val Index: Int, val Value: String)
 
 //数据行
-class DataRow<T>() {
-    private val innerList = mutableListOf<T>()
+class DataRow {
+    private val innerMap = mutableMapOf<String, Any>()
+    fun add(Key: String, Value: Any) {
+        innerMap[Key] = Value
+    }
 }
 
 //数据列
-class DataColumn<T>() {
+class DataColumn<T> {
     private val innerList = mutableListOf<T>()
+    fun add(obj: T) {
+        innerList.add(obj)
+    }
 }
 
 //数据表
