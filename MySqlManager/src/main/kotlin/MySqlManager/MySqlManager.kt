@@ -5,7 +5,7 @@ import java.sql.*
 
 class MySqlManager() {
     private lateinit var ConnectionString: String
-    private lateinit var ConnectionPool: MutableList<Connection>
+    private var ConnectionPool: MutableList<Connection>
 
     //数据库连接访问器
     val Connection: Connection
@@ -24,28 +24,28 @@ class MySqlManager() {
             ConnectionPool.add(DriverManager.getConnection(ConnectionString))
             //ConnectionPool.last().Open();//JDBC中貌似没有打开数据库连接的操作？
             return ConnectionPool.last();
-
         }
 
     init {
-        Class.forName("com.mysql.jdbc.Driver")
+        Class.forName("com.mysql.cj.jdbc.Driver")
+        ConnectionPool = mutableListOf()
     }
 
-    constructor(MySqlConnMsg: MySqlConnMsg) : this() {
+/*    constructor(MySqlConnMsg: MySqlConnMsg) : this() {
         ConnectionString =
             "jdbc:mysql://${MySqlConnMsg.DataSource}:${MySqlConnMsg.Port}" +
                     "/?user=${MySqlConnMsg.User}&" +
                     "password=${MySqlConnMsg.PWD}&" +
                     "UseAffectedRows=TRUE;"
-        /* UPDATE语句返回受影响的行数而不是符合查询条件的行数 */
-    }
+        *//* UPDATE语句返回受影响的行数而不是符合查询条件的行数 *//*
+    }*/
 
     constructor(MySqlConnMsg: MySqlConnMsg, Database: String) : this() {
         ConnectionString =/* USING目标数据库 */
             "jdbc:mysql://${MySqlConnMsg.DataSource}:${MySqlConnMsg.Port}" +
                     "/${Database}?user=${MySqlConnMsg.User}&" +
                     "password=${MySqlConnMsg.PWD}&" +
-                    "UseAffectedRows=TRUE;"
+                    "UseAffectedRows=TRUE;&serverTimezone=GMT"
     }
 
     //一次性连接使用器
@@ -64,7 +64,7 @@ class MySqlManager() {
             val dataTable = DataTable()//临时表
             while (rs.next()) {
                 val row = DataRow()//临时行
-                for (i in 0..rsmd.columnCount) {
+                for (i in 1..rsmd.columnCount) {
                     row.add(rsmd.getColumnLabel(i), rs.getObject(i))
                 }
                 dataTable.addRow(row)
@@ -85,7 +85,7 @@ class MySqlManager() {
             val dataTable = DataTable()//临时表
             while (rs.next()) {
                 val row = DataRow()//临时行
-                for (i in 0..rsmd.columnCount) {
+                for (i in 1..rsmd.columnCount) {
                     row.add(rsmd.getColumnLabel(i), rs.getObject(i))
                 }
                 dataTable.addRow(row)
