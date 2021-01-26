@@ -1,7 +1,10 @@
 package MySqlManager
 
+import java.security.Key
 import java.sql.*
 import java.util.*
+import javax.crypto.KeyGenerator
+import javax.xml.crypto.Data
 
 
 class MySqlManager() {
@@ -58,19 +61,40 @@ class MySqlManager() {
     }
 
     //获取单张数据表
-    fun GetTable(SQL: String): ResultSet {
+    fun GetTable(SQL: String): DataTable {
         DoInConnection { conn ->
-            return conn.createStatement().executeQuery(SQL)
+            val rs = conn.createStatement().executeQuery(SQL)
+            val rsmd = rs.metaData//rs元信息
+            val dataTable = DataTable()//临时表
+            while (rs.next()) {
+                val row = DataRow()//临时行
+                for (i in 0..rsmd.columnCount) {
+                    row.add(rsmd.getColumnLabel(i), rs.getObject(i))
+                }
+                dataTable.addRow(row)
+            }
+            return dataTable
         }
     }
 
     // 获取单张数据表（适用于参数化查询）
-    fun GetTable(SQL: String, vararg parameters: MySqlParameter): ResultSet {
+    fun GetTable(SQL: String, vararg parameters: MySqlParameter): DataTable {
         DoInConnection { conn ->
             val state = conn.prepareStatement(SQL)
             for (el in parameters)
                 state.setString(el.Index, el.Value)
-            return state.executeQuery()
+
+            val rs = state.executeQuery()
+            val rsmd = rs.metaData//rs元信息
+            val dataTable = DataTable()//临时表
+            while (rs.next()) {
+                val row = DataRow()//临时行
+                for (i in 0..rsmd.columnCount) {
+                    row.add(rsmd.getColumnLabel(i), rs.getObject(i))
+                }
+                dataTable.addRow(row)
+            }
+            return dataTable
         }
     }
 
@@ -111,27 +135,12 @@ class MySqlManager() {
 
     // 获得数据行
     fun GetRow(SQL: String): DataRow {
-        /* 数组越界防止 */
-        val rs = GetTable(SQL)
-        rs.next()
-        var rsmd = rs.metaData//rs元信息
-        val row = DataRow()
-        for (i in 0..rsmd.columnCount) {
-            row.add(rsmd.getColumnLabel(i), rs.getObject(i))
-        }
-        return row
+        return GetTable(SQL).getRow(0)
     }
 
     // 获得数据行（适用于参数化查询）
     fun GetRow(SQL: String, vararg parameters: MySqlParameter): DataRow {
-        val rs = GetTable(SQL, *parameters)
-        rs.next()
-        val rsmd = rs.metaData//rs元信息
-        val row = DataRow()
-        for (i in 0..rsmd.columnCount) {
-            row.add(rsmd.getColumnLabel(i), rs.getObject(i))
-        }
-        return row
+        return GetTable(SQL, *parameters).getRow(0)
     }
 
 
@@ -194,7 +203,7 @@ class MySqlManager() {
      * @return 是否操作成功
      */
     fun UpdateKey(Table: String, Key: String, OldValue: Any, NewValue: Any): Boolean {
-        return DoInConnection { conn ->
+        DoInConnection { conn ->
             val SQL = "UPDATE ${Table} SET ${Key}=?NewValue WHERE ${Key}=?OldValue"
             conn.autoCommit = false
             val state = conn.prepareStatement(SQL)
@@ -218,39 +227,30 @@ class MySqlManager() {
     //static
     companion object {
         // 从DataTable中提取第一列（此方法无空值判断）
-        fun <T> GetColumn(DataTable: ResultSet): DataColumn<T> {
+        fun <T> GetColumn(DataTable: DataTable): DataColumn<T> {
             val List = DataColumn<T>()
 
-            while (DataTable.next()) {
-                List.add(DataTable.getObject(1) as T)
+            for (Row in DataTable) {
+                List.add(Row.get(0) as T)
             }
             return List
         }
 
         // 从DataTable中提取指定列（此方法无空值判断）
-        fun <T> GetColumn(DataTable: ResultSet, Key: String): DataColumn<T> {
+        fun <T> GetColumn(DataTable: DataTable, Key: String): DataColumn<T> {
             val List = DataColumn<T>()
 
-            while (DataTable.next()) {
-                List.add(DataTable.getObject(Key) as T)
+            for (Row in DataTable) {
+                List.add(Row.get(Key) as T)
             }
-
             return List
         }
 
         // 从DataTable中提取指定行
-        fun GetRow(DataTable: ResultSet, KeyName: String, KeyValue: Any): DataRow? {
-            while (DataTable.next()) {
-                if (DataTable.getString(KeyName) == KeyValue.toString()) {
-                    /* 返回符合被检索主键的行 */
-                    val rsmd = DataTable.metaData//rs元信息
-                    val row = DataRow()
-                    for (i in 0..rsmd.columnCount) {
-                        row.add(rsmd.getColumnLabel(i), DataTable.getObject(i))
-                    }
-                    return row
-                }
-            }
+        fun GetRow(DataTable: DataTable, Key: String, Value: Any): DataRow? {
+            for (Row in DataTable)
+                if (Row.get(Key) == Value)
+                    return Row
             return null/* 未检索到 */
         }
     }
@@ -261,22 +261,80 @@ data class MySqlKey(val Table: String, val Name: String, val Val: Any)
 data class MySqlParameter(val Index: Int, val Value: String)
 
 //数据行
-class DataRow {
-    private val innerMap = mutableMapOf<String, Any>()
+class DataRow : Iterable<Any> {
+    private val innerList = mutableListOf<Pair<String, Any>>()
+    val colsCount
+        //列计数
+        get() = innerList.count()
+
     fun add(Key: String, Value: Any) {
-        innerMap[Key] = Value
+        innerList.add(Pair(Key, Value))
+    }
+
+    fun get(Key: String): Any? {
+        for (el in innerList)
+            if (el.first == Key)
+                return el.second
+        return null
+    }
+
+    fun get(Index: Int): Any {
+        return innerList[Index].second
+    }
+
+    /**
+     * Returns an iterator over the elements of this object.
+     */
+    override fun iterator(): MutableIterator<Any> {
+        return innerList.iterator()
     }
 }
 
 //数据列
-class DataColumn<T> {
+class DataColumn<T> : Iterable<T> {
     private val innerList = mutableListOf<T>()
+    val colsCount
+        //行计数
+        get() = innerList.count()
+
     fun add(obj: T) {
         innerList.add(obj)
+    }
+
+    fun get(Index: Int): Any? {
+        return innerList[Index]
+    }
+
+    /**
+     * Returns an iterator over the elements of this object.
+     */
+    override fun iterator(): MutableIterator<T> {
+        return innerList.iterator()
     }
 }
 
 //数据表
-class DataTable() {
+class DataTable : Iterable<DataRow> {
+    private val innerList = mutableListOf<DataRow>()
+    val rowsCount
+        //行计数
+        get() = innerList.count()
+    val colsCount
+        //列计数
+        get() = getRow(0).colsCount
 
+    fun addRow(DataRow: DataRow) {
+        innerList.add(DataRow)
+    }
+
+    fun getRow(Index: Int): DataRow {
+        return innerList[Index]
+    }
+
+    /**
+     * Returns an iterator over the elements of this object.
+     */
+    override fun iterator(): MutableIterator<DataRow> {
+        return innerList.iterator()
+    }
 }
