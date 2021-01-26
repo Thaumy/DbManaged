@@ -1,10 +1,6 @@
 package MySqlManager
 
-import java.security.Key
 import java.sql.*
-import java.util.*
-import javax.crypto.KeyGenerator
-import javax.xml.crypto.Data
 
 
 class MySqlManager() {
