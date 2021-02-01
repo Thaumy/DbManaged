@@ -47,6 +47,14 @@ class MySqlManager() {
         return result
     }
 
+    /*inline fun <T> DoInCommand(todo: (Connection) -> T): T {
+
+    }
+
+    inline fun <T> DoInTransaction(todo: (Connection) -> T): T {
+
+    }*/
+
     //获取单张数据表
     fun GetTable(SQL: String): DataTable {
         DoInConnection { conn ->
@@ -209,6 +217,22 @@ class MySqlManager() {
                 }
             }
         }
+    }
+
+    fun ExecuteAny() {
+
+    }
+
+    fun ExecuteUpdate() {
+
+    }
+
+    fun ExecuteInsert() {
+
+    }
+
+    fun ExecuteDelete() {
+
     }
 
     //static
