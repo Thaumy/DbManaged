@@ -4,7 +4,7 @@ import java.sql.*
 
 
 class MySqlManager() {
-    private lateinit var ConnectionString: String
+    private lateinit var ConnectionString: String//链接字符串
     private var ConnectionPool: MutableList<Connection>
 
     //数据库连接访问器
@@ -238,6 +238,7 @@ class MySqlManager() {
     //static
     companion object {
         // 从DataTable中提取第一列（此方法无空值判断）
+        @Suppress("UNCHECKED_CAST")
         fun <T> GetColumn(DataTable: DataTable): DataColumn<T> {
             val List = DataColumn<T>()
 
@@ -248,6 +249,7 @@ class MySqlManager() {
         }
 
         // 从DataTable中提取指定列（此方法无空值判断）
+        @Suppress("UNCHECKED_CAST")
         fun <T> GetColumn(DataTable: DataTable, Key: String): DataColumn<T> {
             val List = DataColumn<T>()
 
