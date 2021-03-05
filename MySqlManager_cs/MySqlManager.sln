@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30907.101
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MySqlManager", "MySqlManager\MySqlManager.csproj", "{EB9C4941-B1FC-4E47-A9F9-1E3664462C02}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{EB9C4941-B1FC-4E47-A9F9-1E3664462C02}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EB9C4941-B1FC-4E47-A9F9-1E3664462C02}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EB9C4941-B1FC-4E47-A9F9-1E3664462C02}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EB9C4941-B1FC-4E47-A9F9-1E3664462C02}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {D17A4FCB-E1F9-482E-8F81-CC8A60EA9526}
+	EndGlobalSection
+EndGlobal
