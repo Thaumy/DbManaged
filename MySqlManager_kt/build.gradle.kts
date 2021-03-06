@@ -7,7 +7,7 @@ group = "thaumy.cn"
 version = "1.0"
 
 repositories {
-    maven("https://mirrors.huaweicloud.com/repository/maven/")
+    maven("https://repo.huaweicloud.com/repository/maven/")
     maven("https://jitpack.io")
     mavenCentral()
     jcenter()

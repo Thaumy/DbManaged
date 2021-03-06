@@ -162,19 +162,19 @@ class MySqlManager() {
 
     /**
      * 更新操作
-     * @param MySqlKey 目标表
-     * @param Key 要更改的键
-     * @param NewValue 新键值
+     * @param Table 目标表
+     * @param SET SET clause
+     * @param WHERE WHERE clause
      * @return 是否操作成功
      */
-    fun ExcuteUpdate(Table: String,): Boolean {
+    fun ExcuteUpdate(Table: String, SET: SET, WHERE: WHERE): Boolean {
         DoInConnection { conn ->
-            val SQL = "UPDATE ${MySqlKey.Table} SET ${Key}=?NewValue WHERE ${MySqlKey.Name}=?Val"
+            val SQL = "UPDATE ${Table} SET ${SET.K}=?NewValue WHERE ${WHERE.K}=?Val"
             conn.autoCommit = false
             val state = conn.prepareStatement(SQL)
 
-            state.setObject(1, NewValue)
-            state.setObject(2, MySqlKey.Val)
+            state.setObject(1, SET.V)
+            state.setObject(2, WHERE.V)
 
             return when (state.executeUpdate()) {
                 1 -> {
@@ -192,20 +192,18 @@ class MySqlManager() {
     /**
      * 更新操作
      * @param Table 目标表
-     * @param Key 键名
+     * @param SET SET clause
      * @param OldValue 旧值
-     * @param NewValue 新值
      * @return 是否操作成功
      */
-    fun ExcuteUpdate(Table: String, Key: String, OldValue: Any, NewValue: Any): Boolean {
+    fun ExcuteUpdate(Table: String, SET: SET, OldValue: Any): Boolean {
         DoInConnection { conn ->
-            val SQL = "UPDATE ${Table} SET ${Key}=?NewValue WHERE ${Key}=?OldValue"
+            val SQL = "UPDATE ${Table} SET ${SET.K}=?NewValue WHERE ${SET.K}=?OldValue"
             conn.autoCommit = false
             val state = conn.prepareStatement(SQL)
 
-            state.setObject(1, NewValue)
+            state.setObject(1, SET.V)
             state.setObject(2, OldValue)
-
             return when (state.executeUpdate()) {
                 1 -> {
                     conn.commit()
@@ -269,6 +267,10 @@ class MySqlManager() {
     }
 }
 
+data class SET(val K: String, val V: Any)
+data class WHERE(val K: String, val V: Any)
+data class MySqlKey(val Table: String, val Name: String, val Val: String)
+data class MySqlParameter(val Index: Int, val Value: String)
 data class MySqlConnMsg(val DataSource: String, val Port: Int, val User: String, val PWD: String)
 
 //数据行
