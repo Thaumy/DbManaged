@@ -161,13 +161,13 @@ class MySqlManager() {
 
 
     /**
-     * 更新单个键值
+     * 更新操作
      * @param MySqlKey 目标表
      * @param Key 要更改的键
      * @param NewValue 新键值
      * @return 是否操作成功
      */
-    fun UpdateKey(MySqlKey: MySqlKey, Key: String, NewValue: Any): Boolean {
+    fun ExcuteUpdate(Table: String,): Boolean {
         DoInConnection { conn ->
             val SQL = "UPDATE ${MySqlKey.Table} SET ${Key}=?NewValue WHERE ${MySqlKey.Name}=?Val"
             conn.autoCommit = false
@@ -190,14 +190,14 @@ class MySqlManager() {
     }
 
     /**
-     * 更新单个键值
+     * 更新操作
      * @param Table 目标表
      * @param Key 键名
      * @param OldValue 旧值
      * @param NewValue 新值
      * @return 是否操作成功
      */
-    fun UpdateKey(Table: String, Key: String, OldValue: Any, NewValue: Any): Boolean {
+    fun ExcuteUpdate(Table: String, Key: String, OldValue: Any, NewValue: Any): Boolean {
         DoInConnection { conn ->
             val SQL = "UPDATE ${Table} SET ${Key}=?NewValue WHERE ${Key}=?OldValue"
             conn.autoCommit = false
@@ -270,8 +270,6 @@ class MySqlManager() {
 }
 
 data class MySqlConnMsg(val DataSource: String, val Port: Int, val User: String, val PWD: String)
-data class MySqlKey(val Table: String, val Name: String, val Val: Any)
-data class MySqlParameter(val Index: Int, val Value: String)
 
 //数据行
 class DataRow : Iterable<Any> {
