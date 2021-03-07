@@ -47,14 +47,6 @@ class MySqlManager() {
         return result
     }
 
-    /*inline fun <T> DoInCommand(todo: (Connection) -> T): T {
-
-    }
-
-    inline fun <T> DoInTransaction(todo: (Connection) -> T): T {
-
-    }*/
-
     //获取单张数据表
     fun GetTable(SQL: String): DataTable {
         DoInConnection { conn ->
@@ -158,7 +150,14 @@ class MySqlManager() {
     fun <T> GetColumn(SQL: String, Key: String, vararg parameters: MySqlParameter): DataColumn<T> {
         return GetColumn(GetTable(SQL, *parameters), Key)
     }
+    //执行任意SQL
+    fun ExcuteAny(SQL: String) {
 
+    }
+    //执行任意SQL
+    fun ExcuteAny(SQL: String, vararg parameters: MySqlParameter) {
+
+    }
 
     /**
      * 更新操作
@@ -167,7 +166,7 @@ class MySqlManager() {
      * @param WHERE WHERE clause
      * @return 是否操作成功
      */
-    fun ExcuteUpdate(Table: String, SET: SET, WHERE: WHERE): Boolean {
+    fun ExcuteUpdate(Table: String, SET: Pair, WHERE: Pair): Boolean {
         DoInConnection { conn ->
             val SQL = "UPDATE ${Table} SET ${SET.K}=?NewValue WHERE ${WHERE.K}=?Val"
             conn.autoCommit = false
@@ -179,10 +178,12 @@ class MySqlManager() {
             return when (state.executeUpdate()) {
                 1 -> {
                     conn.commit()
+                    conn.autoCommit = true
                     true
                 }
                 else -> {
                     conn.rollback()
+                    conn.autoCommit = true
                     false
                 }
             }
@@ -196,7 +197,7 @@ class MySqlManager() {
      * @param OldValue 旧值
      * @return 是否操作成功
      */
-    fun ExcuteUpdate(Table: String, SET: SET, OldValue: Any): Boolean {
+    fun ExcuteUpdate(Table: String, SET: Pair, OldValue: Any): Boolean {
         DoInConnection { conn ->
             val SQL = "UPDATE ${Table} SET ${SET.K}=?NewValue WHERE ${SET.K}=?OldValue"
             conn.autoCommit = false
@@ -207,29 +208,56 @@ class MySqlManager() {
             return when (state.executeUpdate()) {
                 1 -> {
                     conn.commit()
+                    conn.autoCommit = true
                     true
                 }
                 else -> {
                     conn.rollback()
+                    conn.autoCommit = true
                     false
                 }
             }
         }
     }
+    //插入操作
+    fun ExecuteInsert(Table: String, vararg Pairs: Pair): Boolean {
+        DoInConnection { conn ->
+            conn.autoCommit = false
 
-    fun ExecuteAny() {
+            var part1 = ""/* VALUES语句前半部分 */
+            var part2 = ""/* VALUES语句后半部分 */
+            for ((K, _) in Pairs) {
+                part1 += "`${K}`,"
+                part2 += "?${K} ,"
+            }
+            part1 = part1.substring(0, part1.length - 1)/* 末尾逗号去除 */
+            part2 = part2.substring(0, part1.length - 1)
 
+
+            val SQL = "INSERT INTO $Table} (${part1})VALUES(${part2})"
+            val state = conn.prepareStatement(SQL)
+            var index = 0/* 索引值 */
+            for ((_, V) in Pairs) {
+                state.setObject(index, V)/* 参数添加 */
+                index++
+            }
+
+            return when (state.executeUpdate()) {
+                1 -> {
+                    conn.commit()
+                    conn.autoCommit = true
+                    true
+                }
+                else -> {
+                    conn.rollback()
+                    conn.autoCommit = true
+                    false
+                }
+            }
+        }
     }
-
-    fun ExecuteUpdate() {
-
-    }
-
-    fun ExecuteInsert() {
-
-    }
-
-    fun ExecuteDelete() {
+    //删除操作
+    fun ExecuteDelete(Table: String, WHERE: Pair) {
 
     }
 
@@ -267,8 +295,7 @@ class MySqlManager() {
     }
 }
 
-data class SET(val K: String, val V: Any)
-data class WHERE(val K: String, val V: Any)
+data class Pair(val K: String, val V: Any)
 data class MySqlKey(val Table: String, val Name: String, val Val: String)
 data class MySqlParameter(val Index: Int, val Value: String)
 data class MySqlConnMsg(val DataSource: String, val Port: Int, val User: String, val PWD: String)
