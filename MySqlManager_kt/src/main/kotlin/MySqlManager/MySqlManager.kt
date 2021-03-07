@@ -150,13 +150,23 @@ class MySqlManager() {
     fun <T> GetColumn(SQL: String, Key: String, vararg parameters: MySqlParameter): DataColumn<T> {
         return GetColumn(GetTable(SQL, *parameters), Key)
     }
+
     //执行任意SQL
     fun ExcuteAny(SQL: String) {
-
+        DoInConnection { conn ->
+            conn.createStatement().execute(SQL)
+        }
     }
+
     //执行任意SQL
     fun ExcuteAny(SQL: String, vararg parameters: MySqlParameter) {
-
+        DoInConnection { conn ->
+            val state = conn.prepareStatement(SQL)
+            for (el in parameters) {
+                state.setObject(el.Index, el.Value)
+            }
+            conn.commit()
+        }
     }
 
     /**
@@ -219,6 +229,7 @@ class MySqlManager() {
             }
         }
     }
+
     //插入操作
     fun ExecuteInsert(Table: String, vararg Pairs: Pair): Boolean {
         DoInConnection { conn ->
@@ -256,9 +267,30 @@ class MySqlManager() {
             }
         }
     }
-    //删除操作
-    fun ExecuteDelete(Table: String, WHERE: Pair) {
 
+    //删除操作
+    fun ExecuteDelete(Table: String, WHERE: Pair): Boolean {
+        DoInConnection { conn ->
+            conn.autoCommit = false
+
+            val SQL = "DELETE FROM ${Table} WHERE `${WHERE.K}`=?Value"
+            val state = conn.prepareStatement(SQL)
+
+            state.setObject(1, WHERE.V)
+
+            return when (state.executeUpdate()) {
+                1 -> {
+                    conn.commit()
+                    conn.autoCommit = true
+                    true
+                }
+                else -> {
+                    conn.rollback()
+                    conn.autoCommit = true
+                    false
+                }
+            }
+        }
     }
 
     //static
@@ -302,7 +334,7 @@ data class MySqlConnMsg(val DataSource: String, val Port: Int, val User: String,
 
 //数据行
 class DataRow : Iterable<Any> {
-    private val innerList = mutableListOf<Pair<String, Any>>()
+    private val innerList = mutableListOf<Pair>()
     val colsCount
         //列计数
         get() = innerList.count()
@@ -313,13 +345,13 @@ class DataRow : Iterable<Any> {
 
     fun get(Key: String): Any? {
         for (el in innerList)
-            if (el.first == Key)
-                return el.second
+            if (el.K == Key)
+                return el.V
         return null
     }
 
     fun get(Index: Int): Any {
-        return innerList[Index].second
+        return innerList[Index].V
     }
 
     /**
