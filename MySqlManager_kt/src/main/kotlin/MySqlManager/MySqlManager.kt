@@ -7,7 +7,7 @@ class MySqlManager() {
     private lateinit var ConnectionString: String//链接字符串
     private var ConnectionPool: MutableList<Connection>
 
-    //数据库连接访问器
+    //只读数据库连接属性
     val Connection: Connection
         get() {
             /* 在连接数超出时检查无用连接并进行清理 */
@@ -39,7 +39,10 @@ class MySqlManager() {
                     "UseAffectedRows=TRUE;&serverTimezone=GMT"
     }
 
-    //一次性连接使用器
+    /**
+     * 一次性连接托管器
+     * @param todo 连接内行为
+     */
     inline fun <T> DoInConnection(todo: (Connection) -> T): T {
         val conn = Connection;
         val result: T = todo(conn);
@@ -47,7 +50,11 @@ class MySqlManager() {
         return result
     }
 
-    //获取单张数据表
+    /**
+     * 获取单张数据表
+     * @param SQL SQL语句
+     * @return 数据表对象
+     */
     fun GetTable(SQL: String): DataTable {
         DoInConnection { conn ->
             val rs = conn.createStatement().executeQuery(SQL)
@@ -64,7 +71,12 @@ class MySqlManager() {
         }
     }
 
-    // 获取单张数据表（适用于参数化查询）
+    /**
+     * 获取单张数据表（适用于参数化查询）
+     * @param SQL SQL语句
+     * @param parameters 参数化查询参数
+     * @return 数据表对象
+     */
     fun GetTable(SQL: String, vararg parameters: MySqlParameter): DataTable {
         DoInConnection { conn ->
             val state = conn.prepareStatement(SQL)
@@ -85,7 +97,11 @@ class MySqlManager() {
         }
     }
 
-    // 取得首个键值（键匹配查询）
+    /**
+     * 取得首个键值（键匹配查询）
+     * @param SQL SQL语句
+     * @return 键值
+     */
     fun GetKey(SQL: String): Any? {
         DoInConnection { conn ->
             /* 如果结果集为空，该方法返回null *///未作考虑
@@ -95,7 +111,12 @@ class MySqlManager() {
         }
     }
 
-    // 取得首个键值（键匹配查询）
+    /**
+     * 取得首个键值（键匹配查询）
+     * @param SQL SQL语句
+     * @param parameters 参数化查询参数
+     * @return 键值
+     */
     fun GetKey(SQL: String, vararg parameters: MySqlParameter): Any? {
         DoInConnection { conn ->
             val state = conn.prepareStatement(SQL)
@@ -108,7 +129,12 @@ class MySqlManager() {
         }
     }
 
-    // 取得指定键值（键匹配查询）
+    /**
+     * 取得指定键值（键匹配查询）
+     * @param MySqlKey 行定位签名
+     * @param KeyName 键名
+     * @return 键值
+     */
     fun GetKey(MySqlKey: MySqlKey, KeyName: String): Any? {
         DoInConnection { conn ->
             val SQL = "SELECT $KeyName FROM ${MySqlKey.Table} WHERE ${MySqlKey.Name}='${MySqlKey.Val}';";
@@ -120,45 +146,82 @@ class MySqlManager() {
         }
     }
 
-    // 获得数据行
+    /**
+     * 获得数据行
+     * @param SQL SQL语句
+     * @return 数据行对象
+     */
     fun GetRow(SQL: String): DataRow {
         return GetTable(SQL).getRow(0)
     }
 
-    // 获得数据行（适用于参数化查询）
+    /**
+     * 获得数据行（适用于参数化查询）
+     * @param SQL SQL语句
+     * @param parameters 参数化查询参数
+     * @return 数据行对象
+     */
     fun GetRow(SQL: String, vararg parameters: MySqlParameter): DataRow {
         return GetTable(SQL, *parameters).getRow(0)
     }
 
 
-    // 取得查询结果中的第一列
+    /**
+     * 取得查询结果中的第一列
+     * @param SQL SQL语句
+     * @return 数据列对象
+     */
     fun <T> GetColumn(SQL: String): DataColumn<T> {
         return GetColumn(GetTable(SQL))
     }
 
-    // 取得查询结果中的指定列
+    /**
+     * 取得查询结果中的指定列
+     * @param SQL SQL语句
+     * @param Key 列名
+     * @return 数据列对象
+     */
     fun <T> GetColumn(SQL: String, Key: String): DataColumn<T> {
         return GetColumn(GetTable(SQL), Key)
     }
 
-    // 取得查询结果中的第一列
+
+    /**
+     * 取得查询结果中的第一列
+     * @param SQL SQL语句
+     * @param parameters 参数化查询参数
+     * @return 数据列对象
+     */
     fun <T> GetColumn(SQL: String, vararg parameters: MySqlParameter): DataColumn<T> {
         return GetColumn(GetTable(SQL, *parameters))
     }
 
-    // 取得查询结果中的指定列
+    /**
+     * 取得查询结果中的指定列
+     * @param SQL SQL语句
+     * @param Key 列名
+     * @param parameters 参数化查询参数
+     * @return 数据列对象
+     */
     fun <T> GetColumn(SQL: String, Key: String, vararg parameters: MySqlParameter): DataColumn<T> {
         return GetColumn(GetTable(SQL, *parameters), Key)
     }
 
-    //执行任意SQL
+    /**
+     * 更新任意SQL
+     * @param SQL SQL语句
+     */
     fun ExcuteAny(SQL: String) {
         DoInConnection { conn ->
             conn.createStatement().execute(SQL)
         }
     }
 
-    //执行任意SQL
+    /**
+     * 更新任意SQL
+     * @param SQL SQL语句
+     * @param parameters 参数化查询参数
+     */
     fun ExcuteAny(SQL: String, vararg parameters: MySqlParameter) {
         DoInConnection { conn ->
             val state = conn.prepareStatement(SQL)
@@ -170,7 +233,7 @@ class MySqlManager() {
     }
 
     /**
-     * 更新操作
+     * 执行更新
      * @param Table 目标表
      * @param SET SET clause
      * @param WHERE WHERE clause
@@ -201,7 +264,7 @@ class MySqlManager() {
     }
 
     /**
-     * 更新操作
+     * 执行更新
      * @param Table 目标表
      * @param SET SET clause
      * @param OldValue 旧值
@@ -230,7 +293,12 @@ class MySqlManager() {
         }
     }
 
-    //插入操作
+    /**
+     * 执行插入
+     * @param Table 目标表
+     * @param Pairs 键值对
+     * @return 是否操作成功
+     */
     fun ExecuteInsert(Table: String, vararg Pairs: Pair): Boolean {
         DoInConnection { conn ->
             conn.autoCommit = false
@@ -268,7 +336,12 @@ class MySqlManager() {
         }
     }
 
-    //删除操作
+    /**
+     * 执行删除
+     * @param Table 目标表
+     * @param WHERE WHERE clause
+     * @return 是否操作成功
+     */
     fun ExecuteDelete(Table: String, WHERE: Pair): Boolean {
         DoInConnection { conn ->
             conn.autoCommit = false
