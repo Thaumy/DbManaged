@@ -5,7 +5,7 @@ using System.Linq;
 
 using MySql.Data.MySqlClient;
 
-namespace MySqlManager
+namespace WaterLibrary.MySql
 {
     /// <summary>
     /// MySql数据库管理器
@@ -159,7 +159,7 @@ namespace MySqlManager
         {
             return DoInConnection(conn =>
             {
-                using DataTable table = new DataTable();
+                using DataTable table = new();
                 new MySqlDataAdapter(SQL, conn).Fill(table);
 
                 return table;
@@ -177,7 +177,7 @@ namespace MySqlManager
             {
                 return DoInCommand(conn, cmd =>
                 {
-                    using DataTable table = new DataTable();
+                    using DataTable table = new();
                     cmd.CommandText = SQL;
                     cmd.Parameters.AddRange(parameters);/* 添加参数 */
 
@@ -339,7 +339,7 @@ namespace MySqlManager
         /// <returns></returns>
         public static List<T> GetColumn<T>(DataTable DataTable)
         {
-            List<T> List = new List<T>();
+            List<T> List = new();
 
             foreach (DataRow DataRow in DataTable.Rows)
             {
@@ -356,7 +356,7 @@ namespace MySqlManager
         /// <returns>返回非泛型List{object}实例</returns>
         public static List<T> GetColumn<T>(DataTable DataTable, string Key)
         {
-            List<T> List = new List<T>();
+            List<T> List = new();
 
             foreach (DataRow DataRow in DataTable.Rows)
             {
