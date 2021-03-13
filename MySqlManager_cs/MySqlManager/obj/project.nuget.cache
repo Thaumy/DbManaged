@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "Bwzuig386cJ46spgs7CzsSke0QZaSF8V7pqzZCmAY+uzV1dHYqpch5BZ5BMJJ9d/3GswPJgdsADTwi/xDeTFmw==",
+  "dgSpecHash": "ZOD4Csy34Mk6GcXkhumHIk3vfbJyXToz1rx6/8oUtZQZj1WBLXZXI6IqKcr/40oCi8nsxqRUC9SFofetdkZJPw==",
   "success": true,
-  "projectFilePath": "C:\\Users\\Thaumy\\Desktop\\MySqlManager\\MySqlManager\\MySqlManager.csproj",
+  "projectFilePath": "C:\\Users\\Thaumy\\Desktop\\GitHub\\MySqlManager\\MySqlManager_cs\\MySqlManager\\MySqlManager.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Thaumy\\.nuget\\packages\\bouncycastle.netcore\\1.8.5\\bouncycastle.netcore.1.8.5.nupkg.sha512",
     "C:\\Users\\Thaumy\\.nuget\\packages\\google.protobuf\\3.11.4\\google.protobuf.3.11.4.nupkg.sha512",

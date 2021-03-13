@@ -1,0 +1,12 @@
+C:\Users\Thaumy\Desktop\GitHub\MySqlManager\MySqlManager_cs\MySqlManager\bin\Debug\net5.0\MySqlManager.deps.json
+C:\Users\Thaumy\Desktop\GitHub\MySqlManager\MySqlManager_cs\MySqlManager\bin\Debug\net5.0\MySqlManager.dll
+C:\Users\Thaumy\Desktop\GitHub\MySqlManager\MySqlManager_cs\MySqlManager\bin\Debug\net5.0\ref\MySqlManager.dll
+C:\Users\Thaumy\Desktop\GitHub\MySqlManager\MySqlManager_cs\MySqlManager\bin\Debug\net5.0\MySqlManager.pdb
+C:\Users\Thaumy\Desktop\GitHub\MySqlManager\MySqlManager_cs\MySqlManager\obj\Debug\net5.0\MySqlManager.csprojAssemblyReference.cache
+C:\Users\Thaumy\Desktop\GitHub\MySqlManager\MySqlManager_cs\MySqlManager\obj\Debug\net5.0\MySqlManager.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Thaumy\Desktop\GitHub\MySqlManager\MySqlManager_cs\MySqlManager\obj\Debug\net5.0\MySqlManager.AssemblyInfoInputs.cache
+C:\Users\Thaumy\Desktop\GitHub\MySqlManager\MySqlManager_cs\MySqlManager\obj\Debug\net5.0\MySqlManager.AssemblyInfo.cs
+C:\Users\Thaumy\Desktop\GitHub\MySqlManager\MySqlManager_cs\MySqlManager\obj\Debug\net5.0\MySqlManager.csproj.CoreCompileInputs.cache
+C:\Users\Thaumy\Desktop\GitHub\MySqlManager\MySqlManager_cs\MySqlManager\obj\Debug\net5.0\MySqlManager.dll
+C:\Users\Thaumy\Desktop\GitHub\MySqlManager\MySqlManager_cs\MySqlManager\obj\Debug\net5.0\ref\MySqlManager.dll
+C:\Users\Thaumy\Desktop\GitHub\MySqlManager\MySqlManager_cs\MySqlManager\obj\Debug\net5.0\MySqlManager.pdb
