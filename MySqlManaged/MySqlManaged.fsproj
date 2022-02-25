@@ -1,0 +1,25 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <LangVersion>preview</LangVersion>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Compile Include="ext.fs" />
+        <Compile Include="MySqlConnPool.fs" />
+        <Compile Include="MySqlManaged.fs" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Reference Include="fsharper, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null">
+        <HintPath>..\..\fsharper\fsharper\bin\Debug\net6.0\fsharper.dll</HintPath>
+      </Reference>
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="MySql.Data" Version="8.0.28" />
+    </ItemGroup>
+
+</Project>
