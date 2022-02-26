@@ -2,6 +2,7 @@ module internal MySqlManaged.MySqlConnPool
 
 open System.Data
 open MySql.Data.MySqlClient
+open MySqlManaged
 open fsharper.fn
 open fsharper.op
 open fsharper.ethType
@@ -10,15 +11,7 @@ open fsharper.moreType
 
 
 /// MySql数据库连接池
-type internal MySqlConnPool
-    (
-        msg: {| DataSource: string
-                Port: uint16
-                User: string
-                Password: string |},
-        schema,
-        size: uint
-    ) =
+type internal MySqlConnPool(msg: MySqlConnMsg, schema, size: uint) =
 
     /// 连接列表
     /// 新连接总是在此列表首部

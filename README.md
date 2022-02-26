@@ -1,10 +1,10 @@
 # MySqlManaged
 
-由F#实现的函数式（伪）MySQL数据库托管库。
+由F#实现的函数式（伪）MySQL数据库托管库，由pilipala内核分离。
 
 for MySQL 8.0
 
-## MySqlManager（旧版本v1.0.0）
+## MySqlManager（旧版本tag:v1.0.0）
 
 从原有项目移植到JVM的MySql数据库管理库，提供了一系列简化数据库操作的API。
 

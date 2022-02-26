@@ -10,6 +10,7 @@ open fsharper.moreType
 open MySqlManaged.ext
 open MySqlManaged.MySqlConnPool
 
+
 /// MySql数据库管理器
 type MySqlManaged private (pool) =
 
