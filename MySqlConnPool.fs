@@ -5,9 +5,7 @@ open MySql.Data.MySqlClient
 open MySqlManaged
 open fsharper.fn
 open fsharper.op
-open fsharper.ethType
-open fsharper.typeExt
-open fsharper.moreType
+open fsharper.enhType
 
 
 /// MySql数据库连接池
