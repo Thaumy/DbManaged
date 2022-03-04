@@ -2,10 +2,6 @@ module internal MySqlManaged.ext
 
 open MySql.Data.MySqlClient
 open fsharper.fn
-open fsharper.op
-open fsharper.ethType
-open fsharper.typeExt
-open fsharper.moreType
 
 
 type MySqlCommand with
