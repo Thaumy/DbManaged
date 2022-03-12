@@ -2,9 +2,8 @@
 
 open System.Data
 open MySql.Data.MySqlClient
-open fsharper.fn
+open fsharper.types
 open fsharper.op
-open fsharper.enhType
 open MySqlManaged.ext
 open MySqlManaged.MySqlConnPool
 
