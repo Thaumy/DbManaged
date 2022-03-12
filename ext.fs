@@ -1,7 +1,7 @@
 module internal MySqlManaged.ext
 
 open MySql.Data.MySqlClient
-open fsharper.fn
+open fsharper.types
 
 
 type MySqlCommand with

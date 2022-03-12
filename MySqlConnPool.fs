@@ -3,9 +3,8 @@ module internal MySqlManaged.MySqlConnPool
 open System.Data
 open MySql.Data.MySqlClient
 open MySqlManaged
-open fsharper.fn
 open fsharper.op
-open fsharper.enhType
+open fsharper.types
 
 
 /// MySql数据库连接池
