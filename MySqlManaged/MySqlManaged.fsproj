@@ -19,7 +19,7 @@
 
     <ItemGroup>
       <Reference Include="fsharper, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null">
-        <HintPath>..\fsharper\fsharper\bin\Debug\net6.0\fsharper.dll</HintPath>
+        <HintPath>..\fsharper\bin\Debug\net6.0\fsharper.dll</HintPath>
       </Reference>
     </ItemGroup>
 
