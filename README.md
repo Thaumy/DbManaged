@@ -1,4 +1,4 @@
-# SqlManaged
+# DbManaged
 
 由F#实现的函数式（伪）数据库托管库，由pilipala内核分离。
 
