@@ -2,9 +2,8 @@
 
 open System.Data
 open MySql.Data.MySqlClient
-open fsharper.fn
+open fsharper.types
 open fsharper.op
-open fsharper.enhType
 open MySqlManaged.ext
 open MySqlManaged.MySqlConnPool
 
@@ -128,11 +127,11 @@ type MySqlManaged private (pool) =
 
     /// 查询到第一列
     member public this.getFstCol sql =
-        this.getTable sql >>= (this.getFstColFrom >> Ok)
+        this.getTable sql >>= (this.getFstColFrom .|> Ok)
     /// 参数化查询到第一列
     member public this.getFstCol(sql, para) =
         this.getTable (sql, para)
-        >>= (this.getFstColFrom >> Ok)
+        >>= (this.getFstColFrom .|> Ok)
     /// 从既有DataTable中取出第一列
     member public this.getFstColFrom(table: DataTable) =
         match table.Rows with

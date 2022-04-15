@@ -1,25 +1,28 @@
-module internal MySqlManaged.MySqlConnPool
+module internal DbManaged.PgSql.PgSqlConnPool
 
 open System.Data
-open MySql.Data.MySqlClient
-open MySqlManaged
-open fsharper.fn
+open Npgsql
+open DbManaged.PgSql
+open DbManaged.DbConnPool
 open fsharper.op
-open fsharper.enhType
+open fsharper.types
 
 
-/// MySql数据库连接池
-type internal MySqlConnPool(msg: MySqlConnMsg, schema, size: uint) =
+
+/// PgSql数据库连接池
+type internal PgSqlConnPool(msg: PgSqlConnMsg, database, size: uint) =
+    inherit IDbConnPool()
+
 
     /// 连接列表
     /// 新连接总是在此列表首部
-    let mutable ConnList: MySqlConnection list = []
+    let mutable ConnList: NpgsqlConnection list = []
 
     /// 尝试清理连接池
     let tryCleanConnPool () =
         ConnList <-
             filter
-            <| fun (conn: MySqlConnection) ->
+            <| fun (conn: NpgsqlConnection) ->
                 match conn.State with
                 //如果连接中断或是关闭（这都是不工作的状态）
                 | ConnectionState.Broken
@@ -33,7 +36,7 @@ type internal MySqlConnPool(msg: MySqlConnMsg, schema, size: uint) =
     /// 取得空闲连接
     let getIdleConn () =
         filter
-        <| fun (conn: MySqlConnection) ->
+        <| fun (conn: NpgsqlConnection) ->
             match conn.State with
             | ConnectionState.Broken
             | ConnectionState.Closed ->
@@ -47,24 +50,24 @@ type internal MySqlConnPool(msg: MySqlConnMsg, schema, size: uint) =
 
     /// 连接字符串
     let ConnStr =
-        if schema = "" then //TODO 等号右侧空格测试
-            $"DataSource ={msg.DataSource};\
-                    Port ={msg.Port};\
-                  UserID ={msg.User};\
-                Password ={msg.Password};\
-         UseAffectedRows =TRUE;" //使UPDATE语句返回受影响的行数而不是符合查询条件的行数
+        if database = "" then //TODO 等号右侧空格测试
+            $"Host ={msg.Host};\
+                      Port ={msg.Port};\
+                    UserID ={msg.User};\
+                  Password ={msg.Password};\
+           UseAffectedRows =TRUE;" //使UPDATE语句返回受影响的行数而不是符合查询条件的行数
         else
-            $"DataSource ={msg.DataSource};\
-                DataBase ={schema};\
-                    Port ={msg.Port};\
-                  UserID ={msg.User};\
-                Password ={msg.Password};\
-         UseAffectedRows =TRUE;"
+            $"Host ={msg.Host};\
+                  DataBase ={database};\
+                      Port ={msg.Port};\
+                    UserID ={msg.User};\
+                  Password ={msg.Password};\
+           UseAffectedRows =TRUE;"
 
-    /// 从连接池取用 MySqlConnection
-    member this.getConnection() =
+    /// 从连接池取用 NpgsqlConnection
+    override this.getConnection() =
         let genConn () =
-            let newConn = new MySqlConnection(ConnStr)
+            let newConn = new NpgsqlConnection(ConnStr)
 
             ConnList <- newConn :: ConnList
 
@@ -90,20 +93,3 @@ type internal MySqlConnPool(msg: MySqlConnMsg, schema, size: uint) =
 
         with
         | e -> Err e
-
-
-type MySqlConnPool with
-
-    /// 创建一个 MySqlConnection, 并以其为参数执行闭包 f
-    /// MySqlConnection 销毁权交由闭包 f
-    member self.useConnection f =
-        self.getConnection () >>= fun conn -> f conn |> Ok
-
-    /// 托管一个 MySqlConnection, 并以其为参数执行闭包 f
-    /// 闭包执行完成后该 MySqlConnection 会被销毁
-    member self.hostConnection f =
-        self.useConnection
-        <| fun conn ->
-            let result = f conn
-            conn.Dispose()
-            result

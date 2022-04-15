@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <LangVersion>preview</LangVersion>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Compile Include="ext.fs" />
+        <Compile Include="PgSqlConnMsg.fs" />
+        <Compile Include="PgSqlConnPool.fs" />
+        <Compile Include="PgSqlManaged.fs" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Npgsql" Version="7.0.0-preview.2" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Reference Include="fsharper, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null">
+        <HintPath>..\..\fsharper\bin\Debug\net6.0\fsharper.dll</HintPath>
+      </Reference>
+    </ItemGroup>
+
+</Project>
