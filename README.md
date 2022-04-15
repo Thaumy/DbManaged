@@ -4,7 +4,7 @@
 
 ## 数据库支持性
 
-MySql 8.0+
+MySql 8.0+  
 PostgreSql 14+
 
 ## 关于tag:v1.0.0
