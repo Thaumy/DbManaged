@@ -5,7 +5,6 @@ open System.Data
 open System.Data.Common
 open fsharper.types
 
-
 /// PgSql数据库管理器
 type IDbManaged =
 
@@ -14,14 +13,14 @@ type IDbManaged =
     /// 查询到表
     abstract member getTable : sql: string -> Result'<DataTable, exn>
     /// 参数化查询到表
-    abstract member getTable : sql: string * paras: (string * obj) list -> Result'<DataTable, exn>
+    abstract member getTable : sql: string * paras: (string * 't) list -> Result'<DataTable, exn>
     /// 参数化查询到表
     abstract member getTable : sql: string * paras: #DbParameter array -> Result'<DataTable, exn>
 
     /// 查询到第一个值
     abstract member getFstVal : sql: string -> Result'<Option'<obj>, exn>
     /// 参数化查询到第一个值
-    abstract member getFstVal : sql: string * paras: (string * obj) list -> Result'<Option'<obj>, exn>
+    abstract member getFstVal : sql: string * paras: (string * 't) list -> Result'<Option'<obj>, exn>
     /// 参数化查询到第一个值
     abstract member getFstVal : sql: string * paras: #DbParameter array -> Result'<Option'<obj>, exn>
     /// 从既有DataTable中查询到第一个 whereKey 等于 whereKeyVal 的行的值
@@ -31,35 +30,33 @@ type IDbManaged =
     /// 查询到第一行
     abstract member getFstRow : sql: string -> Result'<Option'<DataRow>, exn>
     /// 参数化查询到第一行
-    abstract member getFstRow : sql: string * paras: (string * obj) list -> Result'<Option'<DataRow>, exn>
+    abstract member getFstRow : sql: string * paras: (string * 't) list -> Result'<Option'<DataRow>, exn>
     /// 参数化查询到第一行
     abstract member getFstRow : sql: string * paras: #DbParameter array -> Result'<Option'<DataRow>, exn>
     /// 从既有DataTable中取出第一个 whereKey 等于 whereKeyVal 的行
     abstract member getFstRowFrom : table: DataTable -> whereKey: string -> whereKeyVal: 'a -> Option'<DataRow>
 
-    /// 查询到第一列
-    abstract member getFstCol : sql: string -> Result'<Option'<obj list>, exn>
-    /// 参数化查询到第一列
-    abstract member getFstCol : sql: string * paras: (string * obj) list -> Result'<Option'<obj list>, exn>
-    /// 参数化查询到第一列
-    abstract member getFstCol : sql: string * paras: #DbParameter array -> Result'<Option'<obj list>, exn>
-    /// 从既有DataTable中取出第一列
-    abstract member getFstColFrom : table: DataTable -> Option'<obj list>
-
     /// 查询到指定列
     abstract member getCol : sql: string * key: string -> Result'<Option'<obj list>, exn>
     /// 参数化查询到指定列
-    abstract member getCol : sql: string * key: string * paras: (string * obj) list -> Result'<Option'<obj list>, exn>
+    abstract member getCol : sql: string * key: string * paras: (string * 't) list -> Result'<Option'<obj list>, exn>
     /// 参数化查询到指定列
     abstract member getCol : sql: string * key: string * paras: #DbParameter array -> Result'<Option'<obj list>, exn>
     /// 从既有DataTable中取出指定列
-    abstract member getColFrom : table: DataTable -> key: string -> Option'<obj list>
-
+    abstract member getColFrom : table: DataTable * key: string -> Option'<obj list>
+    /// 查询到指定列
+    abstract member getCol : sql: string * index: uint -> Result'<Option'<obj list>, exn>
+    /// 参数化查询到指定列
+    abstract member getCol : sql: string * index: uint * paras: (string * 't) list -> Result'<Option'<obj list>, exn>
+    /// 参数化查询到指定列
+    abstract member getCol : sql: string * index: uint * paras: #DbParameter array -> Result'<Option'<obj list>, exn>
+    /// 从既有DataTable中取出指定列
+    abstract member getColFrom : table: DataTable * index: uint -> Option'<obj list>
 
     /// 从连接池取用 DbConnection 并在其上调用同名方法
     abstract member executeAny : sql: string -> Result'<(int -> bool) -> int, exn>
     /// 从连接池取用 DbConnection 并在其上调用同名方法
-    abstract member executeAny : sql: string * paras: (string * obj) list -> Result'<(int -> bool) -> int, exn>
+    abstract member executeAny : sql: string * paras: (string * 't) list -> Result'<(int -> bool) -> int, exn>
     /// 从连接池取用 DbConnection 并在其上调用同名方法
     abstract member executeAny : sql: string * paras: #DbParameter array -> Result'<(int -> bool) -> int, exn>
 
@@ -72,7 +69,7 @@ type IDbManaged =
         table: string * key: string * newValue: 'c * oldValue: 'c -> Result'<(int -> bool) -> int, exn>
 
     /// 从连接池取用 DbConnection 并在其上调用同名方法
-    abstract member executeInsert : table: string -> pairs: (string * 'b) list -> Result'<(int -> bool) -> int, exn>
+    abstract member executeInsert : table: string -> pairs: (string * 't) list -> Result'<(int -> bool) -> int, exn>
 
     /// 从连接池取用 DbConnection 并在其上调用同名方法
     abstract member executeDelete :

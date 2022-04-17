@@ -21,15 +21,13 @@ type NpgsqlConnection with
                          SET {setKey}=:setKeyVal \
                        WHERE {whereKey}=:whereKeyVal"
 
-            cmd.Parameters.AddWithValue("setKeyVal", setKeyVal)
-            |> ignore
-
-            cmd.Parameters.AddWithValue("whereKeyVal", whereKeyVal)
-            |> ignore
+            [| NpgsqlParameter("setKeyVal", setKeyVal :> obj)
+               NpgsqlParameter("whereKeyVal", whereKeyVal :> obj) |]
+            |> cmd.Parameters.AddRange
 
             cmd.useTransaction
             <| fun tx ->
-                fun p ->
+                fun callback p ->
                     let affected =
                         match cmd.ExecuteNonQuery() with
                         | n when p n -> //符合期望影响行数规则则提交
@@ -41,6 +39,8 @@ type NpgsqlConnection with
 
                     tx.Dispose() //资源释放
                     cmd.Dispose()
+
+                    callback () //执行回调（可用于连接销毁）
 
                     affected //实际受影响的行数
 
@@ -62,7 +62,7 @@ type NpgsqlConnection with
                 |> foldl
                     (fun (acc_k, acc_v) (k: string, v) ->
 
-                        cmd.Parameters.AddWithValue(k, v) //添加参数
+                        cmd.Parameters.AddWithValue(k, v :> obj) //添加参数
                         |> ignore
 
                         //acc_k 为VALUES语句前半部分
@@ -78,7 +78,7 @@ type NpgsqlConnection with
 
             cmd.useTransaction
             <| fun tx ->
-                fun p ->
+                fun callback p ->
                     let affected =
                         match cmd.ExecuteNonQuery() with
                         | n when p n -> //符合期望影响行数规则则提交
@@ -90,6 +90,8 @@ type NpgsqlConnection with
 
                     tx.Dispose() //资源释放
                     cmd.Dispose()
+
+                    callback () //执行回调（可用于连接销毁）
 
                     affected //实际受影响的行数
 
@@ -107,7 +109,7 @@ type NpgsqlConnection with
 
             cmd.useTransaction
             <| fun tx ->
-                fun p ->
+                fun callback p ->
                     let affected =
                         match cmd.ExecuteNonQuery() with
                         | n when p n -> //符合期望影响行数规则则提交
@@ -119,5 +121,7 @@ type NpgsqlConnection with
 
                     tx.Dispose() //资源释放
                     cmd.Dispose()
+
+                    callback () //执行回调（可用于连接销毁）
 
                     affected //实际受影响的行数
