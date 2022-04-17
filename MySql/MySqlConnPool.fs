@@ -2,6 +2,7 @@ module internal DbManaged.MySql.MySqlConnPool
 
 open System.Data
 open MySql.Data.MySqlClient
+open DbManaged
 open DbManaged.MySql
 open DbManaged.DbConnPool
 open fsharper.op
@@ -9,7 +10,7 @@ open fsharper.types
 
 
 /// MySql数据库连接池
-type internal MySqlConnPool(msg: MySqlConnMsg, schema, size: uint) =
+type internal MySqlConnPool(msg: DbConnMsg, schema, size: uint) =
     inherit IDbConnPool()
 
     /// 连接列表

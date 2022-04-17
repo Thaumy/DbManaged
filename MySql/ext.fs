@@ -58,24 +58,24 @@ type MySqlConnection with
         <| fun cmd' ->
             let cmd: MySqlCommand = coerce cmd'
 
-            let x =
+            let keys, values =
                 pairs
                 |> foldl
-                    (fun (a, b) (k, v) ->
+                    (fun (acc_k, acc_v) (k: string, v) ->
 
                         cmd.Parameters.AddWithValue(k, v) //添加参数
                         |> ignore
 
-                        //a 为VALUES语句前半部分
-                        //b 为VALUES语句后半部分
-                        (a + $"`{k}`,", b + $"?{v} ,"))
+                        //acc_k 为VALUES语句前半部分
+                        //acc_v 为VALUES语句后半部分
+                        ($"{acc_k}{k},", $"{acc_v}:{k},"))
                     ("", "")
 
             cmd.CommandText <-
-                $"INSERT INTO `{table}` \
-                      ({(fst x).[0..^1]}) \
+                $"INSERT INTO {table} \
+                      ({keys.[0..^1]}) \
                       VALUES \
-                      ({(snd x).[0..^1]})"
+                      ({values.[0..^1]})"
 
             cmd.useTransaction
             <| fun tx ->

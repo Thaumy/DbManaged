@@ -42,9 +42,16 @@ type PgSqlManaged private (pool) =
                 |> ignore
 
                 table
-
         /// 参数化查询到表
-        member self.getTable(sql, para) =
+        member self.getTable(sql, paras: (string * obj) list) =
+            let paras' =
+                foldMap (fun (k: string, v: obj) -> List' [ NpgsqlParameter(k, v) ]) paras
+                |> unwarp
+
+            (self :> IDbManaged)
+                .getTable (sql, paras'.toArray ())
+        /// 参数化查询到表
+        member self.getTable(sql, paras: #DbParameter array) =
             pool.hostConnection
             <| fun conn' ->
                 let conn: NpgsqlConnection = coerce conn'
@@ -56,7 +63,7 @@ type PgSqlManaged private (pool) =
                     let table = new DataTable()
 
                     cmd.CommandText <- sql
-                    cmd.Parameters.AddRange para //添加参数
+                    cmd.Parameters.AddRange paras //添加参数
 
                     (new NpgsqlDataAdapter(cmd)).Fill table |> ignore
 
@@ -76,13 +83,21 @@ type PgSqlManaged private (pool) =
                     | null -> None
                     | x -> Some x
         /// 参数化查询到第一个值
-        member self.getFstVal(sql, para) =
+        member self.getFstVal(sql, paras: (string * obj) list) =
+            let paras' =
+                foldMap (fun (k: string, v: obj) -> List' [ NpgsqlParameter(k, v) ]) paras
+                |> unwarp
+
+            (self :> IDbManaged)
+                .getFstVal (sql, paras'.toArray ())
+        /// 参数化查询到第一个值
+        member self.getFstVal(sql, paras: #DbParameter array) =
             pool.hostConnection
             <| fun conn ->
                 conn.hostCommand
                 <| fun cmd ->
                     cmd.CommandText <- sql
-                    cmd.Parameters.AddRange para
+                    cmd.Parameters.AddRange paras
 
                     //如果结果集为空，ExecuteScalar返回null
                     match cmd.ExecuteScalar() with
@@ -94,7 +109,7 @@ type PgSqlManaged private (pool) =
             <| fun conn ->
                 conn.hostCommand
                 <| fun cmd ->
-                    cmd.CommandText <- $"SELECT `{targetKey}` FROM `{table}` WHERE `{whereKey}`=?whereKeyVal"
+                    cmd.CommandText <- $"SELECT {targetKey} FROM {table} WHERE {whereKey}=:whereKeyVal"
 
                     cmd.Parameters.AddRange [| NpgsqlParameter("whereKeyVal", whereKeyVal) |]
 
@@ -102,6 +117,8 @@ type PgSqlManaged private (pool) =
                     match cmd.ExecuteScalar() with
                     | null -> None
                     | x -> Some x
+
+
         /// 查询到第一行
         member self.getFstRow sql =
             (self :> IDbManaged).getTable sql
@@ -111,16 +128,24 @@ type PgSqlManaged private (pool) =
                        //仅当行数非零时有结果
                        | rows when rows.Count <> 0 -> Some rows.[0]
                        | _ -> None
-
         /// 参数化查询到第一行
-        member self.getFstRow(sql, para) =
-            (self :> IDbManaged).getTable (sql, para)
+        member self.getFstRow(sql, paras: (string * obj) list) =
+            let paras' =
+                foldMap (fun (k: string, v: obj) -> List' [ NpgsqlParameter(k, v) ]) paras
+                |> unwarp
+
+            (self :> IDbManaged)
+                .getFstRow (sql, paras'.toArray ())
+        /// 参数化查询到第一行
+        member self.getFstRow(sql, paras: #DbParameter array) =
+            (self :> IDbManaged).getTable (sql, paras)
             >>= fun t ->
                     Ok
                     <| match t.Rows with
                        //仅当行数非零时有结果
                        | rows when rows.Count <> 0 -> Some rows.[0]
                        | _ -> None
+
 
         /// 从既有DataTable中取出第一个 whereKey 等于 whereKeyVal 的行
         member self.getFstRowFrom (table: DataTable) (whereKey: string) whereKeyVal =
@@ -139,8 +164,16 @@ type PgSqlManaged private (pool) =
             (self :> IDbManaged).getTable sql
             >>= ((self :> IDbManaged).getFstColFrom .|> Ok)
         /// 参数化查询到第一列
-        member self.getFstCol(sql, para) =
-            (self :> IDbManaged).getTable (sql, para)
+        member self.getFstCol(sql, paras: (string * obj) list) =
+            let paras' =
+                foldMap (fun (k: string, v: obj) -> List' [ NpgsqlParameter(k, v) ]) paras
+                |> unwarp
+
+            (self :> IDbManaged)
+                .getFstCol (sql, paras'.toArray ())
+        /// 参数化查询到第一列
+        member self.getFstCol(sql, paras: #DbParameter array) =
+            (self :> IDbManaged).getTable (sql, paras)
             >>= ((self :> IDbManaged).getFstColFrom .|> Ok)
         /// 从既有DataTable中取出第一列
         member self.getFstColFrom(table: DataTable) =
@@ -160,8 +193,16 @@ type PgSqlManaged private (pool) =
             (self :> IDbManaged).getTable sql
             >>= fun t -> Ok <| (self :> IDbManaged).getColFrom t key
         /// 参数化查询到指定列
-        member self.getCol(sql, key, para) =
-            (self :> IDbManaged).getTable (sql, para)
+        member self.getCol(sql, key, paras: (string * obj) list) =
+            let paras' =
+                foldMap (fun (k: string, v: obj) -> List' [ NpgsqlParameter(k, v) ]) paras
+                |> unwarp
+
+            (self :> IDbManaged)
+                .getCol (sql, key, paras'.toArray ())
+        /// 参数化查询到指定列
+        member self.getCol(sql, key, paras: #DbParameter array) =
+            (self :> IDbManaged).getTable (sql, paras)
             >>= fun t -> Ok <| (self :> IDbManaged).getColFrom t key
         /// 从既有DataTable中取出指定列
         member self.getColFrom (table: DataTable) (key: string) =
@@ -180,14 +221,21 @@ type PgSqlManaged private (pool) =
 
 
         /// 从连接池取用 NpgsqlConnection 并在其上调用同名方法
-        member self.execute sql =
+        member self.executeAny sql =
             self.getConnection ()
             >>= fun conn -> conn.execute sql |> Ok
         /// 从连接池取用 NpgsqlConnection 并在其上调用同名方法
-        member self.execute(sql, para) =
-            self.getConnection ()
-            >>= fun conn -> conn.execute (sql, para) |> Ok
+        member self.executeAny(sql, paras: (string * obj) list) =
+            let paras' =
+                foldMap (fun (k: string, v: obj) -> List' [ NpgsqlParameter(k, v) ]) paras
+                |> unwarp
 
+            (self :> IDbManaged)
+                .executeAny (sql, paras'.toArray ())
+        /// 从连接池取用 NpgsqlConnection 并在其上调用同名方法
+        member self.executeAny(sql, paras) =
+            self.getConnection ()
+            >>= fun conn -> conn.execute (sql, paras) |> Ok
 
         /// 从连接池取用 NpgsqlConnection 并在其上调用同名方法
         member self.executeUpdate(table, (setKey, setKeyVal), (whereKey, whereKeyVal)) =
@@ -207,7 +255,6 @@ type PgSqlManaged private (pool) =
                     (table, key, newValue, oldValue)
                     |> conn.executeUpdate
                     |> Ok
-
 
         /// 从连接池取用 NpgsqlConnection 并在其上调用同名方法
         member self.executeInsert table pairs =

@@ -2,6 +2,7 @@ module internal DbManaged.PgSql.PgSqlConnPool
 
 open System.Data
 open Npgsql
+open DbManaged
 open DbManaged.PgSql
 open DbManaged.DbConnPool
 open fsharper.op
@@ -10,7 +11,7 @@ open fsharper.types
 
 
 /// PgSql数据库连接池
-type internal PgSqlConnPool(msg: PgSqlConnMsg, database, size: uint) =
+type internal PgSqlConnPool(msg: DbConnMsg, database, size: uint) =
     inherit IDbConnPool()
 
 
@@ -54,15 +55,13 @@ type internal PgSqlConnPool(msg: PgSqlConnMsg, database, size: uint) =
             $"Host ={msg.Host};\
                       Port ={msg.Port};\
                     UserID ={msg.User};\
-                  Password ={msg.Password};\
-           UseAffectedRows =TRUE;" //使UPDATE语句返回受影响的行数而不是符合查询条件的行数
+                  Password ={msg.Password};"
         else
             $"Host ={msg.Host};\
                   DataBase ={database};\
                       Port ={msg.Port};\
                     UserID ={msg.User};\
-                  Password ={msg.Password};\
-           UseAffectedRows =TRUE;"
+                  Password ={msg.Password};"
 
     /// 从连接池取用 NpgsqlConnection
     override this.getConnection() =

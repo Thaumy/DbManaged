@@ -44,7 +44,15 @@ type MySqlManaged private (pool) =
 
                 table
         /// 参数化查询到表
-        member self.getTable(sql, para) =
+        member self.getTable(sql, paras: (string * obj) list) =
+            let paras' =
+                foldMap (fun (k: string, v: obj) -> List' [ MySqlParameter(k, v) ]) paras
+                |> unwarp
+
+            (self :> IDbManaged)
+                .getTable (sql, paras'.toArray ())
+        /// 参数化查询到表
+        member self.getTable(sql, para: #DbParameter array) =
             pool.hostConnection
             <| fun conn' ->
                 let conn: DbConnection = coerce conn'
@@ -76,7 +84,15 @@ type MySqlManaged private (pool) =
                     | null -> None
                     | x -> Some x
         /// 参数化查询到第一个值
-        member self.getFstVal(sql, para) =
+        member self.getFstVal(sql, paras: (string * obj) list) =
+            let paras' =
+                foldMap (fun (k: string, v: obj) -> List' [ MySqlParameter(k, v) ]) paras
+                |> unwarp
+
+            (self :> IDbManaged)
+                .getFstVal (sql, paras'.toArray ())
+        /// 参数化查询到第一个值
+        member self.getFstVal(sql, para: #DbParameter array) =
             pool.hostConnection
             <| fun conn ->
                 conn.hostCommand
@@ -112,8 +128,16 @@ type MySqlManaged private (pool) =
                        | rows when rows.Count <> 0 -> Some rows.[0]
                        | _ -> None
         /// 参数化查询到第一行
-        member self.getFstRow(sql, para) =
-            (self :> IDbManaged).getTable (sql, para)
+        member self.getFstRow(sql, paras: (string * obj) list) =
+            let paras' =
+                foldMap (fun (k: string, v: obj) -> List' [ MySqlParameter(k, v) ]) paras
+                |> unwarp
+
+            (self :> IDbManaged)
+                .getFstRow (sql, paras'.toArray ())
+        /// 参数化查询到第一行
+        member self.getFstRow(sql, paras: #DbParameter array) =
+            (self :> IDbManaged).getTable (sql, paras)
             >>= fun t ->
                     Ok
                     <| match t.Rows with
@@ -138,8 +162,16 @@ type MySqlManaged private (pool) =
             (self :> IDbManaged).getTable sql
             >>= ((self :> IDbManaged).getFstColFrom .|> Ok)
         /// 参数化查询到第一列
-        member self.getFstCol(sql, para) =
-            (self :> IDbManaged).getTable (sql, para)
+        member self.getFstCol(sql, paras: (string * obj) list) =
+            let paras' =
+                foldMap (fun (k: string, v: obj) -> List' [ MySqlParameter(k, v) ]) paras
+                |> unwarp
+
+            (self :> IDbManaged)
+                .getFstCol (sql, paras'.toArray ())
+        /// 参数化查询到第一列
+        member self.getFstCol(sql, paras: #DbParameter array) =
+            (self :> IDbManaged).getTable (sql, paras)
             >>= ((self :> IDbManaged).getFstColFrom .|> Ok)
         /// 从既有DataTable中取出第一列
         member self.getFstColFrom(table: DataTable) =
@@ -158,9 +190,18 @@ type MySqlManaged private (pool) =
         member self.getCol(sql, key) =
             (self :> IDbManaged).getTable sql
             >>= fun t -> Ok <| (self :> IDbManaged).getColFrom t key
+
         /// 参数化查询到指定列
-        member self.getCol(sql, key, para) =
-            (self :> IDbManaged).getTable (sql, para)
+        member self.getCol(sql, key, paras: (string * obj) list) =
+            let paras' =
+                foldMap (fun (k: string, v: obj) -> List' [ MySqlParameter(k, v) ]) paras
+                |> unwarp
+
+            (self :> IDbManaged)
+                .getCol (sql, key, paras'.toArray ())
+        /// 参数化查询到指定列
+        member self.getCol(sql, key, paras: #DbParameter array) =
+            (self :> IDbManaged).getTable (sql, paras)
             >>= fun t -> Ok <| (self :> IDbManaged).getColFrom t key
         /// 从既有DataTable中取出指定列
         member self.getColFrom (table: DataTable) (key: string) =
@@ -175,18 +216,25 @@ type MySqlManaged private (pool) =
             | _ -> None
 
 
-
         //partial...
 
 
         /// 从连接池取用 MySqlConnection 并在其上调用同名方法
-        member self.execute sql =
+        member self.executeAny sql =
             self.getConnection ()
             >>= fun conn -> conn.execute sql |> Ok
         /// 从连接池取用 MySqlConnection 并在其上调用同名方法
-        member self.execute(sql, para) =
+        member self.executeAny(sql, paras: (string * obj) list) =
+            let paras' =
+                foldMap (fun (k: string, v: obj) -> List' [ MySqlParameter(k, v) ]) paras
+                |> unwarp
+
+            (self :> IDbManaged)
+                .executeAny (sql, paras'.toArray ())
+        /// 从连接池取用 MySqlConnection 并在其上调用同名方法
+        member self.executeAny(sql, paras) =
             self.getConnection ()
-            >>= fun conn -> conn.execute (sql, para) |> Ok
+            >>= fun conn -> conn.execute (sql, paras) |> Ok
 
 
         /// 从连接池取用 MySqlConnection 并在其上调用同名方法
