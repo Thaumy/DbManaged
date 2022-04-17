@@ -8,13 +8,24 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <Compile Include="com.fs" />
-        <Compile Include="excute\executeAny.fs" />
-        <Compile Include="excute\executeInsert.fs" />
-        <Compile Include="excute\executeDelete.fs" />
-        <Compile Include="excute\executeUpdate.fs" />
-        <Compile Include="get\getTable.fs" />
-        <Compile Include="get\getFstVal.fs" />
+        <Compile Include="PgSql\com.fs" />
+        <Compile Include="PgSql\excute\executeAny.fs" />
+        <Compile Include="PgSql\excute\executeInsert.fs" />
+        <Compile Include="PgSql\excute\executeDelete.fs" />
+        <Compile Include="PgSql\excute\executeUpdate.fs" />
+        <Compile Include="PgSql\get\getTable.fs" />
+        <Compile Include="PgSql\get\getFstVal.fs" />
+        <Compile Include="PgSql\get\getFstRow.fs" />
+        <Compile Include="PgSql\get\getCol.fs" />
+        <Compile Include="MySql\com.fs" />
+        <Compile Include="MySql\excute\executeAny.fs" />
+        <Compile Include="MySql\excute\executeInsert.fs" />
+        <Compile Include="MySql\excute\executeUpdate.fs" />
+        <Compile Include="MySql\excute\executeDelete.fs" />
+        <Compile Include="MySql\get\getFstRow.fs" />
+        <Compile Include="MySql\get\getCol.fs" />
+        <Compile Include="MySql\get\getFstVal.fs" />
+        <Compile Include="MySql\get\getTable.fs" />
     </ItemGroup>
 
     <ItemGroup>
@@ -27,12 +38,12 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Reference Include="DbManaged, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null">
-        <HintPath>..\bin\Debug\net6.0\DbManaged.dll</HintPath>
-      </Reference>
-      <Reference Include="fsharper, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null">
-        <HintPath>..\..\fsharper\bin\Debug\net6.0\fsharper.dll</HintPath>
-      </Reference>
+        <Reference Include="DbManaged, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null">
+            <HintPath>..\bin\Debug\net6.0\DbManaged.dll</HintPath>
+        </Reference>
+        <Reference Include="fsharper, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null">
+            <HintPath>..\..\fsharper\bin\Debug\net6.0\fsharper.dll</HintPath>
+        </Reference>
     </ItemGroup>
 
 </Project>

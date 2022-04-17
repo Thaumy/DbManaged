@@ -1,14 +1,12 @@
 module internal DbManaged.PgSql.PgSqlConnPool
 
+open System
 open System.Data
+open System.Data.Common
 open Npgsql
-open DbManaged
-open DbManaged.PgSql
-open DbManaged.DbConnPool
-open fsharper.op
 open fsharper.types
-
-
+open DbManaged
+open DbManaged.DbConnPool
 
 /// PgSql数据库连接池
 type internal PgSqlConnPool(msg: DbConnMsg, database, size: uint) =
@@ -74,21 +72,27 @@ type internal PgSqlConnPool(msg: DbConnMsg, database, size: uint) =
             newConn
 
         try
-            Ok
-            <| match uint ConnList.Length with
-               | len when //连接数较少时，新建
-                   len <= size / 2u
-                   ->
-                   genConn ()
-               | len when //连接数较多时，在循环复用的基础上新建
-                   len <= size
-                   ->
-                   match getIdleConn () with
-                   | Some c -> c
-                   | None -> genConn ()
-               | _ -> //连接数过多时，清理后新建
-                   tryCleanConnPool ()
-                   genConn ()
-
+            match uint ConnList.Length with
+            | len when //连接数较少时，新建
+                len <= size / 2u
+                ->
+                //Console.Write "+"
+                genConn ()
+            | len when //连接数较多时，在循环复用的基础上新建
+                len <= size
+                ->
+                match getIdleConn () with
+                | Some c ->
+                    //Console.Write "~"
+                    c
+                | None ->
+                    //Console.Write "+"
+                    genConn ()
+            | _ -> //连接数过多时，清理后新建
+                //Console.Write "-+"
+                tryCleanConnPool ()
+                genConn ()
+            :> DbConnection
+            |> Ok
         with
         | e -> Err e

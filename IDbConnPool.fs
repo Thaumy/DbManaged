@@ -7,8 +7,6 @@ open DbManaged
 open fsharper.op
 open fsharper.types
 
-
-
 /// 数据库连接池
 [<AbstractClass>]
 type internal IDbConnPool() =

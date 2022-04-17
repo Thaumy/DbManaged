@@ -1,7 +1,7 @@
-module dbm_test.get.getTable
+module dbm_test.PgSql.get.getTable
 
 open NUnit.Framework
-open dbm_test
+open dbm_test.PgSql
 open fsharper.types
 open fsharper.types.Ord
 open fsharper.op.Boxing

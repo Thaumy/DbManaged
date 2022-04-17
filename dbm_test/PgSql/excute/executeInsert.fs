@@ -1,7 +1,7 @@
-module dbm_test.excute.executeInsert
+module dbm_test.PgSql.excute.executeInsert
 
 open NUnit.Framework
-open dbm_test
+open dbm_test.PgSql
 open fsharper.types
 open fsharper.types.Ord
 open fsharper.op.Boxing
