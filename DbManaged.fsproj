@@ -13,11 +13,9 @@
         <Compile Include="IDbConnPool.fs" />
         <Compile Include="IDbManaged.fs" />
         <Compile Include="MySql\ext.fs" />
-        <Compile Include="MySql\MySqlConnMsg.fs" />
         <Compile Include="MySql\MySqlConnPool.fs" />
         <Compile Include="MySql\MySqlManaged.fs" />
         <Compile Include="PgSql\ext.fs" />
-        <Compile Include="PgSql\PgSqlConnMsg.fs" />
         <Compile Include="PgSql\PgSqlConnPool.fs" />
         <Compile Include="PgSql\PgSqlManaged.fs" />
     </ItemGroup>
@@ -29,7 +27,7 @@
 
     <ItemGroup>
       <Reference Include="fsharper, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null">
-        <HintPath>..\..\fsharper\bin\Debug\net6.0\fsharper.dll</HintPath>
+        <HintPath>bin\Debug\net6.0\fsharper.dll</HintPath>
       </Reference>
     </ItemGroup>
 
