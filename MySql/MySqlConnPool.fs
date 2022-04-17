@@ -1,15 +1,16 @@
 module internal DbManaged.MySql.MySqlConnPool
 
+open System
+open System.Threading
 open System.Data
+open System.Data.Common
 open MySql.Data.MySqlClient
-open DbManaged.MySql
-open DbManaged.DbConnPool
-open fsharper.op
 open fsharper.types
-
+open DbManaged
+open DbManaged.DbConnPool
 
 /// MySql数据库连接池
-type internal MySqlConnPool(msg: MySqlConnMsg, schema, size: uint) =
+type internal MySqlConnPool(msg: DbConnMsg, schema, size: uint) =
     inherit IDbConnPool()
 
     /// 连接列表
@@ -50,19 +51,18 @@ type internal MySqlConnPool(msg: MySqlConnMsg, schema, size: uint) =
     let ConnStr =
         if schema = "" then //TODO 等号右侧空格测试
             $"Host ={msg.Host};\
-                     Port ={msg.Port};\
+                    Port ={msg.Port};\
                   UserID ={msg.User};\
-                Password ={msg.Password};\
-         UseAffectedRows =TRUE;" //使UPDATE语句返回受影响的行数而不是符合查询条件的行数
+                Password ={msg.Password};"
         else
             $"Host ={msg.Host};\
                 DataBase ={schema};\
                     Port ={msg.Port};\
                   UserID ={msg.User};\
-                Password ={msg.Password};\
-         UseAffectedRows =TRUE;"
+                Password ={msg.Password};"
 
-
+    //参数 UseAffectedRows =TRUE 使UPDATE语句返回受影响的行数而不是符合查询条件的行数
+    //在通用查询逻辑下，该参数的纳入可能有违于操作意图
 
     /// 从连接池取用 MySqlConnection
     override this.getConnection() =
@@ -75,21 +75,28 @@ type internal MySqlConnPool(msg: MySqlConnMsg, schema, size: uint) =
             newConn
 
         try
-            Ok
-            <| match uint ConnList.Length with
-               | len when //连接数较少时，新建
-                   len <= size / 2u
-                   ->
-                   genConn ()
-               | len when //连接数较多时，在循环复用的基础上新建
-                   len <= size
-                   ->
-                   match getIdleConn () with
-                   | Some c -> c
-                   | None -> genConn ()
-               | _ -> //连接数过多时，清理后新建
-                   tryCleanConnPool ()
-                   genConn ()
-
+            match uint ConnList.Length with
+            | len when //连接数较少时，新建
+                len <= size / 2u
+                ->
+                //Console.Write "+"
+                //Thread.Sleep(100)
+                genConn ()
+            | len when //连接数较多时，在循环复用的基础上新建
+                len <= size
+                ->
+                match getIdleConn () with
+                | Some c ->
+                    //Console.Write "~"
+                    c
+                | None ->
+                    //Console.Write "+"
+                    genConn ()
+            | _ -> //连接数过多时，清理后新建
+                //Console.Write "-+"
+                tryCleanConnPool ()
+                genConn ()
+            :> DbConnection
+            |> Ok
         with
         | e -> Err e
