@@ -1,0 +1,32 @@
+﻿<wpf:ResourceDictionary xml:space="preserve" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:s="clr-namespace:System;assembly=mscorlib" xmlns:ss="urn:shemas-jetbrains-com:settings-storage-xaml" xmlns:wpf="http://schemas.microsoft.com/winfx/2006/xaml/presentation">
+	<s:Boolean x:Key="/Default/AddReferences/RecentPaths/=_002Fhome_002Fthaumy_002Frepo_002FDbManaged_002Fbin_002FDebug_002Fnet6_002E0_002FDbManaged_002Edll/@EntryIndexedValue">True</s:Boolean>
+	<s:Boolean x:Key="/Default/AddReferences/RecentPaths/=_002Fhome_002Fthaumy_002Frepo_002Ffsharper_002Fbin_002FDebug_002Fnet6_002E0_002Ffsharper_002Edll/@EntryIndexedValue">True</s:Boolean>
+	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=be63fc0c_002D9927_002D4f7d_002Dbd8f_002D032e91d39026/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" Name="test" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;
+  &lt;TestAncestor&gt;
+    &lt;TestId&gt;NUnit3x::716DD3EB-4C62-445C-9346-385A966C9E55::net6.0::dbm_test.execute.execute&lt;/TestId&gt;
+    &lt;TestId&gt;NUnit3x::716DD3EB-4C62-445C-9346-385A966C9E55::net6.0::dbm_test.excute.executeUpdate&lt;/TestId&gt;
+    &lt;TestId&gt;NUnit3x::716DD3EB-4C62-445C-9346-385A966C9E55::net6.0::dbm_test.excute.executeInsert&lt;/TestId&gt;
+    &lt;TestId&gt;NUnit3x::716DD3EB-4C62-445C-9346-385A966C9E55::net6.0::dbm_test.excute.executeDelete&lt;/TestId&gt;
+  &lt;/TestAncestor&gt;
+&lt;/SessionState&gt;</s:String>
+	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=cb6b1a2f_002Ddbb2_002D4a26_002D97b9_002D57fe4c05359c/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" Name="execute" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;
+  &lt;TestAncestor&gt;
+    &lt;TestId&gt;NUnit3x::716DD3EB-4C62-445C-9346-385A966C9E55::net6.0::dbm_test.execute.execute&lt;/TestId&gt;
+    &lt;TestId&gt;NUnit3x::716DD3EB-4C62-445C-9346-385A966C9E55::net6.0::dbm_test.excute.executeUpdate&lt;/TestId&gt;
+    &lt;TestId&gt;NUnit3x::716DD3EB-4C62-445C-9346-385A966C9E55::net6.0::dbm_test.excute.executeInsert&lt;/TestId&gt;
+    &lt;TestId&gt;NUnit3x::716DD3EB-4C62-445C-9346-385A966C9E55::net6.0::dbm_test.excute.executeDelete&lt;/TestId&gt;
+  &lt;/TestAncestor&gt;
+&lt;/SessionState&gt;</s:String>
+	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=e4369cde_002D5709_002D4099_002Dad5d_002Dc9b6f8b9e361/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" IsActive="True" Name="execute #2" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;
+  &lt;TestAncestor&gt;
+    &lt;TestId&gt;NUnit3x::716DD3EB-4C62-445C-9346-385A966C9E55::net6.0::dbm_test.execute.execute&lt;/TestId&gt;
+    &lt;TestId&gt;NUnit3x::716DD3EB-4C62-445C-9346-385A966C9E55::net6.0::dbm_test.excute.executeUpdate&lt;/TestId&gt;
+    &lt;TestId&gt;NUnit3x::716DD3EB-4C62-445C-9346-385A966C9E55::net6.0::dbm_test.excute.executeInsert&lt;/TestId&gt;
+    &lt;TestId&gt;NUnit3x::716DD3EB-4C62-445C-9346-385A966C9E55::net6.0::dbm_test.excute.executeDelete&lt;/TestId&gt;
+    &lt;TestId&gt;NUnit3x::716DD3EB-4C62-445C-9346-385A966C9E55::net6.0::dbm_test.com.connect_test&lt;/TestId&gt;
+    &lt;TestId&gt;NUnit3x::716DD3EB-4C62-445C-9346-385A966C9E55::net6.0::dbm_test.com.global_OneTimeSetUp&lt;/TestId&gt;
+    &lt;TestId&gt;NUnit3x::716DD3EB-4C62-445C-9346-385A966C9E55::net6.0::dbm_test.com&lt;/TestId&gt;
+    &lt;TestId&gt;NUnit3x::716DD3EB-4C62-445C-9346-385A966C9E55::net6.0::dbm_test.get.getTable&lt;/TestId&gt;
+    &lt;TestId&gt;NUnit3x::716DD3EB-4C62-445C-9346-385A966C9E55::net6.0::dbm_test.get.getFstVal&lt;/TestId&gt;
+  &lt;/TestAncestor&gt;
+&lt;/SessionState&gt;</s:String></wpf:ResourceDictionary>

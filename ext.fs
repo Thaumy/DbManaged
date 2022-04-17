@@ -69,7 +69,7 @@ type DbConnection with
 
     /// 执行任意参数化查询
     /// 返回的闭包用于检测受影响的行数，当断言成立时闭包会提交事务并返回受影响的行数
-    member self.execute(sql, para) =
+    member self.execute(sql, para: #DbParameter array) =
         self.useCommand
         <| fun cmd ->
             cmd.CommandText <- sql
