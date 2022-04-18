@@ -218,7 +218,11 @@ type MySqlManaged private (pool) =
             pool.getConnection ()
             >>= fun conn ->
                     let result = conn.executeAny sql
-                    conn.Dispose |> result |> Ok
+
+                    (pool.recycleConnection conn)
+                    |> delay
+                    |> result
+                    |> Ok
 
         member self.executeAny(sql, paras: (string * 't) list) =
             let paras' =
@@ -232,7 +236,11 @@ type MySqlManaged private (pool) =
             pool.getConnection ()
             >>= fun conn ->
                     let result = conn.executeAny (sql, paras)
-                    conn.Dispose |> result |> Ok
+
+                    (pool.recycleConnection conn)
+                    |> delay
+                    |> result
+                    |> Ok
 
 
         member self.executeUpdate(table, (setKey, setKeyVal), (whereKey, whereKeyVal)) =
@@ -243,7 +251,10 @@ type MySqlManaged private (pool) =
                     let result =
                         conn.executeUpdate (table, (setKey, setKeyVal), (whereKey, whereKeyVal))
 
-                    conn.Dispose |> result |> Ok
+                    (pool.recycleConnection conn)
+                    |> delay
+                    |> result
+                    |> Ok
 
         member self.executeUpdate(table, key, newValue, oldValue) =
             pool.getConnection ()
@@ -254,7 +265,10 @@ type MySqlManaged private (pool) =
                     let result =
                         conn.executeUpdate (table, key, newValue, oldValue)
 
-                    conn.Dispose |> result |> Ok
+                    (pool.recycleConnection conn)
+                    |> delay
+                    |> result
+                    |> Ok
 
 
 
@@ -264,7 +278,11 @@ type MySqlManaged private (pool) =
                     let conn: MySqlConnection = coerce conn'
 
                     let result = conn.executeInsert table pairs
-                    conn.Dispose |> result |> Ok
+
+                    (pool.recycleConnection conn)
+                    |> delay
+                    |> result
+                    |> Ok
 
         member self.executeDelete table (whereKey, whereKeyVal) =
             pool.getConnection ()
@@ -274,4 +292,7 @@ type MySqlManaged private (pool) =
                     let result =
                         conn.executeDelete table (whereKey, whereKeyVal)
 
-                    conn.Dispose |> result |> Ok
+                    (pool.recycleConnection conn)
+                    |> delay
+                    |> result
+                    |> Ok

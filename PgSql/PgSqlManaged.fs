@@ -24,8 +24,6 @@ type PgSqlManaged private (pool) =
         let pool = PgSqlConnPool(msg, database, poolSize)
         PgSqlManaged(pool)
 
-    member self.getConnection = pool.getConnection
-
     // 所有查询均不负责类型转换
     interface IDbManaged with
 
@@ -221,10 +219,14 @@ type PgSqlManaged private (pool) =
 
         /// 从连接池取用 NpgsqlConnection 并在其上调用同名方法
         member self.executeAny sql =
-            self.getConnection ()
+            pool.getConnection ()
             >>= fun conn ->
                     let result = conn.executeAny sql
-                    conn.Dispose |> result |> Ok
+
+                    (pool.recycleConnection conn)
+                    |> delay
+                    |> result
+                    |> Ok
         /// 从连接池取用 NpgsqlConnection 并在其上调用同名方法
         member self.executeAny(sql, paras: (string * 't) list) =
             let paras' =
@@ -235,47 +237,64 @@ type PgSqlManaged private (pool) =
                 .executeAny (sql, paras'.toArray ())
         /// 从连接池取用 NpgsqlConnection 并在其上调用同名方法
         member self.executeAny(sql, paras) =
-            self.getConnection ()
+            pool.getConnection ()
             >>= fun conn ->
                     let result = conn.executeAny (sql, paras)
-                    conn.Dispose |> result |> Ok
+
+                    (pool.recycleConnection conn)
+                    |> delay
+                    |> result
+                    |> Ok
 
         /// 从连接池取用 NpgsqlConnection 并在其上调用同名方法
         member self.executeUpdate(table, (setKey, setKeyVal), (whereKey, whereKeyVal)) =
-            self.getConnection ()
+            pool.getConnection ()
             >>= fun conn' ->
                     let conn: NpgsqlConnection = coerce conn'
 
                     let result =
                         conn.executeUpdate (table, (setKey, setKeyVal), (whereKey, whereKeyVal))
 
-                    conn.Dispose |> result |> Ok
+                    (pool.recycleConnection conn)
+                    |> delay
+                    |> result
+                    |> Ok
         /// 从连接池取用 NpgsqlConnection 并在其上调用同名方法
         member self.executeUpdate(table, key, newValue, oldValue) =
-            self.getConnection ()
+            pool.getConnection ()
             >>= fun conn' ->
                     let conn: NpgsqlConnection = coerce conn'
 
                     let result =
                         conn.executeUpdate (table, key, newValue, oldValue)
 
-                    conn.Dispose |> result |> Ok
+                    (pool.recycleConnection conn)
+                    |> delay
+                    |> result
+                    |> Ok
 
         /// 从连接池取用 NpgsqlConnection 并在其上调用同名方法
         member self.executeInsert table pairs =
-            self.getConnection ()
+            pool.getConnection ()
             >>= fun conn' ->
                     let conn: NpgsqlConnection = coerce conn'
 
                     let result = conn.executeInsert table pairs
-                    conn.Dispose |> result |> Ok
+
+                    (pool.recycleConnection conn)
+                    |> delay
+                    |> result
+                    |> Ok
         /// 从连接池取用 NpgsqlConnection 并在其上调用同名方法
         member self.executeDelete table (whereKey, whereKeyVal) =
-            self.getConnection ()
+            pool.getConnection ()
             >>= fun conn' ->
                     let conn: NpgsqlConnection = coerce conn'
 
                     let result =
                         conn.executeDelete table (whereKey, whereKeyVal)
 
-                    conn.Dispose |> result |> Ok
+                    (pool.recycleConnection conn)
+                    |> delay
+                    |> result
+                    |> Ok

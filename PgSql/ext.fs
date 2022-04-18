@@ -5,6 +5,7 @@ open System.Data.Common
 open DbManaged
 open Npgsql
 open fsharper.op.Coerce
+open fsharper.op.Lazy
 open fsharper.types
 
 type NpgsqlConnection with
@@ -40,7 +41,7 @@ type NpgsqlConnection with
                     tx.Dispose() //资源释放
                     cmd.Dispose()
 
-                    callback () //执行回调（可用于连接销毁）
+                    force callback //执行回调（可用于连接销毁）
 
                     affected //实际受影响的行数
 
@@ -91,7 +92,7 @@ type NpgsqlConnection with
                     tx.Dispose() //资源释放
                     cmd.Dispose()
 
-                    callback () //执行回调（可用于连接销毁）
+                    force callback //执行回调（可用于连接销毁）
 
                     affected //实际受影响的行数
 
@@ -122,6 +123,6 @@ type NpgsqlConnection with
                     tx.Dispose() //资源释放
                     cmd.Dispose()
 
-                    callback () //执行回调（可用于连接销毁）
+                    force callback //执行回调（可用于连接销毁）
 
                     affected //实际受影响的行数
