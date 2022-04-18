@@ -12,12 +12,12 @@
         <Compile Include="DbConnMsg.fs" />
         <Compile Include="IDbConnPool.fs" />
         <Compile Include="IDbManaged.fs" />
-        <Compile Include="MySql\ext.fs" />
-        <Compile Include="MySql\MySqlConnPool.fs" />
-        <Compile Include="MySql\MySqlManaged.fs" />
         <Compile Include="PgSql\ext.fs" />
         <Compile Include="PgSql\PgSqlConnPool.fs" />
         <Compile Include="PgSql\PgSqlManaged.fs" />
+        <Compile Include="MySql\ext.fs" />
+        <Compile Include="MySql\MySqlConnPool.fs" />
+        <Compile Include="MySql\MySqlManaged.fs" />
     </ItemGroup>
 
     <ItemGroup>

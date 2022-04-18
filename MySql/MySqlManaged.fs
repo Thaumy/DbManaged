@@ -213,7 +213,19 @@ type MySqlManaged private (pool) =
 
         //partial...
 
+        //TODO exp async api
+        member self.executeAnyAsync sql =
+            
+                    pool.getConnection ()
+                    >>= fun conn ->
+                            let result = conn.executeAnyAsync sql
 
+                            (pool.recycleConnection conn)
+                            |> delay
+                            |> result
+                            |> Ok
+            
+        
         member self.executeAny sql =
             pool.getConnection ()
             >>= fun conn ->

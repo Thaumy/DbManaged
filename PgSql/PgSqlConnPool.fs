@@ -81,7 +81,7 @@ type internal PgSqlConnPool(msg: DbConnMsg, database, size: uint) =
             | len when //连接数较少时，新建
                 len < uint (float size * 0.6)
                 ->
-                Console.Write $"+{connList.Length}:{idleConnList.Length} "
+                //Console.Write $"+{connList.Length}:{idleConnList.Length} "
                 genConn ()
             | len when //连接数较多时，在循环复用的基础上新建
                 len < uint (float size * 0.8)
@@ -90,13 +90,13 @@ type internal PgSqlConnPool(msg: DbConnMsg, database, size: uint) =
 
                 match getIdleConn () with
                 | Some c ->
-                    Console.Write $"~{connList.Length}:{idleConnList.Length} "
+                    //Console.Write $"~{connList.Length}:{idleConnList.Length} "
                     c
                 | None ->
-                    Console.Write $"+{connList.Length}:{idleConnList.Length} "
+                    //Console.Write $"+{connList.Length}:{idleConnList.Length} "
                     genConn ()
             | _ -> //连接数过多时，清理后新建
-                Console.Write $"-+{connList.Length}:{idleConnList.Length} "
+                //Console.Write $"-+{connList.Length}:{idleConnList.Length} "
                 poolClean ()
                 genConn ()
             :> DbConnection
