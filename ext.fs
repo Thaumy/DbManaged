@@ -2,6 +2,7 @@
 module internal DbManaged.ext
 
 open System.Data.Common
+open fsharper.op.Lazy
 
 type DbCommand with
 
@@ -66,7 +67,7 @@ type DbConnection with
                     tx.Dispose() //资源释放
                     cmd.Dispose()
 
-                    callback () //执行回调（可用于连接销毁）
+                    force callback //执行回调（可用于连接销毁）
 
                     affected //实际受影响的行数
 
@@ -94,6 +95,6 @@ type DbConnection with
                     tx.Dispose() //资源释放
                     cmd.Dispose()
 
-                    callback () //执行回调（可用于连接销毁）
+                    force callback //执行回调（可用于连接销毁）
 
                     affected //实际受影响的行数

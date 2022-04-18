@@ -40,7 +40,7 @@ type MySqlConnection with
                     tx.Dispose() //资源释放
                     cmd.Dispose()
 
-                    callback () //执行回调（可用于连接销毁）
+                    force callback //执行回调（可用于连接销毁）
 
                     affected //实际受影响的行数
 
@@ -91,7 +91,7 @@ type MySqlConnection with
                     tx.Dispose() //资源释放
                     cmd.Dispose()
 
-                    callback () //执行回调（可用于连接销毁）
+                    force callback //执行回调（可用于连接销毁）
 
                     affected //实际受影响的行数
 
@@ -122,6 +122,6 @@ type MySqlConnection with
                     tx.Dispose() //资源释放
                     cmd.Dispose()
 
-                    callback () //执行回调（可用于连接销毁）
+                    force callback //执行回调（可用于连接销毁）
 
                     affected //实际受影响的行数

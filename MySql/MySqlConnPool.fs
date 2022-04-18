@@ -1,25 +1,29 @@
 module internal DbManaged.MySql.MySqlConnPool
 
 open System
-open System.Threading
 open System.Data
 open System.Data.Common
 open MySql.Data.MySqlClient
+open fsharper.op
 open fsharper.types
 open DbManaged
 open DbManaged.DbConnPool
 
 /// MySql数据库连接池
-type internal MySqlConnPool(msg: DbConnMsg, schema, size: uint) =
+type internal MySqlConnPool(msg: DbConnMsg, database, size: uint) =
     inherit IDbConnPool()
 
-    /// 连接列表
+    /// 所有连接列表
     /// 新连接总是在此列表首部
-    let mutable ConnList: MySqlConnection list = []
+    let mutable connList: MySqlConnection list = []
+
+    /// 空闲连接列表
+    /// 其中的任意连接均属于connList
+    let mutable idleConnList: MySqlConnection list = []
 
     /// 尝试清理连接池
-    let tryCleanConnPool () =
-        ConnList <-
+    let poolClean () =
+        connList <-
             filter
             <| fun (conn: MySqlConnection) ->
                 match conn.State with
@@ -29,72 +33,74 @@ type internal MySqlConnPool(msg: DbConnMsg, schema, size: uint) =
                     conn.Dispose() //注销
                     false //移除
                 | _ -> true //保留
-            <| ConnList
+            <| connList
 
 
     /// 取得空闲连接
     let getIdleConn () =
-        filter
-        <| fun (conn: MySqlConnection) ->
-            match conn.State with
-            | ConnectionState.Broken
-            | ConnectionState.Closed ->
-                conn.Dispose()
-                false
-            | _ -> true
-
-        <| ConnList
-
-        |> head
+        match idleConnList with
+        | x :: xs ->
+            idleConnList <- xs //移除头部连接
+            Some x
+        | [] -> None
 
     /// 连接字符串
-    let ConnStr =
-        if schema = "" then //TODO 等号右侧空格测试
-            $"Host ={msg.Host};\
-                    Port ={msg.Port};\
-                  UserID ={msg.User};\
-                Password ={msg.Password};"
-        else
-            $"Host ={msg.Host};\
-                DataBase ={schema};\
-                    Port ={msg.Port};\
-                  UserID ={msg.User};\
-                Password ={msg.Password};"
+    let connStr = //启用连接池，最大超时1秒
+        $"\
+                    Host = {msg.Host};\
+                DataBase = {database};\
+                    Port = {msg.Port};\
+                  UserID = {msg.User};\
+                Password = {msg.Password};\
+                 Pooling = True;\
+             MaxPoolSize = {size};\
+       "
+        + if database = "" then //TODO 等号右侧空格测试
+              ""
+          else
+              $"DataBase ={database};"
+
 
     //参数 UseAffectedRows =TRUE 使UPDATE语句返回受影响的行数而不是符合查询条件的行数
     //在通用查询逻辑下，该参数的纳入可能有违于操作意图
 
+    override this.recycleConnection conn =
+        match conn.State with
+        | ConnectionState.Open -> idleConnList <- (coerce conn) :: idleConnList
+        | _ -> () //连接不可用，交由poolClean调用处统一清理
+
     /// 从连接池取用 MySqlConnection
     override this.getConnection() =
         let genConn () =
-            let newConn = new MySqlConnection(ConnStr)
+            let newConn = new MySqlConnection(connStr)
 
-            ConnList <- newConn :: ConnList
+            connList <- newConn :: connList
 
             newConn.Open()
             newConn
 
         try
-            match uint ConnList.Length with
+            match uint connList.Length with
             | len when //连接数较少时，新建
-                len <= size / 2u
+                len < uint (float size * 0.6)
                 ->
-                //Console.Write "+"
-                //Thread.Sleep(100)
+                Console.Write $"+{connList.Length}:{idleConnList.Length} "
                 genConn ()
             | len when //连接数较多时，在循环复用的基础上新建
-                len <= size
+                len < uint (float size * 0.8)
                 ->
+                poolClean ()
+
                 match getIdleConn () with
                 | Some c ->
-                    //Console.Write "~"
+                    Console.Write $"~{connList.Length}:{idleConnList.Length} "
                     c
                 | None ->
-                    //Console.Write "+"
+                    Console.Write $"+{connList.Length}:{idleConnList.Length} "
                     genConn ()
             | _ -> //连接数过多时，清理后新建
-                //Console.Write "-+"
-                tryCleanConnPool ()
+                Console.Write $"-+{connList.Length}:{idleConnList.Length} "
+                poolClean ()
                 genConn ()
             :> DbConnection
             |> Ok
