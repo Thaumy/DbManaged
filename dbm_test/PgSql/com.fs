@@ -11,14 +11,19 @@ let mutable msg = None
 let mutable managed: Option'<IDbManaged> = None
 
 let connect () =
-    msg <-
-        Some
-            { Host = "localhost"
-              Port = 5432us
-              User = "postgres"
-              Password = "65a1561425f744e2b541303f628963f8" }
+    match msg with
+    | None ->
+        msg <-
+            Some
+                { Host = "localhost"
+                  Port = 5432us
+                  User = "postgres"
+                  Password = "65a1561425f744e2b541303f628963f8" }
+    | _ -> ()
 
-    managed <- Some <| PgSqlManaged(unwarp msg, "dbm_test")
+    match managed with
+    | None -> managed <- Some <| PgSqlManaged(unwarp msg, "dbm_test", 3u)
+    | _ -> ()
 
 let init () =
 
