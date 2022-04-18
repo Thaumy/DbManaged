@@ -22,7 +22,7 @@ let connect () =
     | _ -> ()
 
     match managed with
-    | None -> managed <- Some <| MySqlManaged(unwarp msg, "dbm_test", 3u)
+    | None -> managed <- Some <| MySqlManaged(unwarp msg, "dbm_test", 32u)
     | _ -> ()
 
 let init () =

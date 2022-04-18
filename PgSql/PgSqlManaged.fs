@@ -216,7 +216,19 @@ type PgSqlManaged private (pool) =
 
         //partial...
 
+        //TODO exp async api
+        member self.executeAnyAsync sql =
+            
+                    pool.getConnection ()
+                    >>= fun conn ->
+                            let result = conn.executeAnyAsync sql
 
+                            (pool.recycleConnection conn)
+                            |> delay
+                            |> result
+                            |> Ok
+            
+            
         /// 从连接池取用 NpgsqlConnection 并在其上调用同名方法
         member self.executeAny sql =
             pool.getConnection ()

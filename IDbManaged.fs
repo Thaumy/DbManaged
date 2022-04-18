@@ -1,8 +1,8 @@
 ﻿namespace DbManaged
 
-open System
 open System.Data
 open System.Data.Common
+open System.Threading.Tasks
 open fsharper.types
 
 /// PgSql数据库管理器
@@ -52,6 +52,9 @@ type IDbManaged =
     abstract member getCol : sql: string * index: uint * paras: #DbParameter array -> Result'<Option'<obj list>, exn>
     /// 从既有DataTable中取出指定列
     abstract member getColFrom : table: DataTable * index: uint -> Option'<obj list>
+
+    //TODO exp async api
+    abstract member executeAnyAsync : sql: string -> Result'<(int -> bool) -> Task<int>, exn>
 
     /// 从连接池取用 DbConnection 并在其上调用同名方法
     abstract member executeAny : sql: string -> Result'<(int -> bool) -> int, exn>
