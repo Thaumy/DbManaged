@@ -48,7 +48,6 @@ type internal MySqlConnPool(msg: DbConnMsg, database, size: uint) =
     let connStr = //启用连接池，最大超时1秒
         $"\
                     Host = {msg.Host};\
-                DataBase = {database};\
                     Port = {msg.Port};\
                   UserID = {msg.User};\
                 Password = {msg.Password};\
@@ -60,9 +59,13 @@ type internal MySqlConnPool(msg: DbConnMsg, database, size: uint) =
           else
               $"DataBase ={database};"
 
+    //TODO
+    override this.recycleConnectionAsync conn = raise (NotImplementedException())
+    //TODO
+    override this.getConnectionAsync() = raise (NotImplementedException())
 
-    //参数 UseAffectedRows =TRUE 使UPDATE语句返回受影响的行数而不是符合查询条件的行数
-    //在通用查询逻辑下，该参数的纳入可能有违于操作意图
+    (*参数 UseAffectedRows =TRUE 使UPDATE语句返回受影响的行数而不是符合查询条件的行数
+    在通用查询逻辑下，该参数的纳入可能有违于操作意图*)
 
     override this.recycleConnection conn =
         match conn.State with
@@ -96,7 +99,7 @@ type internal MySqlConnPool(msg: DbConnMsg, database, size: uint) =
                     //Console.Write $"~{connList.Length}:{idleConnList.Length} "
                     c
                 | None ->
-                    //Console.Write $"+{connList.Length}:{idleConnList.Length} "
+                    Console.Write $"+{connList.Length}:{idleConnList.Length} "
                     genConn ()
             | _ -> //连接数过多时，清理后新建
                 //Console.Write $"-+{connList.Length}:{idleConnList.Length} "

@@ -1,7 +1,8 @@
-module dbm_test.PgSql.get.getTable
+module dbm_test.PgSql.Sync.get.getTable
 
 open NUnit.Framework
 open dbm_test.PgSql
+open dbm_test.PgSql.Sync.init
 open fsharper.types
 open fsharper.types.Ord
 open fsharper.op.Boxing
@@ -10,7 +11,7 @@ open fsharper.op.Boxing
 let OneTimeSetUp () = com.connect ()
 
 [<SetUp>]
-let SetUp () = com.init ()
+let SetUp () = init ()
 
 
 [<Test>]

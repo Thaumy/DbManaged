@@ -218,27 +218,21 @@ type PgSqlManaged private (pool) =
 
         //TODO exp async api
         member self.executeAnyAsync sql =
-            
-                    pool.getConnection ()
-                    >>= fun conn ->
-                            let result = conn.executeAnyAsync sql
 
-                            (pool.recycleConnection conn)
-                            |> delay
-                            |> result
-                            |> Ok
-            
-            
+            pool.getConnection ()
+            >>= fun conn ->
+                    let result = conn.executeAnyAsync sql
+
+                    lazy (pool.recycleConnection conn) |> result |> Ok
+
+
         /// 从连接池取用 NpgsqlConnection 并在其上调用同名方法
         member self.executeAny sql =
             pool.getConnection ()
             >>= fun conn ->
                     let result = conn.executeAny sql
 
-                    (pool.recycleConnection conn)
-                    |> delay
-                    |> result
-                    |> Ok
+                    lazy (pool.recycleConnection conn) |> result |> Ok
         /// 从连接池取用 NpgsqlConnection 并在其上调用同名方法
         member self.executeAny(sql, paras: (string * 't) list) =
             let paras' =
@@ -253,10 +247,7 @@ type PgSqlManaged private (pool) =
             >>= fun conn ->
                     let result = conn.executeAny (sql, paras)
 
-                    (pool.recycleConnection conn)
-                    |> delay
-                    |> result
-                    |> Ok
+                    lazy (pool.recycleConnection conn) |> result |> Ok
 
         /// 从连接池取用 NpgsqlConnection 并在其上调用同名方法
         member self.executeUpdate(table, (setKey, setKeyVal), (whereKey, whereKeyVal)) =
@@ -267,10 +258,7 @@ type PgSqlManaged private (pool) =
                     let result =
                         conn.executeUpdate (table, (setKey, setKeyVal), (whereKey, whereKeyVal))
 
-                    (pool.recycleConnection conn)
-                    |> delay
-                    |> result
-                    |> Ok
+                    lazy (pool.recycleConnection conn) |> result |> Ok
         /// 从连接池取用 NpgsqlConnection 并在其上调用同名方法
         member self.executeUpdate(table, key, newValue, oldValue) =
             pool.getConnection ()
@@ -280,10 +268,7 @@ type PgSqlManaged private (pool) =
                     let result =
                         conn.executeUpdate (table, key, newValue, oldValue)
 
-                    (pool.recycleConnection conn)
-                    |> delay
-                    |> result
-                    |> Ok
+                    lazy (pool.recycleConnection conn) |> result |> Ok
 
         /// 从连接池取用 NpgsqlConnection 并在其上调用同名方法
         member self.executeInsert table pairs =
@@ -293,10 +278,7 @@ type PgSqlManaged private (pool) =
 
                     let result = conn.executeInsert table pairs
 
-                    (pool.recycleConnection conn)
-                    |> delay
-                    |> result
-                    |> Ok
+                    lazy (pool.recycleConnection conn) |> result |> Ok
         /// 从连接池取用 NpgsqlConnection 并在其上调用同名方法
         member self.executeDelete table (whereKey, whereKeyVal) =
             pool.getConnection ()
@@ -306,7 +288,4 @@ type PgSqlManaged private (pool) =
                     let result =
                         conn.executeDelete table (whereKey, whereKeyVal)
 
-                    (pool.recycleConnection conn)
-                    |> delay
-                    |> result
-                    |> Ok
+                    lazy (pool.recycleConnection conn) |> result |> Ok

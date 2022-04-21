@@ -27,23 +27,22 @@ type NpgsqlConnection with
             |> cmd.Parameters.AddRange
 
             cmd.useTransaction
-            <| fun tx ->
-                fun callback p ->
-                    let affected =
-                        match cmd.ExecuteNonQuery() with
-                        | n when p n -> //符合期望影响行数规则则提交
-                            tx.Commit()
-                            n
-                        | _ -> //否则回滚
-                            tx.Rollback()
-                            0
+            <| fun tx callback p ->
+                let affected =
+                    match cmd.ExecuteNonQuery() with
+                    | n when p n -> //符合期望影响行数规则则提交
+                        tx.Commit()
+                        n
+                    | _ -> //否则回滚
+                        tx.Rollback()
+                        0
 
-                    tx.Dispose() //资源释放
-                    cmd.Dispose()
+                tx.Dispose() //资源释放
+                cmd.Dispose()
 
-                    force callback //执行回调（可用于连接销毁）
+                force callback //执行回调（可用于连接销毁）
 
-                    affected //实际受影响的行数
+                affected //实际受影响的行数
 
     /// 将 table 中 key 等于 oldValue 的行的 key 更新为 newValue
     /// 返回的闭包用于检测受影响的行数，当断言成立时闭包会提交事务并返回受影响的行数
@@ -78,23 +77,22 @@ type NpgsqlConnection with
                       ({values.[0..^1]})"
 
             cmd.useTransaction
-            <| fun tx ->
-                fun callback p ->
-                    let affected =
-                        match cmd.ExecuteNonQuery() with
-                        | n when p n -> //符合期望影响行数规则则提交
-                            tx.Commit()
-                            n
-                        | _ -> //否则回滚
-                            tx.Rollback()
-                            0
+            <| fun tx callback p ->
+                let affected =
+                    match cmd.ExecuteNonQuery() with
+                    | n when p n -> //符合期望影响行数规则则提交
+                        tx.Commit()
+                        n
+                    | _ -> //否则回滚
+                        tx.Rollback()
+                        0
 
-                    tx.Dispose() //资源释放
-                    cmd.Dispose()
+                tx.Dispose() //资源释放
+                cmd.Dispose()
 
-                    force callback //执行回调（可用于连接销毁）
+                force callback //执行回调（可用于连接销毁）
 
-                    affected //实际受影响的行数
+                affected //实际受影响的行数
 
     /// 删除 table 中 whereKey 等于 whereKeyVal 的行
     /// 返回的闭包用于检测受影响的行数，当断言成立时闭包会提交事务并返回受影响的行数
@@ -109,20 +107,19 @@ type NpgsqlConnection with
             |> ignore
 
             cmd.useTransaction
-            <| fun tx ->
-                fun callback p ->
-                    let affected =
-                        match cmd.ExecuteNonQuery() with
-                        | n when p n -> //符合期望影响行数规则则提交
-                            tx.Commit()
-                            n
-                        | _ -> //否则回滚
-                            tx.Rollback()
-                            0
+            <| fun tx callback p ->
+                let affected =
+                    match cmd.ExecuteNonQuery() with
+                    | n when p n -> //符合期望影响行数规则则提交
+                        tx.Commit()
+                        n
+                    | _ -> //否则回滚
+                        tx.Rollback()
+                        0
 
-                    tx.Dispose() //资源释放
-                    cmd.Dispose()
+                tx.Dispose() //资源释放
+                cmd.Dispose()
 
-                    force callback //执行回调（可用于连接销毁）
+                force callback //执行回调（可用于连接销毁）
 
-                    affected //实际受影响的行数
+                affected //实际受影响的行数
