@@ -3,8 +3,14 @@ module internal DbManaged.PgSql.PgSqlConnPool
 open System
 open System.Data
 open System.Data.Common
+open System.Threading.Tasks
+open System.Threading.Channels
+open System.Collections.Concurrent
+open Microsoft.FSharp.Core
 open Npgsql
 open fsharper.op
+open fsharper.op.Fmt
+open fsharper.op.Async
 open fsharper.types
 open DbManaged
 open DbManaged.DbConnPool
@@ -13,42 +19,10 @@ open DbManaged.DbConnPool
 type internal PgSqlConnPool(msg: DbConnMsg, database, size: uint) =
     inherit IDbConnPool()
 
-    /// 所有连接列表
-    /// 新连接总是在此列表首部
-    let mutable connList: NpgsqlConnection list = []
-
-    /// 空闲连接列表
-    /// 其中的任意连接均属于connList
-    let mutable idleConnList: NpgsqlConnection list = []
-
-    /// 尝试清理连接池
-    let poolClean () =
-        connList <-
-            filter
-            <| fun (conn: NpgsqlConnection) ->
-                match conn.State with
-                //如果连接中断或是关闭（这都是不工作的状态）
-                | ConnectionState.Broken
-                | ConnectionState.Closed ->
-                    conn.Dispose() //注销
-                    false //移除
-                | _ -> true //保留
-            <| connList
-
-
-    /// 取得空闲连接
-    let getIdleConn () =
-        match idleConnList with
-        | x :: xs ->
-            idleConnList <- xs //移除头部连接
-            Some x
-        | [] -> None
-
     /// 连接字符串
     let connStr = //启用连接池，最大超时1秒
         $"\
                     Host = {msg.Host};\
-                DataBase = {database};\
                     Port = {msg.Port};\
                   UserID = {msg.User};\
                 Password = {msg.Password};\
@@ -60,46 +34,91 @@ type internal PgSqlConnPool(msg: DbConnMsg, database, size: uint) =
           else
               $"DataBase ={database};"
 
-    override this.recycleConnection conn =
-        match conn.State with
-        | ConnectionState.Open -> idleConnList <- (coerce conn) :: idleConnList
-        | _ -> () //连接不可用，交由poolClean调用处统一清理
+    /// 空闲连接
+    let freeConnections =
+        Channel.CreateBounded<NpgsqlConnection>(int size)
+
+    /// 忙碌连接
+    let busyConnections =
+        ConcurrentDictionary<int, NpgsqlConnection>()
+
+    /// 添加忙碌连接
+    let busyConnectionsAdd conn =
+        busyConnections.TryAdd(conn.GetHashCode(), conn)
+
+
+    let busyConnectionsRemove (conn: NpgsqlConnection) =
+        let status, _ =
+            busyConnections.TryRemove(conn.GetHashCode())
+
+        status
+
+
+    /// 添加空闲连接
+    let freeConnectionsAdd conn = freeConnections.Writer.WriteAsync conn
+
+    /// 取得空闲连接
+    let freeConnectionsGet () =
+        let ok, conn = freeConnections.Reader.TryRead()
+        if ok then Some conn else None
+
+
+    /// 生成新连接
+    let genNewConn () =
+        let conn = new NpgsqlConnection(connStr)
+
+        conn.Open()
+        conn
+
+
+    override self.recycleConnection conn =
+
+        if busyConnectionsRemove (coerce conn) then
+            freeConnectionsAdd (coerce conn) |> ignore //添加到空闲列表
+        else
+            ()
+
+
+    /// TODO exp async api
+    override self.recycleConnectionAsync conn =
+        lock self (fun _ -> Task.Run<unit>(fun _ -> self.recycleConnection conn))
 
     /// 从连接池取用 NpgsqlConnection
-    override this.getConnection() =
-        let genConn () =
-            let newConn = new NpgsqlConnection()
-
-            connList <- newConn :: connList
-
-            newConn.ConnectionString <- connStr
-            newConn.Open()
-            newConn
+    override self.getConnection() =
+        let freeCount = freeConnections.Reader.Count
+        let busyCount = busyConnections.Count
 
         try
-            match uint connList.Length with
-            | len when //连接数较少时，新建
-                len < uint (float size * 0.6)
-                ->
-                //Console.Write $"+{connList.Length}:{idleConnList.Length} "
-                genConn ()
-            | len when //连接数较多时，在循环复用的基础上新建
-                len < uint (float size * 0.8)
-                ->
-                poolClean ()
+            let result =
+                match freeCount + busyCount with
+                | n when //连接数较少时，新建
+                    n < int (float size * 0.6)
+                    ->
+                    let conn = genNewConn ()
 
-                match getIdleConn () with
-                | Some c ->
-                    //Console.Write $"~{connList.Length}:{idleConnList.Length} "
-                    c
-                | None ->
-                    //Console.Write $"+{connList.Length}:{idleConnList.Length} "
-                    genConn ()
-            | _ -> //连接数过多时，清理后新建
-                //Console.Write $"-+{connList.Length}:{idleConnList.Length} "
-                poolClean ()
-                genConn ()
-            :> DbConnection
-            |> Ok
+                    print "1"
+                    conn
+
+                | _ -> //连接数较多时，在复用的原则上新建
+                    let conn =
+                        freeConnectionsGet()
+                            .unwarpOr (fun _ ->
+                                print "+"
+                                genNewConn ())
+
+                    print "2"
+                    conn
+
+            busyConnectionsAdd result |> ignore //加入忙碌列表
+
+            println
+                $" {freeConnections.Reader.Count
+                    + busyConnections.Count}:{freeConnections.Reader.Count}/{busyConnections.Count} (f/b)"
+
+            result :> DbConnection |> Ok
         with
         | e -> Err e
+
+    /// TODO exp async api
+    override self.getConnectionAsync() =
+        lock self (fun _ -> Task.Run self.getConnection)

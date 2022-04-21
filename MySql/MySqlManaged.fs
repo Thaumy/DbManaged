@@ -1,5 +1,6 @@
 ﻿namespace DbManaged.MySql
 
+open System
 open System.Data
 open System.Data.Common
 open MySql.Data.MySqlClient
@@ -213,28 +214,15 @@ type MySqlManaged private (pool) =
 
         //partial...
 
-        //TODO exp async api
-        member self.executeAnyAsync sql =
-            
-                    pool.getConnection ()
-                    >>= fun conn ->
-                            let result = conn.executeAnyAsync sql
+        //TODO
+        member self.executeAnyAsync sql = raise (NotImplementedException())
 
-                            (pool.recycleConnection conn)
-                            |> delay
-                            |> result
-                            |> Ok
-            
-        
         member self.executeAny sql =
             pool.getConnection ()
             >>= fun conn ->
                     let result = conn.executeAny sql
 
-                    (pool.recycleConnection conn)
-                    |> delay
-                    |> result
-                    |> Ok
+                    lazy (pool.recycleConnection conn) |> result |> Ok
 
         member self.executeAny(sql, paras: (string * 't) list) =
             let paras' =
@@ -249,10 +237,7 @@ type MySqlManaged private (pool) =
             >>= fun conn ->
                     let result = conn.executeAny (sql, paras)
 
-                    (pool.recycleConnection conn)
-                    |> delay
-                    |> result
-                    |> Ok
+                    lazy (pool.recycleConnection conn) |> result |> Ok
 
 
         member self.executeUpdate(table, (setKey, setKeyVal), (whereKey, whereKeyVal)) =
@@ -263,10 +248,7 @@ type MySqlManaged private (pool) =
                     let result =
                         conn.executeUpdate (table, (setKey, setKeyVal), (whereKey, whereKeyVal))
 
-                    (pool.recycleConnection conn)
-                    |> delay
-                    |> result
-                    |> Ok
+                    lazy (pool.recycleConnection conn) |> result |> Ok
 
         member self.executeUpdate(table, key, newValue, oldValue) =
             pool.getConnection ()
@@ -277,10 +259,7 @@ type MySqlManaged private (pool) =
                     let result =
                         conn.executeUpdate (table, key, newValue, oldValue)
 
-                    (pool.recycleConnection conn)
-                    |> delay
-                    |> result
-                    |> Ok
+                    lazy (pool.recycleConnection conn) |> result |> Ok
 
 
 
@@ -291,10 +270,7 @@ type MySqlManaged private (pool) =
 
                     let result = conn.executeInsert table pairs
 
-                    (pool.recycleConnection conn)
-                    |> delay
-                    |> result
-                    |> Ok
+                    lazy (pool.recycleConnection conn) |> result |> Ok
 
         member self.executeDelete table (whereKey, whereKeyVal) =
             pool.getConnection ()
@@ -304,7 +280,4 @@ type MySqlManaged private (pool) =
                     let result =
                         conn.executeDelete table (whereKey, whereKeyVal)
 
-                    (pool.recycleConnection conn)
-                    |> delay
-                    |> result
-                    |> Ok
+                    lazy (pool.recycleConnection conn) |> result |> Ok
