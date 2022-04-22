@@ -6,19 +6,20 @@ open dbm_test.PgSql.com
 open fsharper.op.Boxing
 open fsharper.types.Ord
 open fsharper.types
+open fsharper.op.Fmt
 
 
 let init () =
 
     managed
-        .unwarp()
-        .executeAny "drop table if exists sch1.tab1;"
-    |> unwarp
+        .unwrap()
+        .executeAny $"drop table if exists {tab1};"
+    |> unwrap
     <| (fun _ -> true)
     |> ignore
 
     managed
-        .unwarp()
+        .unwrap()
         .executeAny $"create table {tab1}\
              (\
                  col1 integer,\
@@ -26,24 +27,24 @@ let init () =
                  col3 varchar,\
                  col4 text\
              );"
-    |> unwarp
+    |> unwrap
     <| (fun _ -> true)
     |> ignore
 
     for _ in 1 .. 50 do
         managed
-            .unwarp()
+            .unwrap()
             .executeAny $"INSERT INTO {tab1} (col1, col2, col3, col4)\
                  VALUES (0, 'i', 'init[001,050]', 'initinit');"
-        |> unwarp
+        |> unwrap
         <| eq 1
         |> ignore
 
     for _ in 1 .. 50 do
         managed
-            .unwarp()
+            .unwrap()
             .executeAny $"INSERT INTO {tab1} (col1, col2, col3, col4)\
                  VALUES (0, 'i', 'init[050,100]', 'initinit');"
-        |> unwarp
+        |> unwrap
         <| eq 1
         |> ignore

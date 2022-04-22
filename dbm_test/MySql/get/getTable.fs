@@ -18,9 +18,9 @@ let getTable_overload1_test () =
     let result =
         com
             .managed
-            .unwarp()
+            .unwrap()
             .getTable $"SELECT col1,col2 FROM {com.tab1}"
-        |> unwarp
+        |> unwrap
 
     for row in result.Rows do
         Assert.AreEqual(0, row.["col1"])
@@ -33,9 +33,9 @@ let getTable_overload2_test () =
 
         com
             .managed
-            .unwarp()
+            .unwrap()
             .getTable ($"SELECT col1,col2 FROM {com.tab1} WHERE col3 = ?col3", paras)
-        |> unwarp
+        |> unwrap
 
     for row in result.Rows do
         Assert.AreEqual(0, row.["col1"])

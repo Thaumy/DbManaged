@@ -24,14 +24,14 @@ let executeInsert_test () =
                   ("col3", "ccc")
                   ("col4", "cccc") ]
 
-            com.managed.unwarp().executeInsert "sch1.tab1" pairs
+            com.managed.unwrap().executeInsert $"{com.tab1}" pairs
 
-        Assert.AreEqual(1, query |> unwarp <| eq 1)
+        Assert.AreEqual(1, query |> unwrap <| eq 1)
 
     let count =
         com
             .managed
-            .unwarp()
-            .getFstVal "SELECT COUNT(*) FROM sch1.tab1;"
+            .unwrap()
+            .getFstVal $"SELECT COUNT(*) FROM {com.tab1};"
 
-    Assert.AreEqual(200, count |> unwarp2)
+    Assert.AreEqual(200, count |> unwrap2)

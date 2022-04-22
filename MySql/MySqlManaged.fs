@@ -44,7 +44,7 @@ type MySqlManaged private (pool) =
         member self.getTable(sql, paras: (string * 't) list) =
             let paras' =
                 foldMap (fun (k: string, v) -> List' [ MySqlParameter(k, v :> obj) ]) paras
-                |> unwarp
+                |> unwrap
 
             (self :> IDbManaged)
                 .getTable (sql, paras'.toArray ())
@@ -84,7 +84,7 @@ type MySqlManaged private (pool) =
         member self.getFstVal(sql, paras: (string * 't) list) =
             let paras' =
                 foldMap (fun (k: string, v) -> List' [ MySqlParameter(k, v :> obj) ]) paras
-                |> unwarp
+                |> unwrap
 
             (self :> IDbManaged)
                 .getFstVal (sql, paras'.toArray ())
@@ -128,7 +128,7 @@ type MySqlManaged private (pool) =
         member self.getFstRow(sql, paras: (string * 't) list) =
             let paras' =
                 foldMap (fun (k: string, v) -> List' [ MySqlParameter(k, v :> obj) ]) paras
-                |> unwarp
+                |> unwrap
 
             (self :> IDbManaged)
                 .getFstRow (sql, paras'.toArray ())
@@ -162,7 +162,7 @@ type MySqlManaged private (pool) =
         member self.getCol(sql, key: string, paras: (string * 't) list) =
             let paras' =
                 foldMap (fun (k: string, v) -> List' [ MySqlParameter(k, v :> obj) ]) paras
-                |> unwarp
+                |> unwrap
 
             (self :> IDbManaged)
                 .getCol (sql, key, paras'.toArray ())
@@ -191,7 +191,7 @@ type MySqlManaged private (pool) =
         member self.getCol(sql, index: uint, paras: (string * 't) list) =
             let paras' =
                 foldMap (fun (k: string, v) -> List' [ MySqlParameter(k, v :> obj) ]) paras
-                |> unwarp
+                |> unwrap
 
             (self :> IDbManaged)
                 .getCol (sql, index, paras'.toArray ())
@@ -227,7 +227,7 @@ type MySqlManaged private (pool) =
         member self.executeAny(sql, paras: (string * 't) list) =
             let paras' =
                 foldMap (fun (k: string, v) -> List' [ MySqlParameter(k, v :> obj) ]) paras
-                |> unwarp
+                |> unwrap
 
             (self :> IDbManaged)
                 .executeAny (sql, paras'.toArray ())

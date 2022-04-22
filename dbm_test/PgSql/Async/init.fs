@@ -1,6 +1,7 @@
 module dbm_test.PgSql.Async.init
 
 open System.Threading
+open System.Threading.Tasks
 open DbManaged
 open DbManaged.PgSql
 open dbm_test.PgSql.com
@@ -8,18 +9,19 @@ open fsharper.op.Boxing
 open fsharper.types.Ord
 open fsharper.types
 open fsharper.op.Async
+open fsharper.op.Fmt
 
 let init () =
 
     managed
-        .unwarp()
-        .executeAnyAsync "drop table if exists sch1.tab1;"
-    |> unwarp
+        .unwrap()
+        .executeAnyAsync $"drop table if exists {tab1};"
+    |> unwrap
     <| (fun _ -> true)
     |> wait
 
     managed
-        .unwarp()
+        .unwrap()
         .executeAnyAsync $"create table {tab1}\
              (\
                  col1 integer,\
@@ -27,24 +29,43 @@ let init () =
                  col3 varchar,\
                  col4 text\
              );"
-    |> unwarp
+    |> unwrap
     <| (fun _ -> true)
     |> wait
 
-    for i in 1 .. 50 do
-        managed
-            .unwarp()
-            .executeAnyAsync $"INSERT INTO {tab1} (col1, col2, col3, col4)\
-                 VALUES (0, 'i', 'init[001,050]', 'initinit');"
-        |> unwarp
-        <| eq 1
-        |> wait
+    println "INTO CONCURRENT DO"
 
-    for i in 1 .. 50 do
-        managed
-            .unwarp()
-            .executeAnyAsync $"INSERT INTO {tab1} (col1, col2, col3, col4)\
-                 VALUES (0, 'i', 'init[050,100]', 'initinit');"
-        |> unwarp
-        <| eq 1
-        |> ignore
+    let ts1 =
+        [| for i in 1 .. 50 do
+               managed
+                   .unwrap()
+                   .executeAnyAsync $"INSERT INTO {tab1} (col1, col2, col3, col4)\
+                 VALUES (0, 'i', 'init[001,050]', 'initinit');"
+               |> unwrap
+               <| eq 1
+               :> Task |]
+
+    let ts2 =
+        [| for i in 1 .. 50 do
+               managed
+                   .unwrap()
+                   .executeAnyAsync $"INSERT INTO {tab1} (col1, col2, col3, col4)\
+                         VALUES (0, 'i', 'init[050,100]', 'initinit');"
+               |> unwrap
+               <| eq 1
+               :> Task |]
+
+    let ts3 =
+        [| for i in 1 .. 500 do
+               managed
+                   .unwrap()
+                   .executeAnyAsync $"UPDATE {tab1} SET col1 = 0 WHERE col1 = 0;"
+               |> unwrap
+               <| eq 1
+               :> Task |]
+
+    waitAll ts1
+    waitAll ts2
+    waitAll ts3
+
+    println "EXIT CONCURRENT DO"

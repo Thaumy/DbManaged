@@ -8,6 +8,7 @@ open fsharper.types
 open fsharper.op.Async
 
 let tab1 = "sch1.tab1"
+let size = 100u
 let mutable msg = None
 let mutable managed: Option'<IDbManaged> = None
 
@@ -23,5 +24,5 @@ let connect () =
     | _ -> ()
 
     match managed with
-    | None -> managed <- Some <| PgSqlManaged(unwarp msg, "dbm_test", 32u)
+    | None -> managed <- Some <| PgSqlManaged(unwrap msg, "dbm_test", size)
     | _ -> ()

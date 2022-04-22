@@ -4,8 +4,9 @@ open System.Data
 open System.Data.Common
 open Npgsql
 open fsharper.types
-open fsharper.op.Coerce
 open fsharper.op
+open fsharper.op.Async
+open fsharper.op.Coerce
 open DbManaged
 open DbManaged.PgSql.PgSqlConnPool
 
@@ -43,7 +44,7 @@ type PgSqlManaged private (pool) =
         member self.getTable(sql, paras: (string * 't) list) =
             let paras' =
                 foldMap (fun (k: string, v) -> List' [ NpgsqlParameter(k, v :> obj) ]) paras
-                |> unwarp
+                |> unwrap
 
             (self :> IDbManaged)
                 .getTable (sql, paras'.toArray ())
@@ -83,7 +84,7 @@ type PgSqlManaged private (pool) =
         member self.getFstVal(sql, paras: (string * 't) list) =
             let paras' =
                 foldMap (fun (k: string, v) -> List' [ NpgsqlParameter(k, v :> obj) ]) paras
-                |> unwarp
+                |> unwrap
 
             (self :> IDbManaged)
                 .getFstVal (sql, paras'.toArray ())
@@ -129,7 +130,7 @@ type PgSqlManaged private (pool) =
         member self.getFstRow(sql, paras: (string * 't) list) =
             let paras' =
                 foldMap (fun (k: string, v) -> List' [ NpgsqlParameter(k, v :> obj) ]) paras
-                |> unwarp
+                |> unwrap
 
             (self :> IDbManaged)
                 .getFstRow (sql, paras'.toArray ())
@@ -165,7 +166,7 @@ type PgSqlManaged private (pool) =
         member self.getCol(sql, key: string, paras: (string * 't) list) =
             let paras' =
                 foldMap (fun (k: string, v) -> List' [ NpgsqlParameter(k, v :> obj) ]) paras
-                |> unwarp
+                |> unwrap
 
             (self :> IDbManaged)
                 .getCol (sql, key, paras'.toArray ())
@@ -193,7 +194,7 @@ type PgSqlManaged private (pool) =
         member self.getCol(sql, index: uint, paras: (string * 't) list) =
             let paras' =
                 foldMap (fun (k: string, v) -> List' [ NpgsqlParameter(k, v :> obj) ]) paras
-                |> unwarp
+                |> unwrap
 
             (self :> IDbManaged)
                 .getCol (sql, index, paras'.toArray ())
@@ -218,12 +219,14 @@ type PgSqlManaged private (pool) =
 
         //TODO exp async api
         member self.executeAnyAsync sql =
+            let result = pool.getConnectionAsync().Result
 
-            pool.getConnection ()
+            result
             >>= fun conn ->
                     let result = conn.executeAnyAsync sql
 
                     lazy (pool.recycleConnection conn) |> result |> Ok
+
 
 
         /// 从连接池取用 NpgsqlConnection 并在其上调用同名方法
@@ -237,7 +240,7 @@ type PgSqlManaged private (pool) =
         member self.executeAny(sql, paras: (string * 't) list) =
             let paras' =
                 foldMap (fun (k: string, v) -> List' [ NpgsqlParameter(k, v :> obj) ]) paras
-                |> unwarp
+                |> unwrap
 
             (self :> IDbManaged)
                 .executeAny (sql, paras'.toArray ())

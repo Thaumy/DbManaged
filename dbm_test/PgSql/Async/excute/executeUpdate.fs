@@ -19,10 +19,10 @@ let executeUpdate_overload1_test () =
     let query =
         com
             .managed
-            .unwarp()
-            .executeUpdate ("sch1.tab1", ("col1", 114514), ("col3", "init[001,050]"))
+            .unwrap()
+            .executeUpdate ($"{com.tab1}", ("col1", 114514), ("col3", "init[001,050]"))
 
-    Assert.AreEqual(50, query |> unwarp <| eq 50)
+    Assert.AreEqual(50, query |> unwrap <| eq 50)
 
 [<Test>]
 let executeUpdate_overload2_test () =
@@ -30,7 +30,7 @@ let executeUpdate_overload2_test () =
     let query =
         com
             .managed
-            .unwarp()
-            .executeUpdate ("sch1.tab1", ("col1", 114514), ("col3", "init[050,100]"))
+            .unwrap()
+            .executeUpdate ($"{com.tab1}", ("col1", 114514), ("col3", "init[050,100]"))
 
-    Assert.AreEqual(50, query |> unwarp <| eq 50)
+    Assert.AreEqual(50, query |> unwrap <| eq 50)

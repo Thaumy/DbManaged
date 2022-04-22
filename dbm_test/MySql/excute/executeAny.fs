@@ -19,19 +19,19 @@ let executeAny_overload1_test () =
         let query =
             com
                 .managed
-                .unwarp()
+                .unwrap()
                 .executeAny $"INSERT INTO {com.tab1} (col1, col2, col3, col4)\
                  VALUES (1, 'a', 'aaa', 'aaaa');"
 
-        Assert.AreEqual(1, query |> unwarp <| eq 1)
+        Assert.AreEqual(1, query |> unwrap <| eq 1)
 
     let count =
         com
             .managed
-            .unwarp()
+            .unwrap()
             .getFstVal $"SELECT COUNT(*) FROM {com.tab1};"
 
-    Assert.AreEqual(200, count |> unwarp2)
+    Assert.AreEqual(200, count |> unwrap2)
 
 open Npgsql
 
@@ -48,19 +48,19 @@ let executeAny_overload2_test () =
         let query =
             com
                 .managed
-                .unwarp()
+                .unwrap()
                 .executeAny (
                     $"INSERT INTO {com.tab1} ( col1,  col2,  col3,  col4)\
                                       VALUES (?col1, ?col2, ?col3, ?col4);",
                     paras
                 )
 
-        Assert.AreEqual(1, query |> unwarp <| eq 1)
+        Assert.AreEqual(1, query |> unwrap <| eq 1)
 
     let count =
         com
             .managed
-            .unwarp()
+            .unwrap()
             .getFstVal $"SELECT COUNT(*) FROM {com.tab1};"
 
-    Assert.AreEqual(200, count |> unwarp2)
+    Assert.AreEqual(200, count |> unwrap2)

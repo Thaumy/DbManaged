@@ -1,6 +1,19 @@
 ﻿<wpf:ResourceDictionary xml:space="preserve" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:s="clr-namespace:System;assembly=mscorlib" xmlns:ss="urn:shemas-jetbrains-com:settings-storage-xaml" xmlns:wpf="http://schemas.microsoft.com/winfx/2006/xaml/presentation">
 	<s:Boolean x:Key="/Default/AddReferences/RecentPaths/=_002Fhome_002Fthaumy_002Frepo_002FDbManaged_002Fbin_002FDebug_002Fnet6_002E0_002FDbManaged_002Edll/@EntryIndexedValue">True</s:Boolean>
 	<s:Boolean x:Key="/Default/AddReferences/RecentPaths/=_002Fhome_002Fthaumy_002Frepo_002Ffsharper_002Fbin_002FDebug_002Fnet6_002E0_002Ffsharper_002Edll/@EntryIndexedValue">True</s:Boolean>
+	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=0e5ecde9_002D42ed_002D46a9_002D953e_002D5df8aeb46012/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" Name="Session #2" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;
+  &lt;Or&gt;
+    &lt;TestAncestor&gt;
+      &lt;TestId&gt;NUnit3x::716DD3EB-4C62-445C-9346-385A966C9E55::net6.0::dbm_test.MySql.excute.executeUpdate.executeUpdate_overload1_test&lt;/TestId&gt;
+    &lt;/TestAncestor&gt;
+    &lt;ProjectFolder&gt;716DD3EB-4C62-445C-9346-385A966C9E55/d:PgSql/d:excute&lt;/ProjectFolder&gt;
+    &lt;ProjectFolder&gt;716DD3EB-4C62-445C-9346-385A966C9E55/d:MySql/d:excute&lt;/ProjectFolder&gt;
+    &lt;ProjectFolder&gt;716DD3EB-4C62-445C-9346-385A966C9E55/d:MySql/d:get&lt;/ProjectFolder&gt;
+    &lt;ProjectFolder&gt;716DD3EB-4C62-445C-9346-385A966C9E55/d:PgSql/d:get&lt;/ProjectFolder&gt;
+    &lt;ProjectFolder&gt;716DD3EB-4C62-445C-9346-385A966C9E55/d:PgSql/d:Sync&lt;/ProjectFolder&gt;
+    &lt;ProjectFolder&gt;716DD3EB-4C62-445C-9346-385A966C9E55/d:PgSql/d:Async&lt;/ProjectFolder&gt;
+  &lt;/Or&gt;
+&lt;/SessionState&gt;</s:String>
 	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=3c1ab550_002D5b4e_002D4728_002D9c4f_002Dde67610f8d95/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" Name="executeInsert_test" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;
   &lt;Or&gt;
     &lt;ProjectFolder&gt;716DD3EB-4C62-445C-9346-385A966C9E55/d:MySql/d:excute&lt;/ProjectFolder&gt;

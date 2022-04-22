@@ -83,19 +83,18 @@ type DbConnection with
             cmd.useTransactionAsync
             <| fun tx callback p ->
                 task {
-                    let! result = cmd.ExecuteNonQueryAsync() //耗时操作
+                    let! n = cmd.ExecuteNonQueryAsync() //耗时操作
 
                     let affected =
-                        match result with
-                        | n when p n -> //符合期望影响行数规则则提交
-                            tx.CommitAsync().Wait() |> ignore
+                        if p n then
+                            tx.CommitAsync() |> wait |> ignore //符合期望影响行数规则则提交
                             n
-                        | _ -> //否则回滚
-                            tx.RollbackAsync().Wait() |> ignore
+                        else
+                            tx.RollbackAsync() |> wait |> ignore //否则回滚
                             0
 
-                    tx.DisposeAsync().AsTask().Wait() |> ignore //资源释放
-                    cmd.DisposeAsync().AsTask().Wait() |> ignore
+                    tx.DisposeAsync() |> ignore //资源释放
+                    cmd.DisposeAsync() |> ignore
 
                     force callback //执行回调（可用于连接销毁）
 
