@@ -18,9 +18,9 @@ let getFstRow_overload1_test () =
     let result =
         com
             .managed
-            .unwarp()
+            .unwrap()
             .getFstRow $"SELECT col1,col2 FROM {com.tab1}"
-        |> unwarp2
+        |> unwrap2
 
     Assert.AreEqual(0, result.["col1"])
     Assert.AreEqual("i", result.["col2"])
@@ -34,9 +34,9 @@ let getFstRow_overload2_test () =
 
         com
             .managed
-            .unwarp()
+            .unwrap()
             .getFstRow ($"SELECT col1,col2 FROM {com.tab1} WHERE col3 = ?col3", paras)
-        |> unwarp2
+        |> unwrap2
 
     Assert.AreEqual(0, result.["col1"])
     Assert.AreEqual("i", result.["col2"])

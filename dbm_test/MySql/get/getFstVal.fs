@@ -18,9 +18,9 @@ let getFstVal_overload1_test () =
     let result =
         com
             .managed
-            .unwarp()
+            .unwrap()
             .getFstVal $"SELECT col2 FROM {com.tab1}"
-        |> unwarp2
+        |> unwrap2
 
     Assert.AreEqual("i", result)
 
@@ -33,9 +33,9 @@ let getFstVal_overload2_test () =
 
         com
             .managed
-            .unwarp()
+            .unwrap()
             .getFstVal ($"SELECT col2 FROM {com.tab1} WHERE col3 = ?col3", paras)
-        |> unwarp2
+        |> unwrap2
 
     Assert.AreEqual("i", result)
 
@@ -47,8 +47,8 @@ let getFstVal_overload4_test () =
     let result =
         com
             .managed
-            .unwarp()
+            .unwrap()
             .getFstVal (com.tab1, "col2", ("col3", "init[050,100]"))
-        |> unwarp2
+        |> unwrap2
 
     Assert.AreEqual("i", result)

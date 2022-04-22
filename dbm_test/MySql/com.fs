@@ -22,20 +22,20 @@ let connect () =
     | _ -> ()
 
     match managed with
-    | None -> managed <- Some <| MySqlManaged(unwarp msg, "dbm_test", 32u)
+    | None -> managed <- Some <| MySqlManaged(unwrap msg, "dbm_test", 32u)
     | _ -> ()
 
 let init () =
 
     managed
-        .unwarp()
+        .unwrap()
         .executeAny "drop table if exists tab1;"
-    |> unwarp
+    |> unwrap
     <| (fun _ -> true)
     |> ignore
 
     managed
-        .unwarp()
+        .unwrap()
         .executeAny "create table tab1\
                      (\
                          col1 int         null,\
@@ -43,24 +43,24 @@ let init () =
                          col3 varchar(32) null,\
                          col4 text        null\
                      );"
-    |> unwarp
+    |> unwrap
     <| (fun _ -> true)
     |> ignore
 
     for _ in 1 .. 50 do
         managed
-            .unwarp()
-            .executeAny "INSERT INTO tab1 (col1, col2, col3, col4)\
+            .unwrap()
+            .executeAny $"INSERT INTO tab1 (col1, col2, col3, col4)\
                  VALUES (0, 'i', 'init[001,050]', 'initinit');"
-        |> unwarp
+        |> unwrap
         <| eq 1
         |> ignore
 
     for _ in 1 .. 50 do
         managed
-            .unwarp()
-            .executeAny "INSERT INTO tab1 (col1, col2, col3, col4)\
+            .unwrap()
+            .executeAny $"INSERT INTO tab1 (col1, col2, col3, col4)\
                  VALUES (0, 'i', 'init[050,100]', 'initinit');"
-        |> unwarp
+        |> unwrap
         <| eq 1
         |> ignore
