@@ -8,7 +8,7 @@ open fsharper.types
 
 let tab1 = "tab1"
 let mutable msg = None
-let mutable managed: Option'<IDbManaged> = None
+let mutable managed: Option'<IDbManagedAsync> = None
 
 let connect () =
     match msg with

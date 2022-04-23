@@ -15,10 +15,10 @@ open fsharper.op.Async
 open fsharper.types
 open DbManaged
 open DbManaged.DbConnPool
+open DbManaged.DbConnPoolAsync
 
 /// PgSql数据库连接池
 type internal PgSqlConnPool(msg: DbConnMsg, database, size: uint) =
-    inherit IDbConnPool()
 
     /// 连接字符串
     let connStr = //启用连接池，最大超时1秒
@@ -119,72 +119,77 @@ type internal PgSqlConnPool(msg: DbConnMsg, database, size: uint) =
 
 
 
-    override self.recycleConnection conn =
+    interface IDbConnPool with
+        member self.recycleConnection conn =
 
-        match busyConnectionsTryRemove (coerce conn) with
-        | true, removed when removed.Equals conn ->
-            
-            if getPoolPressureCoef () < 0.3 then
-                conn.DisposeAsync() //增加池压力
-            else
-                //从busyConnections移除了连接，且被移除的连接是目标连接（此处的Equals判断引用相等性）
-                freeConnectionsAdd (coerce conn) //加入空闲连接表
-                
-        | true, removed ->
-            (*从busyConnections移除了连接，但被移除的连接不是目标连接
-                这意味着哈希冲突，此时需将removed返还到忙碌连接表，同时销毁目标连接
-                不进行回收的原因如下：
-                *使用该连接可能进一步引发哈希冲突*)
-            busyConnectionsTryAdd removed |> ignore
-            conn.DisposeAsync()
-        | false, _ ->
-            (*移除失败，这意味着下列情况之一：
-                1.曾经试图将这个连接加入busyConnections，但由于哈希冲突失败了
-                2.这个连接根本不属于连接池
-                对于这样的连接，直接进行销毁
-                不进行回收的原因如下：
-                *使用该连接可能进一步引发哈希冲突
-                *该连接不受连接池管制，可能引发安全性问题*)
-            conn.DisposeAsync()
-        |> ignore
+            match busyConnectionsTryRemove (coerce conn) with
+            | true, removed when removed.Equals conn ->
 
-    /// TODO exp async api
-    override self.recycleConnectionAsync conn =
-        Task.Run<unit>(fun _ -> self.recycleConnection conn)
-
-    /// 从连接池取用 NpgsqlConnection
-    override self.getConnection() =
-        try
-            let result =
-                if getPoolOccRate () < 0.8 then
-                    match getPoolPressureCoef () with
-                    | p when //池压力较小，复用连接以提升池压力系数
-                        p < 0.7
-                        ->
-                        freeConnectionsTryGet().unwrapOr connGen
-                    | p when //池压力较大，新建连接以降低池压力系数
-                        p < 0.8
-                        ->
-                        connGen ()
-                    | _ -> //池压力过大，新建更多连接以降低池压力系数
-                        Task.Run
-                            (fun _ ->
-                                connTryGen()
-                                    .whenCanUnwrap (fun c -> freeConnectionsAdd c |> ignore))
-                        |> ignore
-
-                        connGen ()
+                if getPoolPressureCoef () < 0.3 then
+                    conn.DisposeAsync() //增加池压力
                 else
-                    freeConnectionsGet ()
-            (*加入忙碌列表，如果加入失败则表明该连接与已登记连接存在哈希冲突，
-            此时不进行登记，在回收阶段会检测到该连接并将其销毁*)
-            busyConnectionsTryAdd result |> ignore //添加到忙碌连接表
+                    //从busyConnections移除了连接，且被移除的连接是目标连接（此处的Equals判断引用相等性）
+                    freeConnectionsAdd (coerce conn) //加入空闲连接表
 
-            Task.Run outputPoolStatus |> ignore
+            | true, removed ->
+                (*从busyConnections移除了连接，但被移除的连接不是目标连接
+                    这意味着哈希冲突，此时需将removed返还到忙碌连接表，同时销毁目标连接
+                    不进行回收的原因如下：
+                    *使用该连接可能进一步引发哈希冲突*)
+                busyConnectionsTryAdd removed |> ignore
+                conn.DisposeAsync()
+            | false, _ ->
+                (*移除失败，这意味着下列情况之一：
+                    1.曾经试图将这个连接加入busyConnections，但由于哈希冲突失败了
+                    2.这个连接根本不属于连接池
+                    对于这样的连接，直接进行销毁
+                    不进行回收的原因如下：
+                    *使用该连接可能进一步引发哈希冲突
+                    *该连接不受连接池管制，可能引发安全性问题*)
+                conn.DisposeAsync()
+            |> ignore
 
-            result :> DbConnection |> Ok
-        with
-        | e -> Err e
+        /// TODO exp async api
 
-    /// TODO exp async api
-    override self.getConnectionAsync() = Task.Run self.getConnection
+
+        /// 从连接池取用 NpgsqlConnection
+        member self.getConnection() =
+            try
+                let result =
+                    if getPoolOccRate () < 0.8 then
+                        match getPoolPressureCoef () with
+                        | p when //池压力较小，复用连接以提升池压力系数
+                            p < 0.7
+                            ->
+                            freeConnectionsTryGet().unwrapOr connGen
+                        | p when //池压力较大，新建连接以降低池压力系数
+                            p < 0.8
+                            ->
+                            connGen ()
+                        | _ -> //池压力过大，新建更多连接以降低池压力系数
+                            Task.Run
+                                (fun _ ->
+                                    connTryGen()
+                                        .whenCanUnwrap (fun c -> freeConnectionsAdd c |> ignore))
+                            |> ignore
+
+                            connGen ()
+                    else
+                        freeConnectionsGet ()
+                (*加入忙碌列表，如果加入失败则表明该连接与已登记连接存在哈希冲突，
+                此时不进行登记，在回收阶段会检测到该连接并将其销毁*)
+                busyConnectionsTryAdd result |> ignore //添加到忙碌连接表
+
+                Task.Run outputPoolStatus |> ignore
+
+                result :> DbConnection |> Ok
+            with
+            | e -> Err e
+
+    interface IDbConnPoolAsync with
+        member self.recycleConnectionAsync conn =
+            Task.Run<unit>(fun _ -> (self :> IDbConnPool).recycleConnection conn)
+
+        /// TODO exp async api
+        member self.getConnectionAsync() =
+            Task.Run (self :> IDbConnPool).getConnection
