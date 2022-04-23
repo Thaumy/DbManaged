@@ -1,7 +1,6 @@
-namespace DbManaged.DbConnPool
+namespace DbManaged
 
 open System.Data.Common
-open System.Threading.Tasks
 open fsharper.op
 open fsharper.types
 
@@ -15,7 +14,8 @@ type internal IDbConnPool =
     abstract member recycleConnection : DbConnection -> unit
 
 [<AutoOpen>]
-module internal ext =
+module internal ext_IDbConnPool =
+    
     type internal IDbConnPool with
 
         /// 创建一个数据库连接, 并以其为参数执行闭包 f

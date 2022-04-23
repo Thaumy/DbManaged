@@ -1,8 +1,8 @@
-module dbm_test.MySql.get.getCol
+module dbm_test.MySql.Async.get.getCol
 
 open NUnit.Framework
 open dbm_test.MySql
-open dbm_test.MySql.com
+open dbm_test.MySql.Async.init
 open fsharper.types
 open fsharper.types.Ord
 open fsharper.op.Boxing
@@ -35,7 +35,7 @@ let getCol_overload2_test () =
         com
             .managed
             .unwrap()
-            .getCol ($"SELECT col3 FROM {tab1} WHERE col3 = ?col3", 0u, paras)
+            .getCol ($"SELECT col3 FROM {com.tab1} WHERE col3 = ?col3", 0u, paras)
         |> unwrap2
 
     for it in result do
@@ -65,7 +65,7 @@ let getCol_overload5_test () =
         com
             .managed
             .unwrap()
-            .getCol ($"SELECT col3 FROM {tab1} WHERE col3 = ?col3", "col3", paras)
+            .getCol ($"SELECT col3 FROM {com.tab1} WHERE col3 = ?col3", "col3", paras)
         |> unwrap2
 
     for it in result do

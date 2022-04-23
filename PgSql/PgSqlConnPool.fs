@@ -1,21 +1,13 @@
-module internal DbManaged.PgSql.PgSqlConnPool
+namespace DbManaged.PgSql
 
-open System
-open System.Data
 open System.Data.Common
-open System.Threading
 open System.Threading.Tasks
 open System.Threading.Channels
 open System.Collections.Concurrent
-open Microsoft.FSharp.Core
 open Npgsql
 open fsharper.op
-open fsharper.op.Fmt
-open fsharper.op.Async
 open fsharper.types
 open DbManaged
-open DbManaged.DbConnPool
-open DbManaged.DbConnPoolAsync
 
 /// PgSql数据库连接池
 type internal PgSqlConnPool(msg: DbConnMsg, database, size: uint) =

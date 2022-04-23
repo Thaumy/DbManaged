@@ -1,7 +1,8 @@
-module dbm_test.MySql.excute.executeDelete
+module dbm_test.MySql.Async.excute.executeDelete
 
 open NUnit.Framework
 open dbm_test.MySql
+open dbm_test.MySql.Async.init
 open fsharper.types
 open fsharper.types.Ord
 open fsharper.op.Boxing
@@ -10,13 +11,13 @@ open fsharper.op.Boxing
 let OneTimeSetUp () = com.connect ()
 
 [<SetUp>]
-let SetUp () = com.init ()
+let SetUp () = init ()
 
 [<Test>]
 let executeDelete_test () =
 
     let query =
-        com.managed.unwrap().executeDelete com.tab1 ("col1", 0)
+        com.managed.unwrap().executeDelete $"{com.tab1}" ("col1", 0)
 
     Assert.AreEqual(100, query |> unwrap <| eq 100)
 

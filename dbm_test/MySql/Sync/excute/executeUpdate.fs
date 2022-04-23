@@ -1,8 +1,8 @@
-module dbm_test.MySql.excute.executeUpdate
+module dbm_test.MySql.Sync.excute.executeUpdate
 
-open System
 open NUnit.Framework
 open dbm_test.MySql
+open dbm_test.MySql.Sync.init
 open fsharper.types
 open fsharper.types.Ord
 open fsharper.op.Boxing
@@ -11,7 +11,7 @@ open fsharper.op.Boxing
 let OneTimeSetUp () = com.connect ()
 
 [<SetUp>]
-let SetUp () = com.init ()
+let SetUp () = init ()
 
 [<Test>]
 let executeUpdate_overload1_test () =
@@ -20,8 +20,8 @@ let executeUpdate_overload1_test () =
         com
             .managed
             .unwrap()
-            .executeUpdate (com.tab1, ("col1", 114514), ("col3", "init[001,050]"))
-    
+            .executeUpdate ($"{com.tab1}", ("col1", 114514), ("col3", "init[001,050]"))
+
     Assert.AreEqual(50, query |> unwrap <| eq 50)
 
 [<Test>]
@@ -31,6 +31,6 @@ let executeUpdate_overload2_test () =
         com
             .managed
             .unwrap()
-            .executeUpdate (com.tab1, ("col1", 114514), ("col3", "init[050,100]"))
+            .executeUpdate ($"{com.tab1}", ("col1", 114514), ("col3", "init[050,100]"))
 
     Assert.AreEqual(50, query |> unwrap <| eq 50)

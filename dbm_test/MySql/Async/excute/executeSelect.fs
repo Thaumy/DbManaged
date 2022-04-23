@@ -1,7 +1,8 @@
-module dbm_test.MySql.get.executeSelect
+module dbm_test.MySql.Async.get.executeSelect
 
 open NUnit.Framework
 open dbm_test.MySql
+open dbm_test.MySql.Async.init
 open fsharper.types
 open fsharper.types.Ord
 open fsharper.op.Boxing
@@ -10,7 +11,7 @@ open fsharper.op.Boxing
 let OneTimeSetUp () = com.connect ()
 
 [<SetUp>]
-let SetUp () = com.init ()
+let SetUp () = init ()
 
 
 [<Test>]

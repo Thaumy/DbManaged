@@ -1,7 +1,8 @@
-module dbm_test.MySql.excute.executeInsert
+module dbm_test.MySql.Async.excute.executeInsert
 
 open NUnit.Framework
 open dbm_test.MySql
+open dbm_test.MySql.Async.init
 open fsharper.types
 open fsharper.types.Ord
 open fsharper.op.Boxing
@@ -10,7 +11,7 @@ open fsharper.op.Boxing
 let OneTimeSetUp () = com.connect ()
 
 [<SetUp>]
-let SetUp () = com.init ()
+let SetUp () = init ()
 
 [<Test>]
 let executeInsert_test () =
@@ -23,7 +24,7 @@ let executeInsert_test () =
                   ("col3", "ccc")
                   ("col4", "cccc") ]
 
-            com.managed.unwrap().executeInsert com.tab1 pairs
+            com.managed.unwrap().executeInsert $"{com.tab1}" pairs
 
         Assert.AreEqual(1, query |> unwrap <| eq 1)
 

@@ -9,9 +9,8 @@ open fsharper.op.Coerce
 open fsharper.types
 open fsharper.op
 open DbManaged
-open DbManaged.MySql.MySqlConnPool
-open DbManaged.DbConnPool
-open DbManaged.DbConnPoolAsync
+open DbManaged.ext
+open DbManaged.MySql.ext
 
 /// MySql数据库管理器
 type MySqlManaged private (pool: IDbConnPoolAsync) =
@@ -256,13 +255,33 @@ type MySqlManaged private (pool: IDbConnPoolAsync) =
                     lazy (pool.recycleConnection conn) |> result |> Ok
 
     interface IDbManagedAsync with
+        /// TODO exp async api
+        member self.executeAnyAsync sql =
+            let r = pool.getConnectionAsync().Result
 
-        //TODO exp async api
-        member self.executeAnyAsync(sql: string) : Result'<(int -> bool) -> Task<int>, exn> =
-            raise (NotImplementedException())
-        //TODO exp async api
-        member self.executeAnyAsync(sql: string, paras: (string * 't) list) : Result'<(int -> bool) -> Task<int>, exn> =
-            raise (NotImplementedException())
-        //TODO exp async api
-        member self.executeAnyAsync(sql: string, paras: #DbParameter array) : Result'<(int -> bool) -> Task<int>, exn> =
-            raise (NotImplementedException())
+            r
+            >>= fun conn ->
+                    let result = conn.executeAnyAsync sql
+
+                    lazy (pool.recycleConnectionAsync conn |> ignore)
+                    |> result
+                    |> Ok
+        /// TODO exp async api
+        member self.executeAnyAsync(sql, paras: (string * 't) list) =
+            let paras' =
+                foldMap (fun (k: string, v) -> List' [ MySqlParameter(k, v :> obj) ]) paras
+                |> unwrap
+
+            (self :> IDbManagedAsync)
+                .executeAnyAsync (sql, paras'.toArray ())
+        /// TODO exp async api
+        member self.executeAnyAsync(sql, paras) =
+            let r = pool.getConnectionAsync().Result
+
+            r
+            >>= fun conn ->
+                    let result = conn.executeAnyAsync (sql, paras)
+
+                    lazy (pool.recycleConnectionAsync conn |> ignore)
+                    |> result
+                    |> Ok
