@@ -12,7 +12,7 @@ open DbManaged.MySql.MySqlConnPool
 
 /// MySql数据库管理器
 type MySqlManaged private (pool) =
-
+    inherit IDbManaged()
     /// 以连接信息构造
     new(msg) =
         let pool = MySqlConnPool(msg, "", 32u)
@@ -27,257 +27,225 @@ type MySqlManaged private (pool) =
         MySqlManaged(pool)
 
     // 所有查询均不负责类型转换
-    interface IDbManaged with
-        /// 查询到表
-        member self.getTable sql =
-            pool.hostConnection
-            <| fun conn' ->
-                let conn: MySqlConnection = coerce conn'
+
+    /// 查询到表
+    override self.executeSelect sql =
+        pool.hostConnection
+        <| fun conn' ->
+            let conn: MySqlConnection = coerce conn'
+            let table = new DataTable()
+
+            table
+            |> (new MySqlDataAdapter(sql, conn)).Fill
+            |> ignore
+
+            table
+    /// 参数化查询到表
+    override self.executeSelect(sql, paras: (string * 't) list) =
+        let paras' =
+            foldMap (fun (k: string, v) -> List' [ MySqlParameter(k, v :> obj) ]) paras
+            |> unwrap
+
+        (self :> IDbManaged)
+            .executeSelect (sql, paras'.toArray ())
+    /// 参数化查询到表
+    override self.executeSelect(sql, para: #DbParameter array) =
+        pool.hostConnection
+        <| fun conn' ->
+            let conn: MySqlConnection = coerce conn'
+
+            conn.hostCommand
+            <| fun cmd' ->
+                let cmd: MySqlCommand = coerce cmd'
+
                 let table = new DataTable()
 
-                table
-                |> (new MySqlDataAdapter(sql, conn)).Fill
-                |> ignore
+                cmd.CommandText <- sql
+                cmd.Parameters.AddRange para //添加参数
+
+                (new MySqlDataAdapter(cmd)).Fill table |> ignore
 
                 table
-        /// 参数化查询到表
-        member self.getTable(sql, paras: (string * 't) list) =
-            let paras' =
-                foldMap (fun (k: string, v) -> List' [ MySqlParameter(k, v :> obj) ]) paras
-                |> unwrap
 
-            (self :> IDbManaged)
-                .getTable (sql, paras'.toArray ())
-        /// 参数化查询到表
-        member self.getTable(sql, para: #DbParameter array) =
-            pool.hostConnection
-            <| fun conn' ->
+
+    /// 查询到第一个值
+    override self.getFstVal sql =
+        pool.hostConnection
+        <| fun conn ->
+            conn.hostCommand
+            <| fun cmd ->
+                cmd.CommandText <- sql
+
+                //如果结果集为空，ExecuteScalar返回null
+                match cmd.ExecuteScalar() with
+                | null -> None
+                | x -> Some x
+    /// 参数化查询到第一个值
+    override self.getFstVal(sql, paras: (string * 't) list) =
+        let paras' =
+            foldMap (fun (k: string, v) -> List' [ MySqlParameter(k, v :> obj) ]) paras
+            |> unwrap
+
+        (self :> IDbManaged)
+            .getFstVal (sql, paras'.toArray ())
+    /// 参数化查询到第一个值
+    override self.getFstVal(sql, para: #DbParameter array) =
+        pool.hostConnection
+        <| fun conn ->
+            conn.hostCommand
+            <| fun cmd ->
+                cmd.CommandText <- sql
+                cmd.Parameters.AddRange para
+
+                //如果结果集为空，ExecuteScalar返回null
+                match cmd.ExecuteScalar() with
+                | null -> None
+                | x -> Some x
+    /// 参数化查询到第一个值
+    override self.getFstVal(table: string, targetKey: string, (whereKey: string, whereKeyVal: 'V)) =
+        pool.hostConnection
+        <| fun conn ->
+            conn.hostCommand
+            <| fun cmd ->
+                cmd.CommandText <- $"SELECT `{targetKey}` FROM `{table}` WHERE `{whereKey}`=?whereKeyVal"
+
+                cmd.Parameters.AddRange [| MySqlParameter("whereKeyVal", whereKeyVal) |]
+
+                //如果结果集为空，ExecuteScalar返回null
+                match cmd.ExecuteScalar() with
+                | null -> None
+                | x -> Some x
+    /// 查询到第一行
+    override self.getFstRow sql =
+        (self :> IDbManaged).executeSelect sql
+        >>= fun t ->
+                Ok
+                <| match t.Rows with
+                   //仅当行数非零时有结果
+                   | rows when rows.Count <> 0 -> Some rows.[0]
+                   | _ -> None
+    /// 参数化查询到第一行
+    override self.getFstRow(sql, paras: (string * 't) list) =
+        let paras' =
+            foldMap (fun (k: string, v) -> List' [ MySqlParameter(k, v :> obj) ]) paras
+            |> unwrap
+
+        (self :> IDbManaged)
+            .getFstRow (sql, paras'.toArray ())
+    /// 参数化查询到第一行
+    override self.getFstRow(sql, paras: #DbParameter array) =
+        (self :> IDbManaged).executeSelect (sql, paras)
+        >>= fun t ->
+                Ok
+                <| match t.Rows with
+                   //仅当行数非零时有结果
+                   | rows when rows.Count <> 0 -> Some rows.[0]
+                   | _ -> None
+
+    /// 查询到指定列
+    override self.getCol(sql, key: string) =
+        (self :> IDbManaged).executeSelect sql
+        >>= fun t -> (self :> IDbManaged).getColFrom (t, key) |> Ok
+
+    /// 参数化查询到指定列
+    override self.getCol(sql, key: string, paras: (string * 't) list) =
+        let paras' =
+            foldMap (fun (k: string, v) -> List' [ MySqlParameter(k, v :> obj) ]) paras
+            |> unwrap
+
+        (self :> IDbManaged)
+            .getCol (sql, key, paras'.toArray ())
+    /// 参数化查询到指定列
+    override self.getCol(sql, key: string, paras: #DbParameter array) =
+        (self :> IDbManaged).executeSelect (sql, paras)
+        >>= fun t -> Ok <| (self :> IDbManaged).getColFrom (t, key)
+
+
+    /// 查询到指定列
+    override self.getCol(sql, index: uint) =
+        (self :> IDbManaged).executeSelect sql
+        >>= fun t -> (self :> IDbManaged).getColFrom (t, index) |> Ok
+
+    /// 参数化查询到指定列
+    override self.getCol(sql, index: uint, paras: (string * 't) list) =
+        let paras' =
+            foldMap (fun (k: string, v) -> List' [ MySqlParameter(k, v :> obj) ]) paras
+            |> unwrap
+
+        (self :> IDbManaged)
+            .getCol (sql, index, paras'.toArray ())
+    /// 参数化查询到指定列
+    override self.getCol(sql, index: uint, paras: #DbParameter array) =
+        (self :> IDbManaged).executeSelect (sql, paras)
+        >>= fun t -> Ok <| (self :> IDbManaged).getColFrom (t, index)
+
+
+    //partial...
+
+    //TODO
+    override self.executeAnyAsync sql = raise (NotImplementedException())
+
+    override self.executeAny sql =
+        pool.getConnection ()
+        >>= fun conn ->
+                let result = conn.executeAny sql
+
+                lazy (pool.recycleConnection conn) |> result |> Ok
+
+    override self.executeAny(sql, paras: (string * 't) list) =
+        let paras' =
+            foldMap (fun (k: string, v) -> List' [ MySqlParameter(k, v :> obj) ]) paras
+            |> unwrap
+
+        (self :> IDbManaged)
+            .executeAny (sql, paras'.toArray ())
+
+    override self.executeAny(sql, paras) =
+        pool.getConnection ()
+        >>= fun conn ->
+                let result = conn.executeAny (sql, paras)
+
+                lazy (pool.recycleConnection conn) |> result |> Ok
+
+
+    override self.executeUpdate(table, (setKey, setKeyVal), (whereKey, whereKeyVal)) =
+        pool.getConnection ()
+        >>= fun conn' ->
                 let conn: MySqlConnection = coerce conn'
 
-                conn.hostCommand
-                <| fun cmd' ->
-                    let cmd: MySqlCommand = coerce cmd'
+                let result =
+                    conn.executeUpdate (table, (setKey, setKeyVal), (whereKey, whereKeyVal))
 
-                    let table = new DataTable()
+                lazy (pool.recycleConnection conn) |> result |> Ok
 
-                    cmd.CommandText <- sql
-                    cmd.Parameters.AddRange para //添加参数
-
-                    (new MySqlDataAdapter(cmd)).Fill table |> ignore
-
-                    table
+    override self.executeUpdate(table, key, newValue, oldValue) =
+        pool.getConnection ()
+        >>= fun conn' ->
+                let conn: MySqlConnection = coerce conn'
 
 
-        /// 查询到第一个值
-        member self.getFstVal sql =
-            pool.hostConnection
-            <| fun conn ->
-                conn.hostCommand
-                <| fun cmd ->
-                    cmd.CommandText <- sql
+                let result =
+                    conn.executeUpdate (table, key, newValue, oldValue)
 
-                    //如果结果集为空，ExecuteScalar返回null
-                    match cmd.ExecuteScalar() with
-                    | null -> None
-                    | x -> Some x
-        /// 参数化查询到第一个值
-        member self.getFstVal(sql, paras: (string * 't) list) =
-            let paras' =
-                foldMap (fun (k: string, v) -> List' [ MySqlParameter(k, v :> obj) ]) paras
-                |> unwrap
-
-            (self :> IDbManaged)
-                .getFstVal (sql, paras'.toArray ())
-        /// 参数化查询到第一个值
-        member self.getFstVal(sql, para: #DbParameter array) =
-            pool.hostConnection
-            <| fun conn ->
-                conn.hostCommand
-                <| fun cmd ->
-                    cmd.CommandText <- sql
-                    cmd.Parameters.AddRange para
-
-                    //如果结果集为空，ExecuteScalar返回null
-                    match cmd.ExecuteScalar() with
-                    | null -> None
-                    | x -> Some x
-        /// 从既有DataTable中查询到第一个 whereKey 等于 whereKeyVal 的行的 targetKey 值
-        member self.getFstVal(table: string, targetKey: string, (whereKey: string, whereKeyVal: 'V)) =
-            pool.hostConnection
-            <| fun conn ->
-                conn.hostCommand
-                <| fun cmd ->
-                    cmd.CommandText <- $"SELECT `{targetKey}` FROM `{table}` WHERE `{whereKey}`=?whereKeyVal"
-
-                    cmd.Parameters.AddRange [| MySqlParameter("whereKeyVal", whereKeyVal) |]
-
-                    //如果结果集为空，ExecuteScalar返回null
-                    match cmd.ExecuteScalar() with
-                    | null -> None
-                    | x -> Some x
-        /// 查询到第一行
-        member self.getFstRow sql =
-            (self :> IDbManaged).getTable sql
-            >>= fun t ->
-                    Ok
-                    <| match t.Rows with
-                       //仅当行数非零时有结果
-                       | rows when rows.Count <> 0 -> Some rows.[0]
-                       | _ -> None
-        /// 参数化查询到第一行
-        member self.getFstRow(sql, paras: (string * 't) list) =
-            let paras' =
-                foldMap (fun (k: string, v) -> List' [ MySqlParameter(k, v :> obj) ]) paras
-                |> unwrap
-
-            (self :> IDbManaged)
-                .getFstRow (sql, paras'.toArray ())
-        /// 参数化查询到第一行
-        member self.getFstRow(sql, paras: #DbParameter array) =
-            (self :> IDbManaged).getTable (sql, paras)
-            >>= fun t ->
-                    Ok
-                    <| match t.Rows with
-                       //仅当行数非零时有结果
-                       | rows when rows.Count <> 0 -> Some rows.[0]
-                       | _ -> None
-
-        /// 从既有DataTable中取出第一个 whereKey 等于 whereKeyVal 的行
-        member self.getFstRowFrom (table: DataTable) (whereKey: string) whereKeyVal =
-            match table.Rows with
-            | rows when rows.Count <> 0 ->
-
-                [ for r in rows -> r ]
-                |> filter (fun (row: DataRow) -> row.[whereKey].ToString() = whereKeyVal.ToString())
-                |> head
-
-            | _ -> None
-
-        /// 查询到指定列
-        member self.getCol(sql, key: string) =
-            (self :> IDbManaged).getTable sql
-            >>= fun t -> (self :> IDbManaged).getColFrom (t, key) |> Ok
-
-        /// 参数化查询到指定列
-        member self.getCol(sql, key: string, paras: (string * 't) list) =
-            let paras' =
-                foldMap (fun (k: string, v) -> List' [ MySqlParameter(k, v :> obj) ]) paras
-                |> unwrap
-
-            (self :> IDbManaged)
-                .getCol (sql, key, paras'.toArray ())
-        /// 参数化查询到指定列
-        member self.getCol(sql, key: string, paras: #DbParameter array) =
-            (self :> IDbManaged).getTable (sql, paras)
-            >>= fun t -> Ok <| (self :> IDbManaged).getColFrom (t, key)
-        /// 从既有DataTable中取出指定列
-        member self.getColFrom(table: DataTable, key: string) =
-            match table.Rows with
-            | rows when rows.Count <> 0 ->
-
-                //此处未考虑列数为0的情况和取用失败的情况
-                [ for r in rows -> r ]
-                |> map (fun (row: DataRow) -> row.[key])
-                |> Some
-
-            | _ -> None
-
-        /// 查询到指定列
-        member self.getCol(sql, index: uint) =
-            (self :> IDbManaged).getTable sql
-            >>= fun t -> (self :> IDbManaged).getColFrom (t, index) |> Ok
-
-        /// 参数化查询到指定列
-        member self.getCol(sql, index: uint, paras: (string * 't) list) =
-            let paras' =
-                foldMap (fun (k: string, v) -> List' [ MySqlParameter(k, v :> obj) ]) paras
-                |> unwrap
-
-            (self :> IDbManaged)
-                .getCol (sql, index, paras'.toArray ())
-        /// 参数化查询到指定列
-        member self.getCol(sql, index: uint, paras: #DbParameter array) =
-            (self :> IDbManaged).getTable (sql, paras)
-            >>= fun t -> Ok <| (self :> IDbManaged).getColFrom (t, index)
-        /// 从既有DataTable中取出指定列
-        member self.getColFrom(table: DataTable, index: uint) =
-            match table.Rows with
-            | rows when rows.Count <> 0 ->
-
-                //此处未考虑列数为0的情况和取用失败的情况
-                [ for r in rows -> r ]
-                |> map (fun (row: DataRow) -> row.[int index])
-                |> Some
-
-            | _ -> None
-
-
-        //partial...
-
-        //TODO
-        member self.executeAnyAsync sql = raise (NotImplementedException())
-
-        member self.executeAny sql =
-            pool.getConnection ()
-            >>= fun conn ->
-                    let result = conn.executeAny sql
-
-                    lazy (pool.recycleConnection conn) |> result |> Ok
-
-        member self.executeAny(sql, paras: (string * 't) list) =
-            let paras' =
-                foldMap (fun (k: string, v) -> List' [ MySqlParameter(k, v :> obj) ]) paras
-                |> unwrap
-
-            (self :> IDbManaged)
-                .executeAny (sql, paras'.toArray ())
-
-        member self.executeAny(sql, paras) =
-            pool.getConnection ()
-            >>= fun conn ->
-                    let result = conn.executeAny (sql, paras)
-
-                    lazy (pool.recycleConnection conn) |> result |> Ok
-
-
-        member self.executeUpdate(table, (setKey, setKeyVal), (whereKey, whereKeyVal)) =
-            pool.getConnection ()
-            >>= fun conn' ->
-                    let conn: MySqlConnection = coerce conn'
-
-                    let result =
-                        conn.executeUpdate (table, (setKey, setKeyVal), (whereKey, whereKeyVal))
-
-                    lazy (pool.recycleConnection conn) |> result |> Ok
-
-        member self.executeUpdate(table, key, newValue, oldValue) =
-            pool.getConnection ()
-            >>= fun conn' ->
-                    let conn: MySqlConnection = coerce conn'
-
-
-                    let result =
-                        conn.executeUpdate (table, key, newValue, oldValue)
-
-                    lazy (pool.recycleConnection conn) |> result |> Ok
+                lazy (pool.recycleConnection conn) |> result |> Ok
 
 
 
-        member self.executeInsert table pairs =
-            pool.getConnection ()
-            >>= fun conn' ->
-                    let conn: MySqlConnection = coerce conn'
+    override self.executeInsert table pairs =
+        pool.getConnection ()
+        >>= fun conn' ->
+                let conn: MySqlConnection = coerce conn'
 
-                    let result = conn.executeInsert table pairs
+                let result = conn.executeInsert table pairs
 
-                    lazy (pool.recycleConnection conn) |> result |> Ok
+                lazy (pool.recycleConnection conn) |> result |> Ok
 
-        member self.executeDelete table (whereKey, whereKeyVal) =
-            pool.getConnection ()
-            >>= fun conn' ->
-                    let conn: MySqlConnection = coerce conn'
+    override self.executeDelete table (whereKey, whereKeyVal) =
+        pool.getConnection ()
+        >>= fun conn' ->
+                let conn: MySqlConnection = coerce conn'
 
-                    let result =
-                        conn.executeDelete table (whereKey, whereKeyVal)
+                let result =
+                    conn.executeDelete table (whereKey, whereKeyVal)
 
-                    lazy (pool.recycleConnection conn) |> result |> Ok
+                lazy (pool.recycleConnection conn) |> result |> Ok
