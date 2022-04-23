@@ -1,6 +1,7 @@
 module dbm_test.PgSql.com
 
 open DbManaged
+open DbManaged.MySql
 open DbManaged.PgSql
 open fsharper.op.Boxing
 open fsharper.types.Ord
@@ -10,7 +11,7 @@ open fsharper.op.Async
 let tab1 = "sch1.tab1"
 let size = 100u
 let mutable msg = None
-let mutable managed: Option'<IDbManaged> = None
+let mutable managed: Option'<IDbManagedAsync> = None
 
 let connect () =
     match msg with

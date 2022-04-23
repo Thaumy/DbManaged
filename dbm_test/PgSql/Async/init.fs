@@ -55,7 +55,7 @@ let init () =
                <| eq 1
                :> Task |]
 
-    let ts3 =
+    (*let ts3 =
         [| for i in 1 .. 500 do
                managed
                    .unwrap()
@@ -64,8 +64,10 @@ let init () =
                <| eq 1
                :> Task |]
 
+    waitAll ts3*)
+    
     waitAll ts1
     waitAll ts2
-    waitAll ts3
+
 
     println "EXIT CONCURRENT DO"

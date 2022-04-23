@@ -73,38 +73,6 @@ type DbConnection with
 
 type DbConnection with
 
-    //TODO exp async api
-    member self.executeAnyAsync sql =
-
-        self.useCommandAsync
-        <| fun cmd ->
-            cmd.CommandText <- sql
-
-            cmd.useTransactionAsync
-            <| fun tx callback p ->
-                task {
-                    let! n = cmd.ExecuteNonQueryAsync() //耗时操作
-
-                    let affected =
-                        if p n then
-                            tx.CommitAsync() |> wait |> ignore //符合期望影响行数规则则提交
-                            n
-                        else
-                            tx.RollbackAsync() |> wait |> ignore //否则回滚
-                            0
-
-                    tx.DisposeAsync() |> ignore //资源释放
-                    cmd.DisposeAsync() |> ignore
-
-                    force callback //执行回调（可用于连接销毁）
-
-                    return affected
-                }
-        |> result
-        |> result
-
-
-
     /// 执行任意查询
     /// 返回的闭包用于检测受影响的行数，当断言成立时闭包会提交事务并返回受影响的行数
     /// 低级操作：查询执行完成后应注意注销该连接以避免连接泄漏
@@ -157,3 +125,66 @@ type DbConnection with
                 force callback //执行回调（可用于连接销毁）
 
                 affected //实际受影响的行数
+
+type DbConnection with
+    /// TODO exp async api
+    member self.executeAnyAsync sql =
+
+        self.useCommandAsync
+        <| fun cmd ->
+            cmd.CommandText <- sql
+
+            cmd.useTransactionAsync
+            <| fun tx callback p ->
+                task {
+                    let! n = cmd.ExecuteNonQueryAsync() //耗时操作
+
+                    let affected =
+                        if p n then
+                            tx.CommitAsync() |> wait |> ignore //符合期望影响行数规则则提交
+                            n
+                        else
+                            tx.RollbackAsync() |> wait |> ignore //否则回滚
+                            0
+
+                    tx.DisposeAsync() |> ignore //资源释放
+                    cmd.DisposeAsync() |> ignore
+
+                    force callback //执行回调（可用于连接销毁）
+
+                    return affected
+                }
+        |> result
+        |> result
+
+    /// TODO exp async api
+    member self.executeAnyAsync(sql, para: #DbParameter array) =
+
+        self.useCommandAsync
+        <| fun cmd ->
+            cmd.CommandText <- sql
+            cmd.Parameters.AddRange para //添加参数
+
+            cmd.useTransactionAsync
+            <| fun tx callback p ->
+                task {
+                    let! n = cmd.ExecuteNonQueryAsync() //耗时操作
+
+                    let affected =
+                        if p n then
+                            tx.CommitAsync() |> wait |> ignore //符合期望影响行数规则则提交
+                            n
+                        else
+                            tx.RollbackAsync() |> wait |> ignore //否则回滚
+                            0
+
+                    tx.DisposeAsync() |> ignore //资源释放
+                    cmd.DisposeAsync() |> ignore
+
+                    force callback //执行回调（可用于连接销毁）
+
+                    return affected //实际受影响的行数
+
+                }
+        |> result
+        |> result

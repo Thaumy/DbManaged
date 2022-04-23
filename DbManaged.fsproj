@@ -4,14 +4,17 @@
         <TargetFramework>net6.0</TargetFramework>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <LangVersion>preview</LangVersion>
-        <RootNamespace>SqlManaged</RootNamespace>
+        <RootNamespace>DbManaged</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
         <Compile Include="ext.fs" />
+        <Compile Include="fn.fs" />
         <Compile Include="DbConnMsg.fs" />
         <Compile Include="IDbConnPool.fs" />
+        <Compile Include="IDbConnPoolAsync.fs" />
         <Compile Include="IDbManaged.fs" />
+        <Compile Include="IDbManagedAsync.fs" />
         <Compile Include="PgSql\ext.fs" />
         <Compile Include="PgSql\PgSqlConnPool.fs" />
         <Compile Include="PgSql\PgSqlManaged.fs" />
