@@ -1,8 +1,7 @@
-module dbm_test.PgSql.Sync.get.getTable
+module dbm_test.MySql.get.executeSelect
 
 open NUnit.Framework
-open dbm_test.PgSql
-open dbm_test.PgSql.Sync.init
+open dbm_test.MySql
 open fsharper.types
 open fsharper.types.Ord
 open fsharper.op.Boxing
@@ -11,16 +10,16 @@ open fsharper.op.Boxing
 let OneTimeSetUp () = com.connect ()
 
 [<SetUp>]
-let SetUp () = init ()
+let SetUp () = com.init ()
 
 
 [<Test>]
-let getTable_overload1_test () =
+let executeSelect_overload1_test () =
     let result =
         com
             .managed
             .unwrap()
-            .getTable $"SELECT col1,col2 FROM {com.tab1}"
+            .executeSelect $"SELECT col1,col2 FROM {com.tab1}"
         |> unwrap
 
     for row in result.Rows do
@@ -28,14 +27,14 @@ let getTable_overload1_test () =
         Assert.AreEqual("i", row.["col2"])
 
 [<Test>]
-let getTable_overload2_test () =
+let executeSelect_overload2_test () =
     let result =
         let paras: (string * obj) list = [ ("col3", "init[050,100]") ]
 
         com
             .managed
             .unwrap()
-            .getTable ($"SELECT col1,col2 FROM {com.tab1} WHERE col3 = :col3", paras)
+            .executeSelect ($"SELECT col1,col2 FROM {com.tab1} WHERE col3 = ?col3", paras)
         |> unwrap
 
     for row in result.Rows do
