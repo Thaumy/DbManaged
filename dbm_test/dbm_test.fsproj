@@ -8,24 +8,45 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <Compile Include="PgSql\com.fs" />
-        <Compile Include="PgSql\excute\executeAny.fs" />
-        <Compile Include="PgSql\excute\executeInsert.fs" />
-        <Compile Include="PgSql\excute\executeDelete.fs" />
-        <Compile Include="PgSql\excute\executeUpdate.fs" />
-        <Compile Include="PgSql\get\getTable.fs" />
-        <Compile Include="PgSql\get\getFstVal.fs" />
-        <Compile Include="PgSql\get\getFstRow.fs" />
-        <Compile Include="PgSql\get\getCol.fs" />
         <Compile Include="MySql\com.fs" />
-        <Compile Include="MySql\excute\executeAny.fs" />
-        <Compile Include="MySql\excute\executeInsert.fs" />
-        <Compile Include="MySql\excute\executeUpdate.fs" />
-        <Compile Include="MySql\excute\executeDelete.fs" />
-        <Compile Include="MySql\get\getFstRow.fs" />
-        <Compile Include="MySql\get\getCol.fs" />
-        <Compile Include="MySql\get\getFstVal.fs" />
-        <Compile Include="MySql\get\getTable.fs" />
+        <Compile Include="MySql\Async\init.fs" />
+        <Compile Include="MySql\Async\excute\executeAny.fs" />
+        <Compile Include="MySql\Async\excute\executeDelete.fs" />
+        <Compile Include="MySql\Async\excute\executeInsert.fs" />
+        <Compile Include="MySql\Async\excute\executeSelect.fs" />
+        <Compile Include="MySql\Async\excute\executeUpdate.fs" />
+        <Compile Include="MySql\Async\get\getCol.fs" />
+        <Compile Include="MySql\Async\get\getFstRow.fs" />
+        <Compile Include="MySql\Async\get\getFstVal.fs" />
+        <Compile Include="MySql\Sync\init.fs" />
+        <Compile Include="MySql\Sync\excute\executeAny.fs" />
+        <Compile Include="MySql\Sync\excute\executeDelete.fs" />
+        <Compile Include="MySql\Sync\excute\executeInsert.fs" />
+        <Compile Include="MySql\Sync\excute\executeSelect.fs" />
+        <Compile Include="MySql\Sync\excute\executeUpdate.fs" />
+        <Compile Include="MySql\Sync\get\getCol.fs" />
+        <Compile Include="MySql\Sync\get\getFstRow.fs" />
+        <Compile Include="MySql\Sync\get\getFstVal.fs" />
+        <Compile Include="PgSql\com.fs" />
+        <Compile Include="PgSql\Async\init.fs" />
+        <Compile Include="PgSql\Async\get\getFstVal.fs" />
+        <Compile Include="PgSql\Async\get\getFstRow.fs" />
+        <Compile Include="PgSql\Async\get\getCol.fs" />
+        <Compile Include="PgSql\Async\excute\executeAny.fs" />
+        <Compile Include="PgSql\Async\excute\executeSelect.fs" />
+        <Compile Include="PgSql\Async\excute\executeInsert.fs" />
+        <Compile Include="PgSql\Async\excute\executeDelete.fs" />
+        <Compile Include="PgSql\Async\excute\executeUpdate.fs" />
+
+        <Compile Include="PgSql\Sync\init.fs" />
+        <Compile Include="PgSql\Sync\get\getFstVal.fs" />
+        <Compile Include="PgSql\Sync\get\getFstRow.fs" />
+        <Compile Include="PgSql\Sync\get\getCol.fs" />
+        <Compile Include="PgSql\Sync\excute\executeAny.fs" />
+        <Compile Include="PgSql\Sync\excute\executeSelect.fs" />
+        <Compile Include="PgSql\Sync\excute\executeInsert.fs" />
+        <Compile Include="PgSql\Sync\excute\executeDelete.fs" />
+        <Compile Include="PgSql\Sync\excute\executeUpdate.fs" />
     </ItemGroup>
 
     <ItemGroup>
