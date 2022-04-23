@@ -1,7 +1,8 @@
-module dbm_test.MySql.get.getFstVal
+module dbm_test.MySql.Async.get.getFstVal
 
 open NUnit.Framework
 open dbm_test.MySql
+open dbm_test.MySql.Async.init
 open fsharper.types
 open fsharper.types.Ord
 open fsharper.op.Boxing
@@ -10,7 +11,7 @@ open fsharper.op.Boxing
 let OneTimeSetUp () = com.connect ()
 
 [<SetUp>]
-let SetUp () = com.init ()
+let SetUp () = init ()
 
 
 [<Test>]
@@ -48,7 +49,7 @@ let getFstVal_overload4_test () =
         com
             .managed
             .unwrap()
-            .getFstVal (com.tab1, "col2", ("col3", "init[050,100]"))
+            .getFstVal ($"{com.tab1}", "col2", ("col3", "init[050,100]"))
         |> unwrap2
 
     Assert.AreEqual("i", result)

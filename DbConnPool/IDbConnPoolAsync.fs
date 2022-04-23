@@ -1,6 +1,6 @@
-namespace DbManaged.DbConnPoolAsync
+namespace DbManaged
 
-open DbManaged.DbConnPool
+open DbManaged
 open System.Data.Common
 open System.Threading.Tasks
 open fsharper.op
@@ -19,8 +19,8 @@ type internal IDbConnPoolAsync =
     abstract member recycleConnectionAsync : DbConnection -> Task<unit>
 
 [<AutoOpen>]
-module internal ext =
-
+module internal ext_IDbConnPoolAsync =
+    
     type internal IDbConnPoolAsync with
 
         /// TODO exp async api

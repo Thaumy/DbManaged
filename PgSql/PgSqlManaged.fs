@@ -5,12 +5,9 @@ open System.Data.Common
 open Npgsql
 open fsharper.types
 open fsharper.op
-open fsharper.op.Async
-open fsharper.op.Coerce
 open DbManaged
-open DbManaged.PgSql.PgSqlConnPool
-open DbManaged.DbConnPool
-open DbManaged.DbConnPoolAsync
+open DbManaged.ext
+open DbManaged.PgSql.ext
 
 /// PgSql数据库管理器
 type PgSqlManaged private (pool: IDbConnPoolAsync) =

@@ -1,12 +1,9 @@
 module dbm_test.PgSql.com
 
 open DbManaged
-open DbManaged.MySql
 open DbManaged.PgSql
 open fsharper.op.Boxing
-open fsharper.types.Ord
 open fsharper.types
-open fsharper.op.Async
 
 let tab1 = "sch1.tab1"
 let size = 100u

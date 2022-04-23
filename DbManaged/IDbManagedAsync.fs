@@ -1,6 +1,5 @@
 ﻿namespace DbManaged
 
-open System.Data
 open System.Data.Common
 open System.Threading.Tasks
 open fsharper.types

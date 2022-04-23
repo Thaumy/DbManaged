@@ -1,11 +1,11 @@
 [<AutoOpen>]
-module internal DbManaged.MySql.ext
+module internal DbManaged.MySql.ext.MySqlConnection
 
 open System.Data.Common
 open MySql.Data.MySqlClient
 open fsharper.op
 open fsharper.types
-open DbManaged
+open DbManaged.ext
 
 type MySqlConnection with
 

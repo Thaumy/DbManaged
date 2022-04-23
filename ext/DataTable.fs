@@ -1,5 +1,5 @@
 [<AutoOpen>]
-module DbManaged.fn
+module internal DbManaged.ext.DataTable
 
 open System.Data
 open fsharper.types

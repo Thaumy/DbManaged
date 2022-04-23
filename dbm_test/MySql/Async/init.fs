@@ -1,10 +1,10 @@
-module dbm_test.PgSql.Async.init
+module dbm_test.MySql.Async.init
 
 open System.Threading
 open System.Threading.Tasks
 open DbManaged
 open DbManaged.PgSql
-open dbm_test.PgSql.com
+open dbm_test.MySql.com
 open fsharper.op.Boxing
 open fsharper.types.Ord
 open fsharper.types
@@ -23,12 +23,12 @@ let init () =
     managed
         .unwrap()
         .executeAnyAsync $"create table {tab1}\
-             (\
-                 col1 integer,\
-                 col2 char,\
-                 col3 varchar,\
-                 col4 text\
-             );"
+                        (\
+                            col1 int         null,\
+                            col2 char        null,\
+                            col3 varchar(32) null,\
+                            col4 text        null\
+                        );"
     |> unwrap
     <| (fun _ -> true)
     |> wait
@@ -72,7 +72,7 @@ let init () =
                        <| eq 1
                        :> Task |]
                 |> waitAll)
-    
+
     wait ts1
     wait ts2
     wait ts3

@@ -1,12 +1,12 @@
 ﻿[<AutoOpen>]
-module internal DbManaged.PgSql.ext
+module internal DbManaged.PgSql.ext.NpgsqlConnection
 
 open System.Data.Common
-open DbManaged
 open Npgsql
 open fsharper.op.Coerce
 open fsharper.op.Lazy
 open fsharper.types
+open DbManaged.ext
 
 type NpgsqlConnection with
 
