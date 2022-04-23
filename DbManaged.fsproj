@@ -4,31 +4,42 @@
         <TargetFramework>net6.0</TargetFramework>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <LangVersion>preview</LangVersion>
-        <RootNamespace>SqlManaged</RootNamespace>
+        <RootNamespace>DbManaged</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
-        <Compile Include="ext.fs" />
+        <Compile Include="ext\DataTable.fs" />
+        <Compile Include="ext\DbCommand.fs" />
+        <Compile Include="ext\DbConnection.fs" />
+
         <Compile Include="DbConnMsg.fs" />
-        <Compile Include="IDbConnPool.fs" />
-        <Compile Include="IDbManaged.fs" />
-        <Compile Include="MySql\ext.fs" />
-        <Compile Include="MySql\MySqlConnPool.fs" />
-        <Compile Include="MySql\MySqlManaged.fs" />
-        <Compile Include="PgSql\ext.fs" />
+
+        <Compile Include="DbConnPool\IDbConnPool.fs" />
+        <Compile Include="DbConnPool\IDbConnPoolAsync.fs" />
+        <Compile Include="DbManaged\IDbManaged.fs" />
+        <Compile Include="DbManaged\IDbManagedAsync.fs" />
+
+        <Compile Include="PgSql\ext\NpgsqlConnection.fs" />
         <Compile Include="PgSql\PgSqlConnPool.fs" />
         <Compile Include="PgSql\PgSqlManaged.fs" />
+
+        <Compile Include="MySql\ext\MySqlConnection.fs" />
+        <Compile Include="MySql\MySqlConnPool.fs" />
+        <Compile Include="MySql\MySqlManaged.fs" />
+
+
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="MySql.Data" Version="8.0.28" />
-      <PackageReference Include="Npgsql" Version="7.0.0-preview.2" />
+        <PackageReference Include="MySql.Data" Version="8.0.28" />
+        <PackageReference Include="Npgsql" Version="7.0.0-preview.3" />
+        <PackageReference Update="FSharp.Core" Version="6.0.4-beta.22181.2" />
     </ItemGroup>
 
     <ItemGroup>
-      <Reference Include="fsharper, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null">
-        <HintPath>..\fsharper\bin\Debug\net6.0\fsharper.dll</HintPath>
-      </Reference>
+        <Reference Include="fsharper, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null">
+            <HintPath>..\fsharper\bin\Debug\net6.0\fsharper.dll</HintPath>
+        </Reference>
     </ItemGroup>
 
 </Project>
