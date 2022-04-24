@@ -150,7 +150,7 @@ type MySqlManaged private (pool: IDbConnPoolAsync) =
         /// 查询到指定列
         override self.getCol(sql, key: string) =
             (self :> IDbManaged).executeSelect sql
-            >>= fun t -> getColFromByKey (t, key) |> Ok
+            >>= fun t -> t.getColByKey key |> Ok
 
         /// 参数化查询到指定列
         override self.getCol(sql, key: string, paras: (string * 't) list) =
@@ -163,13 +163,13 @@ type MySqlManaged private (pool: IDbConnPoolAsync) =
         /// 参数化查询到指定列
         override self.getCol(sql, key: string, paras: #DbParameter array) =
             (self :> IDbManaged).executeSelect (sql, paras)
-            >>= fun t -> Ok <| getColFromByKey (t, key)
+            >>= fun t -> t.getColByKey key |> Ok
 
 
         /// 查询到指定列
         override self.getCol(sql, index: uint) =
             (self :> IDbManaged).executeSelect sql
-            >>= fun t -> getColFromByIndex (t, index) |> Ok
+            >>= fun t -> t.getColByIndex index |> Ok
 
         /// 参数化查询到指定列
         override self.getCol(sql, index: uint, paras: (string * 't) list) =
@@ -182,7 +182,7 @@ type MySqlManaged private (pool: IDbConnPoolAsync) =
         /// 参数化查询到指定列
         override self.getCol(sql, index: uint, paras: #DbParameter array) =
             (self :> IDbManaged).executeSelect (sql, paras)
-            >>= fun t -> Ok <| getColFromByIndex (t, index)
+            >>= fun t -> t.getColByIndex index |> Ok
 
 
         //partial...
