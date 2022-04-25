@@ -46,9 +46,9 @@ type MySqlManaged private (pool: IDbConnPoolAsync) =
 
                 table
         /// 参数化查询到表
-        override self.executeSelect(sql, paras: (string * 't) list) =
+        override self.executeSelect(sql, paras: (string * #obj) list) =
             let paras' =
-                foldMap (fun (k: string, v) -> List' [ MySqlParameter(k, v :> obj) ]) paras
+                foldMap (fun (k: string, v: #obj) -> List' [ MySqlParameter(k, v) ]) paras
                 |> unwrap
 
             (self :> IDbManaged)
@@ -86,9 +86,9 @@ type MySqlManaged private (pool: IDbConnPoolAsync) =
                     | null -> None
                     | x -> Some x
         /// 参数化查询到第一个值
-        override self.getFstVal(sql, paras: (string * 't) list) =
+        override self.getFstVal(sql, paras: (string * #obj) list) =
             let paras' =
-                foldMap (fun (k: string, v) -> List' [ MySqlParameter(k, v :> obj) ]) paras
+                foldMap (fun (k: string, v: #obj) -> List' [ MySqlParameter(k, v) ]) paras
                 |> unwrap
 
             (self :> IDbManaged)
@@ -130,9 +130,9 @@ type MySqlManaged private (pool: IDbConnPoolAsync) =
                        | rows when rows.Count <> 0 -> Some rows.[0]
                        | _ -> None
         /// 参数化查询到第一行
-        override self.getFstRow(sql, paras: (string * 't) list) =
+        override self.getFstRow(sql, paras: (string * #obj) list) =
             let paras' =
-                foldMap (fun (k: string, v) -> List' [ MySqlParameter(k, v :> obj) ]) paras
+                foldMap (fun (k: string, v: #obj) -> List' [ MySqlParameter(k, v) ]) paras
                 |> unwrap
 
             (self :> IDbManaged)
@@ -153,9 +153,9 @@ type MySqlManaged private (pool: IDbConnPoolAsync) =
             >>= fun t -> t.getColByKey key |> Ok
 
         /// 参数化查询到指定列
-        override self.getCol(sql, key: string, paras: (string * 't) list) =
+        override self.getCol(sql, key: string, paras: (string * #obj) list) =
             let paras' =
-                foldMap (fun (k: string, v) -> List' [ MySqlParameter(k, v :> obj) ]) paras
+                foldMap (fun (k: string, v: #obj) -> List' [ MySqlParameter(k, v) ]) paras
                 |> unwrap
 
             (self :> IDbManaged)
@@ -172,9 +172,9 @@ type MySqlManaged private (pool: IDbConnPoolAsync) =
             >>= fun t -> t.getColByIndex index |> Ok
 
         /// 参数化查询到指定列
-        override self.getCol(sql, index: uint, paras: (string * 't) list) =
+        override self.getCol(sql, index: uint, paras: (string * #obj) list) =
             let paras' =
-                foldMap (fun (k: string, v) -> List' [ MySqlParameter(k, v :> obj) ]) paras
+                foldMap (fun (k: string, v: #obj) -> List' [ MySqlParameter(k, v) ]) paras
                 |> unwrap
 
             (self :> IDbManaged)
@@ -196,9 +196,9 @@ type MySqlManaged private (pool: IDbConnPoolAsync) =
 
                     lazy (pool.recycleConnection conn) |> result |> Ok
 
-        override self.executeAny(sql, paras: (string * 't) list) =
+        override self.executeAny(sql, paras: (string * #obj) list) =
             let paras' =
-                foldMap (fun (k: string, v) -> List' [ MySqlParameter(k, v :> obj) ]) paras
+                foldMap (fun (k: string, v: #obj) -> List' [ MySqlParameter(k, v) ]) paras
                 |> unwrap
 
             (self :> IDbManaged)
@@ -267,9 +267,9 @@ type MySqlManaged private (pool: IDbConnPoolAsync) =
                     |> result
                     |> Ok
         /// TODO exp async api
-        member self.executeAnyAsync(sql, paras: (string * 't) list) =
+        member self.executeAnyAsync(sql, paras: (string * #obj) list) =
             let paras' =
-                foldMap (fun (k: string, v) -> List' [ MySqlParameter(k, v :> obj) ]) paras
+                foldMap (fun (k: string, v: #obj) -> List' [ MySqlParameter(k, v) ]) paras
                 |> unwrap
 
             (self :> IDbManagedAsync)
