@@ -9,7 +9,7 @@ open fsharper.types
 /// 数据库连接池
 type internal IDbConnPoolAsync =
     inherit IDbConnPool
-    
+
     /// TODO exp async api
     /// 异步获取数据库连接
     abstract member getConnectionAsync : unit -> Task<Result'<DbConnection, exn>>
@@ -20,7 +20,7 @@ type internal IDbConnPoolAsync =
 
 [<AutoOpen>]
 module internal ext_IDbConnPoolAsync =
-    
+
     type internal IDbConnPoolAsync with
 
         /// TODO exp async api

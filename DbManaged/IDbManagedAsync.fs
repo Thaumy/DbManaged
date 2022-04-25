@@ -10,7 +10,7 @@ type IDbManagedAsync =
     abstract member executeAnyAsync : sql: string -> Result'<(int -> bool) -> Task<int>, exn>
     //TODO exp async api
     abstract member executeAnyAsync :
-        sql: string * paras: (string * 't) list -> Result'<(int -> bool) -> Task<int>, exn>
+        sql: string * paras: (string * #obj) list -> Result'<(int -> bool) -> Task<int>, exn>
     //TODO exp async api
     abstract member executeAnyAsync :
         sql: string * paras: #DbParameter array -> Result'<(int -> bool) -> Task<int>, exn>

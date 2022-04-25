@@ -15,7 +15,7 @@ type internal IDbConnPool =
 
 [<AutoOpen>]
 module internal ext_IDbConnPool =
-    
+
     type internal IDbConnPool with
 
         /// 创建一个数据库连接, 并以其为参数执行闭包 f

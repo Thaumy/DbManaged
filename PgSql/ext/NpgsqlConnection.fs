@@ -12,7 +12,7 @@ type NpgsqlConnection with
 
     /// 将 table 中 whereKey 等于 whereKeyVal 的行的 setKey 更新为 setKeyVal
     /// 返回的闭包用于检测受影响的行数，当断言成立时闭包会提交事务并返回受影响的行数
-    member self.executeUpdate(table: string, (setKey: string, setKeyVal), (whereKey: string, whereKeyVal)) =
+    member self.executeUpdate(table: string, (setKey: string, setKeyVal: #obj), (whereKey: string, whereKeyVal: #obj)) =
         (self :> DbConnection).useCommand
         <| fun cmd' ->
             let cmd: NpgsqlCommand = coerce cmd'
@@ -22,8 +22,8 @@ type NpgsqlConnection with
                          SET {setKey}=:setKeyVal \
                        WHERE {whereKey}=:whereKeyVal"
 
-            [| NpgsqlParameter("setKeyVal", setKeyVal :> obj)
-               NpgsqlParameter("whereKeyVal", whereKeyVal :> obj) |]
+            [| NpgsqlParameter("setKeyVal", setKeyVal)
+               NpgsqlParameter("whereKeyVal", whereKeyVal) |]
             |> cmd.Parameters.AddRange
 
             cmd.useTransaction
@@ -46,8 +46,8 @@ type NpgsqlConnection with
 
     /// 将 table 中 key 等于 oldValue 的行的 key 更新为 newValue
     /// 返回的闭包用于检测受影响的行数，当断言成立时闭包会提交事务并返回受影响的行数
-    member self.executeUpdate(table, key, newValue: 'V, oldValue: 'V) =
-        (table, (key, newValue), (key, oldValue))
+    member self.executeUpdate(table, key, newValue: 'v, oldValue: 'v) =
+        (table, (key, newValue :> obj), (key, oldValue :> obj))
         |> self.executeUpdate
 
     /// 在 table 中插入一行
@@ -62,7 +62,7 @@ type NpgsqlConnection with
                 |> foldl
                     (fun (acc_k, acc_v) (k: string, v) ->
 
-                        cmd.Parameters.AddWithValue(k, v :> obj) //添加参数
+                        cmd.Parameters.AddWithValue(k, v) //添加参数
                         |> ignore
 
                         //acc_k 为VALUES语句前半部分
