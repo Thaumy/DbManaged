@@ -24,10 +24,10 @@ type internal MySqlConnPool(msg: DbConnMsg, database, size: uint) =
                  Pooling = True;\
              MaxPoolSize = {size};\
        "
-        + if database = "" then //TODO 等号右侧空格测试
+        + if database = "" then
               ""
           else
-              $"DataBase ={database};"
+              $"DataBase = {database};"
 
     /// 空闲连接表
     let freeConnections =
@@ -177,7 +177,7 @@ type internal MySqlConnPool(msg: DbConnMsg, database, size: uint) =
                 此时不进行登记，在回收阶段会检测到该连接并将其销毁*)
                 busyConnectionsTryAdd result |> ignore //添加到忙碌连接表
 
-                Task.Run outputPoolStatus |> ignore
+                //Task.Run outputPoolStatus |> ignore
 
                 result :> DbConnection |> Ok
             with

@@ -18,8 +18,8 @@ type MySqlConnection with
 
             cmd.CommandText <-
                 $"UPDATE `{table}` \
-                     SET `{setKey}`=?setKeyVal \
-                 WHERE `{whereKey}`=?whereKeyVal"
+                     SET   `{setKey}` = ?setKeyVal \
+                   WHERE `{whereKey}` = ?whereKeyVal"
 
             [| MySqlParameter("setKeyVal", setKeyVal :> obj)
                MySqlParameter("whereKeyVal", whereKeyVal :> obj) |]
@@ -102,9 +102,9 @@ type MySqlConnection with
         <| fun cmd' ->
             let cmd: MySqlCommand = coerce cmd'
 
-            cmd.CommandText <- $"DELETE FROM `{table}` WHERE `{whereKey}`=?Value"
+            cmd.CommandText <- $"DELETE FROM `{table}` WHERE `{whereKey}` = ?whereKeyVal"
 
-            cmd.Parameters.AddWithValue("Value", whereKeyVal) //添加参数
+            cmd.Parameters.AddWithValue("whereKeyVal", whereKeyVal) //添加参数
             |> ignore
 
             cmd.useTransaction

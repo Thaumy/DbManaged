@@ -22,10 +22,10 @@ type internal PgSqlConnPool(msg: DbConnMsg, database, size: uint) =
                  Pooling = True;\
              MaxPoolSize = {size};\
        "
-        + if database = "" then //TODO 等号右侧空格测试
+        + if database = "" then 
               ""
           else
-              $"DataBase ={database};"
+              $"DataBase = {database};"
 
     /// 空闲连接表
     let freeConnections =

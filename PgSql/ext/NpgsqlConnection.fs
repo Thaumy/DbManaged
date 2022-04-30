@@ -19,8 +19,8 @@ type NpgsqlConnection with
 
             cmd.CommandText <-
                 $"UPDATE {table} \
-                         SET {setKey}=:setKeyVal \
-                       WHERE {whereKey}=:whereKeyVal"
+                         SET   {setKey} = :setKeyVal \
+                       WHERE {whereKey} = :whereKeyVal"
 
             [| NpgsqlParameter("setKeyVal", setKeyVal :> obj)
                NpgsqlParameter("whereKeyVal", whereKeyVal :> obj) |]
@@ -101,7 +101,7 @@ type NpgsqlConnection with
         <| fun cmd' ->
             let cmd: NpgsqlCommand = coerce cmd'
 
-            cmd.CommandText <- $"DELETE FROM {table} WHERE {whereKey}=:Value"
+            cmd.CommandText <- $"DELETE FROM {table} WHERE {whereKey} = :Value"
 
             cmd.Parameters.AddWithValue("Value", whereKeyVal) //添加参数
             |> ignore
