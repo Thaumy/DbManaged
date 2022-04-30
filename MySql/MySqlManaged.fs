@@ -112,7 +112,7 @@ type MySqlManaged private (pool: IDbConnPoolAsync) =
             <| fun conn ->
                 conn.hostCommand
                 <| fun cmd ->
-                    cmd.CommandText <- $"SELECT `{targetKey}` FROM `{table}` WHERE `{whereKey}`=?whereKeyVal"
+                    cmd.CommandText <- $"SELECT `{targetKey}` FROM `{table}` WHERE `{whereKey}` = ?whereKeyVal"
 
                     cmd.Parameters.AddRange [| MySqlParameter("whereKeyVal", whereKeyVal) |]
 

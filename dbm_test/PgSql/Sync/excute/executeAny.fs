@@ -6,6 +6,7 @@ open dbm_test.PgSql.Sync.init
 open fsharper.types
 open fsharper.types.Ord
 open fsharper.op.Boxing
+open DbManaged.PgSql.ext.String
 
 [<OneTimeSetUp>]
 let OneTimeSetUp () = com.connect ()
@@ -22,7 +23,7 @@ let executeAny_overload1_test () =
                 .managed
                 .unwrap()
                 .executeAny $"INSERT INTO {com.tab1} (col1, col2, col3, col4)\
-                 VALUES (1, 'a', 'aaa', 'aaaa');"
+                                              VALUES (1, 'a', 'aaa', 'aaaa');"
 
         Assert.AreEqual(1, query |> unwrap <| eq 1)
 
@@ -51,8 +52,9 @@ let executeAny_overload2_test () =
                 .managed
                 .unwrap()
                 .executeAny (
-                    $"INSERT INTO {com.tab1} ( col1,  col2,  col3,  col4)\
-                                    VALUES (:col1, :col2, :col3, :col4);",
+                    normalizeSql
+                        $"INSERT INTO {com.tab1} ( col1,  col2,  col3,  col4) \
+                                          VALUES (<col1>,<col2>,<col3>,<col4>);",
                     paras
                 )
 

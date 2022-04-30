@@ -18,10 +18,12 @@
         <Compile Include="DbConnPool\IDbConnPoolAsync.fs" />
         <Compile Include="DbManaged\IDbManaged.fs" />
         <Compile Include="DbManaged\IDbManagedAsync.fs" />
+        <Compile Include="PgSql\ext\String.fs" />
 
         <Compile Include="PgSql\ext\NpgsqlConnection.fs" />
         <Compile Include="PgSql\PgSqlConnPool.fs" />
         <Compile Include="PgSql\PgSqlManaged.fs" />
+        <Compile Include="MySql\ext\String.fs" />
 
         <Compile Include="MySql\ext\MySqlConnection.fs" />
         <Compile Include="MySql\MySqlConnPool.fs" />
