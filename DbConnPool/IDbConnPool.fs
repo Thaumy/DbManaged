@@ -2,7 +2,7 @@ namespace DbManaged
 
 open System.Data.Common
 open fsharper.op
-open fsharper.types
+open fsharper.typ
 
 /// 数据库连接池
 type internal IDbConnPool =

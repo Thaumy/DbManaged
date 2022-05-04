@@ -3,7 +3,7 @@
 open System.Data
 open System.Data.Common
 open Npgsql
-open fsharper.types
+open fsharper.typ
 open fsharper.op
 open DbManaged
 open DbManaged.ext

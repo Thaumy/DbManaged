@@ -4,7 +4,7 @@ module internal DbManaged.MySql.ext.MySqlConnection
 open System.Data.Common
 open MySql.Data.MySqlClient
 open fsharper.op
-open fsharper.types
+open fsharper.typ
 open DbManaged.ext
 
 type MySqlConnection with

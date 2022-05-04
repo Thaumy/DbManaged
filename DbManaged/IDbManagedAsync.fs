@@ -2,7 +2,7 @@
 
 open System.Data.Common
 open System.Threading.Tasks
-open fsharper.types
+open fsharper.typ
 
 type IDbManagedAsync =
     inherit IDbManaged

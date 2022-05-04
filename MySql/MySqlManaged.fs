@@ -6,7 +6,7 @@ open System.Data.Common
 open System.Threading.Tasks
 open MySql.Data.MySqlClient
 open fsharper.op.Coerce
-open fsharper.types
+open fsharper.typ
 open fsharper.op
 open DbManaged
 open DbManaged.ext

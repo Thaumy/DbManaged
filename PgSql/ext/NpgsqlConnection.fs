@@ -5,7 +5,7 @@ open System.Data.Common
 open Npgsql
 open fsharper.op.Coerce
 open fsharper.op.Lazy
-open fsharper.types
+open fsharper.typ
 open DbManaged.ext
 
 type NpgsqlConnection with
