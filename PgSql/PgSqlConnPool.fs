@@ -6,7 +6,7 @@ open System.Threading.Channels
 open System.Collections.Concurrent
 open Npgsql
 open fsharper.op
-open fsharper.types
+open fsharper.typ
 open DbManaged
 
 /// PgSql数据库连接池

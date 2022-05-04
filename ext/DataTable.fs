@@ -2,7 +2,7 @@
 module internal DbManaged.ext.DataTable
 
 open System.Data
-open fsharper.types
+open fsharper.typ
 
 /// 从DataTable中取出第一个值
 let getFstValFrom (table: DataTable) =

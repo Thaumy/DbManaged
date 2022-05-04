@@ -4,7 +4,7 @@ open DbManaged
 open System.Data.Common
 open System.Threading.Tasks
 open fsharper.op
-open fsharper.types
+open fsharper.typ
 
 /// 数据库连接池
 type internal IDbConnPoolAsync =

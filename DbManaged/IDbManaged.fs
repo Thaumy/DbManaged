@@ -2,7 +2,7 @@
 
 open System.Data
 open System.Data.Common
-open fsharper.types
+open fsharper.typ
 
 /// PgSql数据库管理器
 type IDbManaged =
