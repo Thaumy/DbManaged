@@ -3,7 +3,7 @@ module dbm_test.PgSql.com
 open DbManaged
 open DbManaged.PgSql
 open fsharper.op.Boxing
-open fsharper.types
+open fsharper.typ
 
 let tab1 = "sch1.tab1"
 let size = 100u
@@ -22,5 +22,5 @@ let connect () =
     | _ -> ()
 
     match managed with
-    | None -> managed <- Some <| PgSqlManaged(unwrap msg, "dbm_test", size)
+    | None -> managed <- Some <| new PgSqlManaged(unwrap msg, "dbm_test", size)
     | _ -> ()

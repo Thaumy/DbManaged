@@ -27,6 +27,7 @@
         <Compile Include="MySql\Sync\get\getCol.fs" />
         <Compile Include="MySql\Sync\get\getFstRow.fs" />
         <Compile Include="MySql\Sync\get\getFstVal.fs" />
+        <Compile Include="MySql\Sync\queue\queueQuery.fs" />
         <Compile Include="PgSql\com.fs" />
         <Compile Include="PgSql\Async\init.fs" />
         <Compile Include="PgSql\Async\get\getFstVal.fs" />
@@ -47,6 +48,7 @@
         <Compile Include="PgSql\Sync\excute\executeInsert.fs" />
         <Compile Include="PgSql\Sync\excute\executeDelete.fs" />
         <Compile Include="PgSql\Sync\excute\executeUpdate.fs" />
+        <Compile Include="PgSql\Sync\queue\queueQuery.fs" />
     </ItemGroup>
 
     <ItemGroup>
