@@ -3,8 +3,8 @@ module dbm_test.PgSql.Sync.get.getFstRow
 open NUnit.Framework
 open dbm_test.PgSql
 open dbm_test.PgSql.Sync.init
-open fsharper.types
-open fsharper.types.Ord
+open fsharper.typ
+open fsharper.typ.Ord
 open fsharper.op.Boxing
 open DbManaged.PgSql.ext.String
 

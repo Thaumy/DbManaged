@@ -2,6 +2,7 @@
 
 open System
 open System.Data
+open System.Text
 open System.Data.Common
 open System.Threading.Tasks
 open MySql.Data.MySqlClient
@@ -15,21 +16,41 @@ open DbManaged.MySql.ext
 /// MySql数据库管理器
 type MySqlManaged private (pool: IDbConnPoolAsync) =
 
+    let queuedQuery = StringBuilder()
+
     /// 以连接信息构造
     new(msg) =
         let pool = MySqlConnPool(msg, "", 32u)
-        MySqlManaged(pool)
+        new MySqlManaged(pool)
     /// 以连接信息构造，并指定使用的数据库
     new(msg, schema) =
         let pool = MySqlConnPool(msg, schema, 32u)
-        MySqlManaged(pool)
+        new MySqlManaged(pool)
     /// 以连接信息构造，并指定使用的数据库和连接池大小
     new(msg, schema, poolSize) =
         let pool = MySqlConnPool(msg, schema, poolSize)
-        MySqlManaged(pool)
+        new MySqlManaged(pool)
 
     // 所有查询均不负责类型转换
 
+    interface IDbQueryQueue with
+
+        member self.queueQuery(sql: string) =
+            lock self (fun _ -> sql |> queuedQuery.Append |> ignore)
+
+        member self.executeLeftQueuedQuery() =
+            fun _ ->
+                let sql = queuedQuery.ToString()
+                queuedQuery.Clear() |> ignore
+
+                (self :> IDbManaged).executeAny sql |> unwrap
+                <| always true
+                |> ignore
+            |> lock self
+
+    interface IDisposable with
+        member self.Dispose() =
+            (self :> IDbQueryQueue).executeLeftQueuedQuery ()
 
     interface IDbManaged with
 

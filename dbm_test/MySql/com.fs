@@ -3,7 +3,7 @@ module dbm_test.MySql.com
 open DbManaged
 open DbManaged.MySql
 open fsharper.op.Boxing
-open fsharper.types
+open fsharper.typ
 
 let tab1 = "tab1"
 let size = 100u

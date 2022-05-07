@@ -3,8 +3,8 @@ module dbm_test.MySql.Async.execute.execute
 open NUnit.Framework
 open dbm_test.MySql
 open dbm_test.MySql.Async.init
-open fsharper.types
-open fsharper.types.Ord
+open fsharper.typ
+open fsharper.typ.Ord
 open fsharper.op.Boxing
 open DbManaged.MySql.ext.String
 

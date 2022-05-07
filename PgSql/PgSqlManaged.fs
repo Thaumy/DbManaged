@@ -1,7 +1,9 @@
 ﻿namespace DbManaged.PgSql
 
+open System
 open System.Data
 open System.Data.Common
+open System.Text
 open Npgsql
 open fsharper.typ
 open fsharper.op
@@ -12,18 +14,39 @@ open DbManaged.PgSql.ext
 /// PgSql数据库管理器
 type PgSqlManaged private (pool: IDbConnPoolAsync) =
 
+    let queuedQuery = StringBuilder()
+
     /// 以连接信息构造
     new(msg) =
         let pool = PgSqlConnPool(msg, "", 32u)
-        PgSqlManaged(pool)
+        new PgSqlManaged(pool)
     /// 以连接信息构造，并指定使用的数据库
     new(msg, database) =
         let pool = PgSqlConnPool(msg, database, 32u)
-        PgSqlManaged(pool)
+        new PgSqlManaged(pool)
     /// 以连接信息构造，并指定使用的数据库和连接池大小
     new(msg, database, poolSize) =
         let pool = PgSqlConnPool(msg, database, poolSize)
-        PgSqlManaged(pool)
+        new PgSqlManaged(pool)
+
+    interface IDbQueryQueue with
+
+        member self.queueQuery(sql: string) =
+            lock self (fun _ -> sql |> queuedQuery.Append |> ignore)
+
+        member self.executeLeftQueuedQuery() =
+            fun _ ->
+                let sql = queuedQuery.ToString()
+                queuedQuery.Clear() |> ignore
+
+                (self :> IDbManaged).executeAny sql |> unwrap
+                <| always true
+                |> ignore
+            |> lock self
+
+    interface IDisposable with
+        member self.Dispose() =
+            (self :> IDbQueryQueue).executeLeftQueuedQuery ()
 
     // 所有查询均不负责类型转换
     interface IDbManaged with
