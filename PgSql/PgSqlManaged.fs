@@ -18,15 +18,17 @@ type PgSqlManaged private (pool: IDbConnPoolAsync) =
 
     /// 以连接信息构造
     new(msg) =
-        let pool = PgSqlConnPool(msg, "", 32u)
+        let pool = new PgSqlConnPool(msg, "", 32u)
         new PgSqlManaged(pool)
     /// 以连接信息构造，并指定使用的数据库
     new(msg, database) =
-        let pool = PgSqlConnPool(msg, database, 32u)
+        let pool = new PgSqlConnPool(msg, database, 32u)
         new PgSqlManaged(pool)
     /// 以连接信息构造，并指定使用的数据库和连接池大小
     new(msg, database, poolSize) =
-        let pool = PgSqlConnPool(msg, database, poolSize)
+        let pool =
+            new PgSqlConnPool(msg, database, poolSize)
+
         new PgSqlManaged(pool)
 
     interface IDbQueryQueue with
@@ -47,8 +49,8 @@ type PgSqlManaged private (pool: IDbConnPoolAsync) =
     interface IDisposable with
         member self.Dispose() =
             (self :> IDbQueryQueue).executeLeftQueuedQuery ()
+            pool.Dispose()
 
-    // 所有查询均不负责类型转换
     interface IDbManaged with
 
         /// 查询到第一个值

@@ -9,10 +9,11 @@ open System.Collections.Concurrent
 open MySql.Data.MySqlClient
 open fsharper.op
 open fsharper.typ
+open fsharper.op.Eq
 open DbManaged
 
 /// PgSql数据库连接池
-type internal MySqlConnPool(msg: DbConnMsg, database, size: uint) =
+type internal MySqlConnPool(msg: IDbConnMsg, database, size: uint) =
 
     /// 连接字符串
     let connStr = //启用连接池，最大超时1秒
@@ -62,7 +63,7 @@ type internal MySqlConnPool(msg: DbConnMsg, database, size: uint) =
         busyConnections.TryRemove(conn.GetHashCode())
 
     /// 空闲连接表
-    let freeConnectionsAdd conn = freeConnections.Writer.WriteAsync conn
+    let mutable freeConnectionsAdd = freeConnections.Writer.WriteAsync
 
     /// 尝试取得空闲连接
     let freeConnectionsGet () =
@@ -111,18 +112,37 @@ type internal MySqlConnPool(msg: DbConnMsg, database, size: uint) =
 
         printfn $"[占用 {occ}: {freeAndBusy} /{size}] [压力 {pressure}: 忙{busy} 闲{free}]"
 
+    interface IDisposable with
+        /// 注销后不应进行新的查询
+        member self.Dispose() =
+            //对加入空闲连接表的请求进行拦截，注销要求加入的连接
+            freeConnectionsAdd <- fun conn -> conn.DisposeAsync()
 
+            let en =
+                freeConnections
+                    .Reader
+                    .ReadAllAsync()
+                    .GetAsyncEnumerator()
+
+            let rec loop () =
+                match en.MoveNextAsync().Result with
+                | true ->
+                    en.Current.DisposeAsync() |> ignore
+                    loop ()
+                | _ -> ()
+
+            loop ()
 
     interface IDbConnPool with
         member self.recycleConnection conn =
 
             match busyConnectionsTryRemove (coerce conn) with
-            | true, removed when removed.Equals conn ->
+            | true, removed when refEq removed conn ->
 
                 if getPoolPressureCoef () < 0.1 then
                     conn.DisposeAsync() //增加池压力
                 else
-                    //从busyConnections移除了连接，且被移除的连接是目标连接（此处的Equals判断引用相等性）
+                    //从busyConnections移除了连接，且被移除的连接是目标连接
                     freeConnectionsAdd (coerce conn) //加入空闲连接表
 
             | true, removed ->

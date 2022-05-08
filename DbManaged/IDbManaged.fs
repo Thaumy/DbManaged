@@ -1,11 +1,14 @@
 ﻿namespace DbManaged
 
+open System
 open System.Data
 open System.Data.Common
 open fsharper.typ
 
 /// PgSql数据库管理器
 type IDbManaged =
+
+    inherit IDisposable
 
     /// 所有查询均不负责类型转换
 

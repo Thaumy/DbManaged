@@ -12,7 +12,7 @@
         <Compile Include="ext\DbCommand.fs" />
         <Compile Include="ext\DbConnection.fs" />
 
-        <Compile Include="DbConnMsg.fs" />
+        <Compile Include="IDbConnMsg.fs" />
 
         <Compile Include="IDbQueryQueue.fs" />
 

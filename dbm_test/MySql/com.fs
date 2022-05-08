@@ -4,17 +4,18 @@ open DbManaged
 open DbManaged.MySql
 open fsharper.op.Boxing
 open fsharper.typ
+open dbm_test
 
 let tab1 = "tab1"
 let size = 100u
-let mutable msg = None
-let mutable managed: Option'<IDbManagedAsync> = None
+let mutable msg = Err ManagedNotInitException
+let mutable managed: Result'<IDbManagedAsync, exn> = Err ManagedNotInitException
 
 let connect () =
     match msg with
-    | None ->
+    | Err _ ->
         msg <-
-            Some
+            Ok
                 { Host = "localhost"
                   Port = 3306us
                   User = "root"
@@ -22,5 +23,8 @@ let connect () =
     | _ -> ()
 
     match managed with
-    | None -> managed <- Some <| MySqlManaged(unwrap msg, "dbm_test", size)
+    | Err _ ->
+        managed <-
+            Ok
+            <| new MySqlManaged(unwrap msg, "dbm_test", size)
     | _ -> ()
