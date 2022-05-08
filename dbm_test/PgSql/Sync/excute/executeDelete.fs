@@ -3,8 +3,8 @@ module dbm_test.PgSql.Sync.excute.executeDelete
 open NUnit.Framework
 open dbm_test.PgSql.com
 open dbm_test.PgSql.Sync.init
-open fsharper.types
-open fsharper.types.Ord
+open fsharper.typ
+open fsharper.typ.Ord
 open fsharper.op.Boxing
 
 [<OneTimeSetUp>]

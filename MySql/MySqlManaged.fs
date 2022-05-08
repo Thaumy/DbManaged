@@ -2,11 +2,12 @@
 
 open System
 open System.Data
+open System.Text
 open System.Data.Common
 open System.Threading.Tasks
 open MySql.Data.MySqlClient
 open fsharper.op.Coerce
-open fsharper.types
+open fsharper.typ
 open fsharper.op
 open DbManaged
 open DbManaged.ext
@@ -15,21 +16,40 @@ open DbManaged.MySql.ext
 /// MySql数据库管理器
 type MySqlManaged private (pool: IDbConnPoolAsync) =
 
+    let queuedQuery = StringBuilder()
+
     /// 以连接信息构造
     new(msg) =
-        let pool = MySqlConnPool(msg, "", 32u)
-        MySqlManaged(pool)
+        let pool = new MySqlConnPool(msg, "", 32u)
+        new MySqlManaged(pool)
     /// 以连接信息构造，并指定使用的数据库
     new(msg, schema) =
-        let pool = MySqlConnPool(msg, schema, 32u)
-        MySqlManaged(pool)
+        let pool = new MySqlConnPool(msg, schema, 32u)
+        new MySqlManaged(pool)
     /// 以连接信息构造，并指定使用的数据库和连接池大小
     new(msg, schema, poolSize) =
-        let pool = MySqlConnPool(msg, schema, poolSize)
-        MySqlManaged(pool)
+        let pool = new MySqlConnPool(msg, schema, poolSize)
+        new MySqlManaged(pool)
 
-    // 所有查询均不负责类型转换
+    interface IDbQueryQueue with
 
+        member self.queueQuery(sql: string) =
+            lock self (fun _ -> sql |> queuedQuery.Append |> ignore)
+
+        member self.executeLeftQueuedQuery() =
+            fun _ ->
+                let sql = queuedQuery.ToString()
+                queuedQuery.Clear() |> ignore
+
+                (self :> IDbManaged).executeAny sql |> unwrap
+                <| always true
+                |> ignore
+            |> lock self
+
+    interface IDisposable with
+        member self.Dispose() =
+            (self :> IDbQueryQueue).executeLeftQueuedQuery ()
+            pool.Dispose()
 
     interface IDbManaged with
 
@@ -46,9 +66,9 @@ type MySqlManaged private (pool: IDbConnPoolAsync) =
 
                 table
         /// 参数化查询到表
-        override self.executeSelect(sql, paras: (string * #obj) list) =
+        override self.executeSelect(sql, paras: (string * 't) list) =
             let paras' =
-                foldMap (fun (k: string, v: #obj) -> List' [ MySqlParameter(k, v) ]) paras
+                foldMap (fun (k: string, v) -> List' [ MySqlParameter(k, v :> obj) ]) paras
                 |> unwrap
 
             (self :> IDbManaged)
@@ -86,9 +106,9 @@ type MySqlManaged private (pool: IDbConnPoolAsync) =
                     | null -> None
                     | x -> Some x
         /// 参数化查询到第一个值
-        override self.getFstVal(sql, paras: (string * #obj) list) =
+        override self.getFstVal(sql, paras: (string * 't) list) =
             let paras' =
-                foldMap (fun (k: string, v: #obj) -> List' [ MySqlParameter(k, v) ]) paras
+                foldMap (fun (k: string, v) -> List' [ MySqlParameter(k, v :> obj) ]) paras
                 |> unwrap
 
             (self :> IDbManaged)
@@ -112,7 +132,7 @@ type MySqlManaged private (pool: IDbConnPoolAsync) =
             <| fun conn ->
                 conn.hostCommand
                 <| fun cmd ->
-                    cmd.CommandText <- $"SELECT `{targetKey}` FROM `{table}` WHERE `{whereKey}`=?whereKeyVal"
+                    cmd.CommandText <- $"SELECT `{targetKey}` FROM `{table}` WHERE `{whereKey}` = ?whereKeyVal"
 
                     cmd.Parameters.AddRange [| MySqlParameter("whereKeyVal", whereKeyVal) |]
 
@@ -130,9 +150,9 @@ type MySqlManaged private (pool: IDbConnPoolAsync) =
                        | rows when rows.Count <> 0 -> Some rows.[0]
                        | _ -> None
         /// 参数化查询到第一行
-        override self.getFstRow(sql, paras: (string * #obj) list) =
+        override self.getFstRow(sql, paras: (string * 't) list) =
             let paras' =
-                foldMap (fun (k: string, v: #obj) -> List' [ MySqlParameter(k, v) ]) paras
+                foldMap (fun (k: string, v) -> List' [ MySqlParameter(k, v :> obj) ]) paras
                 |> unwrap
 
             (self :> IDbManaged)
@@ -150,12 +170,12 @@ type MySqlManaged private (pool: IDbConnPoolAsync) =
         /// 查询到指定列
         override self.getCol(sql, key: string) =
             (self :> IDbManaged).executeSelect sql
-            >>= fun t -> t.getColByKey key |> Ok
+            >>= fun t -> getColFromByKey (t, key) |> Ok
 
         /// 参数化查询到指定列
-        override self.getCol(sql, key: string, paras: (string * #obj) list) =
+        override self.getCol(sql, key: string, paras: (string * 't) list) =
             let paras' =
-                foldMap (fun (k: string, v: #obj) -> List' [ MySqlParameter(k, v) ]) paras
+                foldMap (fun (k: string, v) -> List' [ MySqlParameter(k, v :> obj) ]) paras
                 |> unwrap
 
             (self :> IDbManaged)
@@ -163,18 +183,18 @@ type MySqlManaged private (pool: IDbConnPoolAsync) =
         /// 参数化查询到指定列
         override self.getCol(sql, key: string, paras: #DbParameter array) =
             (self :> IDbManaged).executeSelect (sql, paras)
-            >>= fun t -> t.getColByKey key |> Ok
+            >>= fun t -> Ok <| getColFromByKey (t, key)
 
 
         /// 查询到指定列
         override self.getCol(sql, index: uint) =
             (self :> IDbManaged).executeSelect sql
-            >>= fun t -> t.getColByIndex index |> Ok
+            >>= fun t -> getColFromByIndex (t, index) |> Ok
 
         /// 参数化查询到指定列
-        override self.getCol(sql, index: uint, paras: (string * #obj) list) =
+        override self.getCol(sql, index: uint, paras: (string * 't) list) =
             let paras' =
-                foldMap (fun (k: string, v: #obj) -> List' [ MySqlParameter(k, v) ]) paras
+                foldMap (fun (k: string, v) -> List' [ MySqlParameter(k, v :> obj) ]) paras
                 |> unwrap
 
             (self :> IDbManaged)
@@ -182,7 +202,7 @@ type MySqlManaged private (pool: IDbConnPoolAsync) =
         /// 参数化查询到指定列
         override self.getCol(sql, index: uint, paras: #DbParameter array) =
             (self :> IDbManaged).executeSelect (sql, paras)
-            >>= fun t -> t.getColByIndex index |> Ok
+            >>= fun t -> Ok <| getColFromByIndex (t, index)
 
 
         //partial...
@@ -196,9 +216,9 @@ type MySqlManaged private (pool: IDbConnPoolAsync) =
 
                     lazy (pool.recycleConnection conn) |> result |> Ok
 
-        override self.executeAny(sql, paras: (string * #obj) list) =
+        override self.executeAny(sql, paras: (string * 't) list) =
             let paras' =
-                foldMap (fun (k: string, v: #obj) -> List' [ MySqlParameter(k, v) ]) paras
+                foldMap (fun (k: string, v) -> List' [ MySqlParameter(k, v :> obj) ]) paras
                 |> unwrap
 
             (self :> IDbManaged)
@@ -267,9 +287,9 @@ type MySqlManaged private (pool: IDbConnPoolAsync) =
                     |> result
                     |> Ok
         /// TODO exp async api
-        member self.executeAnyAsync(sql, paras: (string * #obj) list) =
+        member self.executeAnyAsync(sql, paras: (string * 't) list) =
             let paras' =
-                foldMap (fun (k: string, v: #obj) -> List' [ MySqlParameter(k, v) ]) paras
+                foldMap (fun (k: string, v) -> List' [ MySqlParameter(k, v :> obj) ]) paras
                 |> unwrap
 
             (self :> IDbManagedAsync)

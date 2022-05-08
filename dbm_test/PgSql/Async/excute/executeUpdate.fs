@@ -3,8 +3,8 @@ module dbm_test.PgSql.Async.excute.executeUpdate
 open NUnit.Framework
 open dbm_test.PgSql
 open dbm_test.PgSql.Async.init
-open fsharper.types
-open fsharper.types.Ord
+open fsharper.typ
+open fsharper.typ.Ord
 open fsharper.op.Boxing
 
 [<OneTimeSetUp>]

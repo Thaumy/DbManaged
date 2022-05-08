@@ -1,9 +1,11 @@
 ﻿namespace DbManaged.PgSql
 
+open System
 open System.Data
 open System.Data.Common
+open System.Text
 open Npgsql
-open fsharper.types
+open fsharper.typ
 open fsharper.op
 open DbManaged
 open DbManaged.ext
@@ -12,20 +14,43 @@ open DbManaged.PgSql.ext
 /// PgSql数据库管理器
 type PgSqlManaged private (pool: IDbConnPoolAsync) =
 
+    let queuedQuery = StringBuilder()
+
     /// 以连接信息构造
     new(msg) =
-        let pool = PgSqlConnPool(msg, "", 32u)
-        PgSqlManaged(pool)
+        let pool = new PgSqlConnPool(msg, "", 32u)
+        new PgSqlManaged(pool)
     /// 以连接信息构造，并指定使用的数据库
     new(msg, database) =
-        let pool = PgSqlConnPool(msg, database, 32u)
-        PgSqlManaged(pool)
+        let pool = new PgSqlConnPool(msg, database, 32u)
+        new PgSqlManaged(pool)
     /// 以连接信息构造，并指定使用的数据库和连接池大小
     new(msg, database, poolSize) =
-        let pool = PgSqlConnPool(msg, database, poolSize)
-        PgSqlManaged(pool)
+        let pool =
+            new PgSqlConnPool(msg, database, poolSize)
 
-    // 所有查询均不负责类型转换
+        new PgSqlManaged(pool)
+
+    interface IDbQueryQueue with
+
+        member self.queueQuery(sql: string) =
+            lock self (fun _ -> sql |> queuedQuery.Append |> ignore)
+
+        member self.executeLeftQueuedQuery() =
+            fun _ ->
+                let sql = queuedQuery.ToString()
+                queuedQuery.Clear() |> ignore
+
+                (self :> IDbManaged).executeAny sql |> unwrap
+                <| always true
+                |> ignore
+            |> lock self
+
+    interface IDisposable with
+        member self.Dispose() =
+            (self :> IDbQueryQueue).executeLeftQueuedQuery ()
+            pool.Dispose()
+
     interface IDbManaged with
 
         /// 查询到第一个值
@@ -41,9 +66,9 @@ type PgSqlManaged private (pool: IDbConnPoolAsync) =
                     | null -> None
                     | x -> Some x
         /// 参数化查询到第一个值
-        member self.getFstVal(sql, paras: (string * #obj) list) =
+        member self.getFstVal(sql, paras: (string * 't) list) =
             let paras' =
-                foldMap (fun (k: string, v: #obj) -> List' [ NpgsqlParameter(k, v) ]) paras
+                foldMap (fun (k: string, v) -> List' [ NpgsqlParameter(k, v :> obj) ]) paras
                 |> unwrap
 
             (self :> IDbManaged)
@@ -67,7 +92,7 @@ type PgSqlManaged private (pool: IDbConnPoolAsync) =
             <| fun conn ->
                 conn.hostCommand
                 <| fun cmd ->
-                    cmd.CommandText <- $"SELECT {targetKey} FROM {table} WHERE {whereKey}=:whereKeyVal"
+                    cmd.CommandText <- $"SELECT {targetKey} FROM {table} WHERE {whereKey} = :whereKeyVal"
 
                     cmd.Parameters.AddRange [| NpgsqlParameter("whereKeyVal", whereKeyVal) |]
 
@@ -87,9 +112,9 @@ type PgSqlManaged private (pool: IDbConnPoolAsync) =
                        | rows when rows.Count <> 0 -> Some rows.[0]
                        | _ -> None
         /// 参数化查询到第一行
-        member self.getFstRow(sql, paras: (string * #obj) list) =
+        member self.getFstRow(sql, paras: (string * 't) list) =
             let paras' =
-                foldMap (fun (k: string, v: #obj) -> List' [ NpgsqlParameter(k, v) ]) paras
+                foldMap (fun (k: string, v) -> List' [ NpgsqlParameter(k, v :> obj) ]) paras
                 |> unwrap
 
             (self :> IDbManaged)
@@ -109,11 +134,11 @@ type PgSqlManaged private (pool: IDbConnPoolAsync) =
         /// 查询到指定列
         member self.getCol(sql, key: string) =
             (self :> IDbManaged).executeSelect sql
-            >>= fun t -> t.getColByKey key |> Ok
+            >>= fun t -> Ok <| getColFromByKey (t, key)
         /// 参数化查询到指定列
-        member self.getCol(sql, key: string, paras: (string * #obj) list) =
+        member self.getCol(sql, key: string, paras: (string * 't) list) =
             let paras' =
-                foldMap (fun (k: string, v: #obj) -> List' [ NpgsqlParameter(k, v) ]) paras
+                foldMap (fun (k: string, v) -> List' [ NpgsqlParameter(k, v :> obj) ]) paras
                 |> unwrap
 
             (self :> IDbManaged)
@@ -121,17 +146,17 @@ type PgSqlManaged private (pool: IDbConnPoolAsync) =
         /// 参数化查询到指定列
         member self.getCol(sql, key: string, paras: #DbParameter array) =
             (self :> IDbManaged).executeSelect (sql, paras)
-            >>= fun t -> t.getColByKey key |> Ok
+            >>= fun t -> getColFromByKey (t, key) |> Ok
 
 
         /// 查询到指定列
         member self.getCol(sql, index: uint) =
             (self :> IDbManaged).executeSelect sql
-            >>= fun t -> t.getColByIndex index |> Ok
+            >>= fun t -> Ok <| getColFromByIndex (t, index)
         /// 参数化查询到指定列
-        member self.getCol(sql, index: uint, paras: (string * #obj) list) =
+        member self.getCol(sql, index: uint, paras: (string * 't) list) =
             let paras' =
-                foldMap (fun (k: string, v: #obj) -> List' [ NpgsqlParameter(k, v) ]) paras
+                foldMap (fun (k: string, v) -> List' [ NpgsqlParameter(k, v :> obj) ]) paras
                 |> unwrap
 
             (self :> IDbManaged)
@@ -139,7 +164,7 @@ type PgSqlManaged private (pool: IDbConnPoolAsync) =
         /// 参数化查询到指定列
         member self.getCol(sql, index: uint, paras: #DbParameter array) =
             (self :> IDbManaged).executeSelect (sql, paras)
-            >>= fun t -> t.getColByIndex index |> Ok
+            >>= fun t -> getColFromByIndex (t, index) |> Ok
 
         //partial...
 
@@ -151,9 +176,9 @@ type PgSqlManaged private (pool: IDbConnPoolAsync) =
 
                     lazy (pool.recycleConnection conn) |> result |> Ok
         /// 从连接池取用 NpgsqlConnection 并在其上调用同名方法
-        member self.executeAny(sql, paras: (string * #obj) list) =
+        member self.executeAny(sql, paras: (string * 't) list) =
             let paras' =
-                foldMap (fun (k: string, v: #obj) -> List' [ NpgsqlParameter(k, v) ]) paras
+                foldMap (fun (k: string, v) -> List' [ NpgsqlParameter(k, v :> obj) ]) paras
                 |> unwrap
 
             (self :> IDbManaged)
@@ -179,9 +204,9 @@ type PgSqlManaged private (pool: IDbConnPoolAsync) =
 
                 table
         /// 参数化查询到表
-        member self.executeSelect(sql, paras: (string * #obj) list) =
+        member self.executeSelect(sql, paras: (string * 't) list) =
             let paras' =
-                foldMap (fun (k: string, v: #obj) -> List' [ NpgsqlParameter(k, v) ]) paras
+                foldMap (fun (k: string, v) -> List' [ NpgsqlParameter(k, v :> obj) ]) paras
                 |> unwrap
 
             (self :> IDbManaged)
@@ -259,9 +284,9 @@ type PgSqlManaged private (pool: IDbConnPoolAsync) =
                     |> result
                     |> Ok
         /// TODO exp async api
-        member self.executeAnyAsync(sql, paras: (string * #obj) list) =
+        member self.executeAnyAsync(sql, paras: (string * 't) list) =
             let paras' =
-                foldMap (fun (k: string, v: #obj) -> List' [ NpgsqlParameter(k, v) ]) paras
+                foldMap (fun (k: string, v) -> List' [ NpgsqlParameter(k, v :> obj) ]) paras
                 |> unwrap
 
             (self :> IDbManagedAsync)

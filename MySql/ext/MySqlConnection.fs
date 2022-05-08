@@ -4,25 +4,25 @@ module internal DbManaged.MySql.ext.MySqlConnection
 open System.Data.Common
 open MySql.Data.MySqlClient
 open fsharper.op
-open fsharper.types
+open fsharper.typ
 open DbManaged.ext
 
 type MySqlConnection with
 
     /// 将 table 中 whereKey 等于 whereKeyVal 的行的 setKey 更新为 setKeyVal
     /// 返回的闭包用于检测受影响的行数，当断言成立时闭包会提交事务并返回受影响的行数
-    member self.executeUpdate(table: string, (setKey: string, setKeyVal: #obj), (whereKey: string, whereKeyVal: #obj)) =
+    member self.executeUpdate(table: string, (setKey: string, setKeyVal), (whereKey: string, whereKeyVal)) =
         (self :> DbConnection).useCommand
         <| fun cmd' ->
             let cmd: MySqlCommand = coerce cmd'
 
             cmd.CommandText <-
                 $"UPDATE `{table}` \
-                     SET `{setKey}`=?setKeyVal \
-                 WHERE `{whereKey}`=?whereKeyVal"
+                     SET   `{setKey}` = ?setKeyVal \
+                   WHERE `{whereKey}` = ?whereKeyVal"
 
-            [| MySqlParameter("setKeyVal", setKeyVal)
-               MySqlParameter("whereKeyVal", whereKeyVal) |]
+            [| MySqlParameter("setKeyVal", setKeyVal :> obj)
+               MySqlParameter("whereKeyVal", whereKeyVal :> obj) |]
             |> cmd.Parameters.AddRange
 
             cmd.useTransaction
@@ -46,8 +46,8 @@ type MySqlConnection with
 
     /// 将 table 中 key 等于 oldValue 的行的 key 更新为 newValue
     /// 返回的闭包用于检测受影响的行数，当断言成立时闭包会提交事务并返回受影响的行数
-    member self.executeUpdate(table, key, newValue: 'v, oldValue: 'v) =
-        (table, (key, newValue :> obj), (key, oldValue :> obj))
+    member self.executeUpdate(table, key, newValue: 'V, oldValue: 'V) =
+        (table, (key, newValue), (key, oldValue))
         |> self.executeUpdate
 
     /// 在 table 中插入一行
@@ -62,7 +62,7 @@ type MySqlConnection with
                 |> foldl
                     (fun (acc_k, acc_v) (k: string, v) ->
 
-                        cmd.Parameters.AddWithValue(k, v) //添加参数
+                        cmd.Parameters.AddWithValue(k, v :> obj) //添加参数
                         |> ignore
 
                         //acc_k 为VALUES语句前半部分
@@ -102,9 +102,9 @@ type MySqlConnection with
         <| fun cmd' ->
             let cmd: MySqlCommand = coerce cmd'
 
-            cmd.CommandText <- $"DELETE FROM `{table}` WHERE `{whereKey}`=?Value"
+            cmd.CommandText <- $"DELETE FROM `{table}` WHERE `{whereKey}` = ?whereKeyVal"
 
-            cmd.Parameters.AddWithValue("Value", whereKeyVal) //添加参数
+            cmd.Parameters.AddWithValue("whereKeyVal", whereKeyVal) //添加参数
             |> ignore
 
             cmd.useTransaction

@@ -3,9 +3,10 @@ module dbm_test.PgSql.Async.get.getFstRow
 open NUnit.Framework
 open dbm_test.PgSql
 open dbm_test.PgSql.Async.init
-open fsharper.types
-open fsharper.types.Ord
+open fsharper.typ
+open fsharper.typ.Ord
 open fsharper.op.Boxing
+open DbManaged.PgSql.ext.String
 
 [<OneTimeSetUp>]
 let OneTimeSetUp () = com.connect ()
@@ -36,7 +37,7 @@ let getFstRow_overload2_test () =
         com
             .managed
             .unwrap()
-            .getFstRow ($"SELECT col1,col2 FROM {com.tab1} WHERE col3 = :col3", paras)
+            .getFstRow (normalizeSql $"SELECT col1,col2 FROM {com.tab1} WHERE col3 = <col3>", paras)
         |> unwrap2
 
     Assert.AreEqual(0, result.["col1"])
