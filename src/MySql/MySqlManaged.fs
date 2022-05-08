@@ -16,7 +16,7 @@ open DbManaged.MySql.ext
 /// MySql数据库管理器
 type MySqlManaged private (pool: IDbConnPoolAsync) =
 
-    let queuedQuery = StringBuilder()
+    let queryQueue = StringBuilder()
 
     /// 以连接信息构造
     new(msg) =
@@ -34,12 +34,12 @@ type MySqlManaged private (pool: IDbConnPoolAsync) =
     interface IDbQueryQueue with
 
         member self.queueQuery(sql: string) =
-            lock self (fun _ -> sql |> queuedQuery.Append |> ignore)
+            lock self (fun _ -> sql |> queryQueue.Append |> ignore)
 
-        member self.executeLeftQueuedQuery() =
+        member self.forceLeftQueuedQuery() =
             fun _ ->
-                let sql = queuedQuery.ToString()
-                queuedQuery.Clear() |> ignore
+                let sql = queryQueue.ToString()
+                queryQueue.Clear() |> ignore
 
                 (self :> IDbManaged).executeAny sql |> unwrap
                 <| always true
@@ -48,7 +48,7 @@ type MySqlManaged private (pool: IDbConnPoolAsync) =
 
     interface IDisposable with
         member self.Dispose() =
-            (self :> IDbQueryQueue).executeLeftQueuedQuery ()
+            (self :> IDbQueryQueue).forceLeftQueuedQuery ()
             pool.Dispose()
 
     interface IDbManaged with
