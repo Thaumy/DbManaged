@@ -10,4 +10,4 @@ type IDbQueryQueue =
     abstract member queueQuery : sql: string -> unit
 
     /// 强制执行队列中剩余的sql语句
-    abstract member executeLeftQueuedQuery : unit -> unit
+    abstract member forceLeftQueuedQuery : unit -> unit
