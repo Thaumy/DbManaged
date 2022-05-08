@@ -1,6 +1,6 @@
-namespace DbManaged.MySql
+namespace DbManaged.PgSql
 
-type MySqlConnMsg =
+type PgSqlConnMsg =
     { Host: string
       Port: uint16
       User: string
