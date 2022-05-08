@@ -6,8 +6,8 @@ open DbManaged
 open DbManaged.PgSql
 open dbm_test.MySql.com
 open fsharper.op.Boxing
-open fsharper.types.Ord
-open fsharper.types
+open fsharper.typ.Ord
+open fsharper.typ
 open fsharper.op.Async
 open fsharper.op.Fmt
 

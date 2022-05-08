@@ -3,9 +3,10 @@ module dbm_test.MySql.Sync.execute.execute
 open NUnit.Framework
 open dbm_test.MySql
 open dbm_test.MySql.Sync.init
-open fsharper.types
-open fsharper.types.Ord
+open fsharper.typ
+open fsharper.typ.Ord
 open fsharper.op.Boxing
+open DbManaged.MySql.ext.String
 
 [<OneTimeSetUp>]
 let OneTimeSetUp () = com.connect ()
@@ -51,8 +52,9 @@ let executeAny_overload2_test () =
                 .managed
                 .unwrap()
                 .executeAny (
-                    $"INSERT INTO {com.tab1} ( col1,  col2,  col3,  col4)\
-                                    VALUES (?col1, ?col2, ?col3, ?col4);",
+                    normalizeSql
+                        $"INSERT INTO {com.tab1} ( col1,  col2,  col3,  col4) \
+                                          VALUES (<col1>,<col2>,<col3>,<col4>);",
                     paras
                 )
 

@@ -3,8 +3,8 @@ module dbm_test.MySql.Sync.excute.executeDelete
 open NUnit.Framework
 open dbm_test.MySql.com
 open dbm_test.MySql.Sync.init
-open fsharper.types
-open fsharper.types.Ord
+open fsharper.typ
+open fsharper.typ.Ord
 open fsharper.op.Boxing
 
 [<OneTimeSetUp>]

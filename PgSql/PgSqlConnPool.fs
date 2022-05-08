@@ -1,16 +1,18 @@
 namespace DbManaged.PgSql
 
+open System
 open System.Data.Common
 open System.Threading.Tasks
 open System.Threading.Channels
 open System.Collections.Concurrent
 open Npgsql
 open fsharper.op
-open fsharper.types
+open fsharper.typ
+open fsharper.op.Eq
 open DbManaged
 
 /// PgSql数据库连接池
-type internal PgSqlConnPool(msg: DbConnMsg, database, size: uint) =
+type internal PgSqlConnPool(msg: IDbConnMsg, database, size: uint) =
 
     /// 连接字符串
     let connStr = //启用连接池，最大超时1秒
@@ -22,10 +24,10 @@ type internal PgSqlConnPool(msg: DbConnMsg, database, size: uint) =
                  Pooling = True;\
              MaxPoolSize = {size};\
        "
-        + if database = "" then //TODO 等号右侧空格测试
+        + if database = "" then
               ""
           else
-              $"DataBase ={database};"
+              $"DataBase = {database};"
 
     /// 空闲连接表
     let freeConnections =
@@ -55,14 +57,14 @@ type internal PgSqlConnPool(msg: DbConnMsg, database, size: uint) =
     let busyConnectionsTryAdd conn =
         busyConnections.TryAdd(conn.GetHashCode(), conn)
 
-    /// 忙碌连接表移除
+    /// 从忙碌连接表移除
     let busyConnectionsTryRemove (conn: NpgsqlConnection) =
         busyConnections.TryRemove(conn.GetHashCode())
 
-    /// 空闲连接表
-    let freeConnectionsAdd conn = freeConnections.Writer.WriteAsync conn
+    /// 添加到空闲连接表
+    let mutable freeConnectionsAdd = freeConnections.Writer.WriteAsync
 
-    /// 尝试取得空闲连接
+    /// 取得空闲连接
     let freeConnectionsGet () =
         freeConnections.Reader.ReadAsync().AsTask().Result
 
@@ -109,18 +111,37 @@ type internal PgSqlConnPool(msg: DbConnMsg, database, size: uint) =
 
         printfn $"[占用 {occ}: {freeAndBusy} /{size}] [压力 {pressure}: 忙{busy} 闲{free}]"
 
+    interface IDisposable with
+        /// 注销后不应进行新的查询
+        member self.Dispose() =
+            //对加入空闲连接表的请求进行拦截，注销要求加入的连接
+            freeConnectionsAdd <- fun conn -> conn.DisposeAsync()
 
+            let en =
+                freeConnections
+                    .Reader
+                    .ReadAllAsync()
+                    .GetAsyncEnumerator()
+
+            let rec loop () =
+                match en.MoveNextAsync().Result with
+                | true ->
+                    en.Current.DisposeAsync() |> ignore
+                    loop ()
+                | _ -> ()
+
+            loop ()
 
     interface IDbConnPool with
         member self.recycleConnection conn =
 
             match busyConnectionsTryRemove (coerce conn) with
-            | true, removed when removed.Equals conn ->
+            | true, removed when refEq removed conn ->
 
                 if getPoolPressureCoef () < 0.3 then
                     conn.DisposeAsync() //增加池压力
                 else
-                    //从busyConnections移除了连接，且被移除的连接是目标连接（此处的Equals判断引用相等性）
+                    //从busyConnections移除了连接，且被移除的连接是目标连接
                     freeConnectionsAdd (coerce conn) //加入空闲连接表
 
             | true, removed ->
@@ -133,16 +154,13 @@ type internal PgSqlConnPool(msg: DbConnMsg, database, size: uint) =
             | false, _ ->
                 (*移除失败，这意味着下列情况之一：
                     1.曾经试图将这个连接加入busyConnections，但由于哈希冲突失败了
-                    2.这个连接根本不属于连接池
+                    2.这个连接根本不由连接池产生
                     对于这样的连接，直接进行销毁
                     不进行回收的原因如下：
                     *使用该连接可能进一步引发哈希冲突
                     *该连接不受连接池管制，可能引发安全性问题*)
                 conn.DisposeAsync()
             |> ignore
-
-        /// TODO exp async api
-
 
         /// 从连接池取用 NpgsqlConnection
         member self.getConnection() =

@@ -12,21 +12,24 @@
         <Compile Include="ext\DbCommand.fs" />
         <Compile Include="ext\DbConnection.fs" />
 
-        <Compile Include="DbConnMsg.fs" />
+        <Compile Include="IDbConnMsg.fs" />
+
+        <Compile Include="IDbQueryQueue.fs" />
 
         <Compile Include="DbConnPool\IDbConnPool.fs" />
         <Compile Include="DbConnPool\IDbConnPoolAsync.fs" />
         <Compile Include="DbManaged\IDbManaged.fs" />
         <Compile Include="DbManaged\IDbManagedAsync.fs" />
+        <Compile Include="PgSql\ext\String.fs" />
 
         <Compile Include="PgSql\ext\NpgsqlConnection.fs" />
         <Compile Include="PgSql\PgSqlConnPool.fs" />
         <Compile Include="PgSql\PgSqlManaged.fs" />
+        <Compile Include="MySql\ext\String.fs" />
 
         <Compile Include="MySql\ext\MySqlConnection.fs" />
         <Compile Include="MySql\MySqlConnPool.fs" />
-        <Compile Include="MySql\MySqlManaged.fs" />
-
+        <Compile Include="MySql\MySqlManaged.fs" /> 
 
     </ItemGroup>
 
@@ -37,9 +40,9 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Reference Include="fsharper, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null">
-            <HintPath>..\fsharper\bin\Debug\net6.0\fsharper.dll</HintPath>
-        </Reference>
+      <Reference Include="fsharper, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null">
+        <HintPath>..\fsharper\bin\Debug\net6.0\fsharper.dll</HintPath>
+      </Reference>
     </ItemGroup>
 
 </Project>

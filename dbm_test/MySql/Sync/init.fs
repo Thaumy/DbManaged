@@ -4,8 +4,8 @@ open DbManaged
 open DbManaged.MySql
 open dbm_test.MySql.com
 open fsharper.op.Boxing
-open fsharper.types.Ord
-open fsharper.types
+open fsharper.typ.Ord
+open fsharper.typ
 open fsharper.op.Fmt
 
 

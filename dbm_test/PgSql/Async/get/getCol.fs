@@ -3,9 +3,10 @@ module dbm_test.PgSql.Async.get.getCol
 open NUnit.Framework
 open dbm_test.PgSql
 open dbm_test.PgSql.Async.init
-open fsharper.types
-open fsharper.types.Ord
+open fsharper.typ
+open fsharper.typ.Ord
 open fsharper.op.Boxing
+open DbManaged.PgSql.ext.String
 
 [<OneTimeSetUp>]
 let OneTimeSetUp () = com.connect ()
@@ -35,7 +36,7 @@ let getCol_overload2_test () =
         com
             .managed
             .unwrap()
-            .getCol ($"SELECT col3 FROM {com.tab1} WHERE col3 = :col3", 0u, paras)
+            .getCol (normalizeSql $"SELECT col3 FROM {com.tab1} WHERE col3 = <col3>", 0u, paras)
         |> unwrap2
 
     for it in result do
@@ -65,7 +66,7 @@ let getCol_overload5_test () =
         com
             .managed
             .unwrap()
-            .getCol ($"SELECT col3 FROM {com.tab1} WHERE col3 = :col3", "col3", paras)
+            .getCol (normalizeSql $"SELECT col3 FROM {com.tab1} WHERE col3 = <col3>", "col3", paras)
         |> unwrap2
 
     for it in result do

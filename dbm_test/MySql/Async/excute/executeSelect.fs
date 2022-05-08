@@ -3,9 +3,9 @@ module dbm_test.MySql.Async.get.executeSelect
 open NUnit.Framework
 open dbm_test.MySql
 open dbm_test.MySql.Async.init
-open fsharper.types
-open fsharper.types.Ord
+open fsharper.typ
 open fsharper.op.Boxing
+open DbManaged.MySql.ext.String
 
 [<OneTimeSetUp>]
 let OneTimeSetUp () = com.connect ()
@@ -35,7 +35,7 @@ let executeSelect_overload2_test () =
         com
             .managed
             .unwrap()
-            .executeSelect ($"SELECT col1,col2 FROM {com.tab1} WHERE col3 = ?col3", paras)
+            .executeSelect (normalizeSql $"SELECT col1,col2 FROM {com.tab1} WHERE col3 = <col3>", paras)
         |> unwrap
 
     for row in result.Rows do

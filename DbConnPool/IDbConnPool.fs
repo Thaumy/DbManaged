@@ -1,12 +1,15 @@
 namespace DbManaged
 
+open System
 open System.Data.Common
 open fsharper.op
-open fsharper.types
+open fsharper.typ
 
 /// 数据库连接池
 type internal IDbConnPool =
 
+    inherit IDisposable
+    
     /// 获取数据库连接
     abstract member getConnection : unit -> Result'<DbConnection, exn>
 
