@@ -20,18 +20,16 @@ type MySqlManaged private (pool: IDbConnPoolAsync) =
 
     /// 以连接信息构造
     new(msg) =
-        let pool = MySqlConnPool(msg, "", 32u)
+        let pool = new MySqlConnPool(msg, "", 32u)
         new MySqlManaged(pool)
     /// 以连接信息构造，并指定使用的数据库
     new(msg, schema) =
-        let pool = MySqlConnPool(msg, schema, 32u)
+        let pool = new MySqlConnPool(msg, schema, 32u)
         new MySqlManaged(pool)
     /// 以连接信息构造，并指定使用的数据库和连接池大小
     new(msg, schema, poolSize) =
-        let pool = MySqlConnPool(msg, schema, poolSize)
+        let pool = new MySqlConnPool(msg, schema, poolSize)
         new MySqlManaged(pool)
-
-    // 所有查询均不负责类型转换
 
     interface IDbQueryQueue with
 
@@ -51,6 +49,7 @@ type MySqlManaged private (pool: IDbConnPoolAsync) =
     interface IDisposable with
         member self.Dispose() =
             (self :> IDbQueryQueue).executeLeftQueuedQuery ()
+            pool.Dispose()
 
     interface IDbManaged with
 

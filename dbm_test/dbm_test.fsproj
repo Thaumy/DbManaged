@@ -8,6 +8,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <Compile Include="err.fs" />
         <Compile Include="MySql\com.fs" />
         <Compile Include="MySql\Async\init.fs" />
         <Compile Include="MySql\Async\excute\executeAny.fs" />
@@ -61,9 +62,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Reference Include="DbManaged, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null">
-            <HintPath>..\bin\Debug\net6.0\DbManaged.dll</HintPath>
-        </Reference>
         <Reference Include="fsharper, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null">
             <HintPath>..\..\fsharper\bin\Debug\net6.0\fsharper.dll</HintPath>
         </Reference>

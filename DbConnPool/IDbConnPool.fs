@@ -1,5 +1,6 @@
 namespace DbManaged
 
+open System
 open System.Data.Common
 open fsharper.op
 open fsharper.typ
@@ -7,6 +8,8 @@ open fsharper.typ
 /// 数据库连接池
 type internal IDbConnPool =
 
+    inherit IDisposable
+    
     /// 获取数据库连接
     abstract member getConnection : unit -> Result'<DbConnection, exn>
 
@@ -15,7 +18,7 @@ type internal IDbConnPool =
 
 [<AutoOpen>]
 module internal ext_IDbConnPool =
-    
+
     type internal IDbConnPool with
 
         /// 创建一个数据库连接, 并以其为参数执行闭包 f
