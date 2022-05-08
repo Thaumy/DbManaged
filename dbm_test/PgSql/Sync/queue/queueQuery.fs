@@ -4,7 +4,6 @@ open DbManaged
 open NUnit.Framework
 open dbm_test.PgSql
 open dbm_test.PgSql.Sync.init
-open fsharper.typ
 open fsharper.op.Boxing
 
 [<OneTimeSetUp>]
