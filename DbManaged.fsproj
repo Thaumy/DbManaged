@@ -9,35 +9,35 @@
 
     <ItemGroup>
         
-        <Compile Include="src\ext\DataTable.fs"/>
-        <Compile Include="src\ext\DbCommand.fs"/>
-        <Compile Include="src\ext\DbConnection.fs"/>
+        <Compile Include="src\ext\DataTable.fs" />
+        <Compile Include="src\ext\DbCommand.fs" />
+        <Compile Include="src\ext\DbConnection.fs" />
 
-        <Compile Include="src\DbConnMsg.fs"/>
+        <Compile Include="src\DbConnMsg.fs" />
 
-        <Compile Include="src\IDbQueryQueue.fs"/>
+        <Compile Include="src\IDbQueryQueue.fs" />
 
-        <Compile Include="src\DbConnPool\IDbConnPool.fs"/>
-        <Compile Include="src\DbConnPool\IDbConnPoolAsync.fs"/>
-        <Compile Include="src\DbManaged\IDbManaged.fs"/>
-        <Compile Include="src\DbManaged\IDbManagedAsync.fs"/>
-        <Compile Include="src\PgSql\ext\String.fs"/>
+        <Compile Include="src\DbConnPool\IDbConnPool.fs" />
+        <Compile Include="src\DbConnPool\IDbConnPoolAsync.fs" />
+        <Compile Include="src\DbConnPool\AnySqlConnPool.fs" />
+        <Compile Include="src\DbManaged\IDbManaged.fs" />
+        <Compile Include="src\DbManaged\IDbManagedAsync.fs" />
+        <Compile Include="src\PgSql\ext\String.fs" />
 
-        <Compile Include="src\PgSql\ext\NpgsqlConnection.fs"/>
-        <Compile Include="src\PgSql\PgSqlConnPool.fs"/>
-        <Compile Include="src\PgSql\PgSqlManaged.fs"/>
-        <Compile Include="src\MySql\ext\String.fs"/>
+        <Compile Include="src\PgSql\ext\NpgsqlConnection.fs" />
+        <Compile Include="src\PgSql\PgSqlManaged.fs" />
+        <Compile Include="src\MySql\ext\String.fs" />
 
-        <Compile Include="src\MySql\ext\MySqlConnection.fs"/>
-        <Compile Include="src\MySql\MySqlConnPool.fs"/>
-        <Compile Include="src\MySql\MySqlManaged.fs"/>
+        <Compile Include="src\MySql\ext\MySqlConnection.fs" />
+        <Compile Include="src\MySql\MySqlManaged.fs" />
+        <Compile Include="src\AnySql\AnySqlManaged.fs" />
 
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="MySql.Data" Version="8.0.28"/>
-        <PackageReference Include="Npgsql" Version="7.0.0-preview.3"/>
-        <PackageReference Update="FSharp.Core" Version="6.0.4-beta.22181.2"/>
+        <PackageReference Include="MySql.Data" Version="8.0.28" />
+        <PackageReference Include="Npgsql" Version="7.0.0-preview.3" />
+        <PackageReference Update="FSharp.Core" Version="6.0.4-beta.22181.2" />
     </ItemGroup>
 
     <ItemGroup>

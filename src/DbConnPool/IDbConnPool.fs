@@ -4,12 +4,20 @@ open System
 open System.Data.Common
 open fsharper.op
 open fsharper.typ
+open fsharper.op.Alias
 
 /// 数据库连接池
 type internal IDbConnPool =
 
     inherit IDisposable
-    
+
+    /// 池压力系数
+    /// 池瞬时压力越大，该系数越接近1，反之接近0
+    abstract member pressure : f64
+    /// 池占用率
+    /// 池冗余量越大，该系数越接近1，反之接近0
+    abstract member occupancy : f64
+
     /// 获取数据库连接
     abstract member getConnection : unit -> Result'<DbConnection, exn>
 

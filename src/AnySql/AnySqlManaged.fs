@@ -1,25 +1,24 @@
-﻿namespace DbManaged.MySql
+﻿namespace DbManaged.AnySql
 
+(*
 open System
 open System.Data
-open System.Text
 open System.Threading
-open System.Threading.Tasks
 open System.Data.Common
 open System.Threading.Tasks
-open MySql.Data.MySqlClient
+open System.Text
+open Npgsql
 open fsharper.op
 open fsharper.typ
 open fsharper.op.Alias
-open fsharper.op.Coerce
 open DbManaged
 open DbManaged.ext
-open DbManaged.AnySql
-open DbManaged.MySql.ext
+open DbManaged.PgSql.ext
 
-/// MySql数据库管理器
-type MySqlManaged private (pool: IDbConnPoolAsync, syncSpan: u32) as self =
-
+/// PgSql数据库管理器
+type AnySqlManaged<'ParaType> private (pool: IDbConnPoolAsync, syncSpan: u32) as self =
+    //TODO 实现一个按照时间间隔同步的查询队列，为此，队列需要实现拆分和异步化，并将接口泛化
+    //另外，可以通过类型参数的方式简化构造，不再区分Myql和Pgql控制器
     let queryQueue = StringBuilder()
 
     let _ =
@@ -31,28 +30,24 @@ type MySqlManaged private (pool: IDbConnPoolAsync, syncSpan: u32) as self =
 
     /// 以连接信息构造
     new(msg) =
-        let pool =
-            new AnySqlConnPool<MySqlConnection>(msg, 32u)
-
-        new MySqlManaged(pool, 0u)
+        let pool = new AnySqlConnPool(msg, 32u)
+        new AnySqlManaged(pool, 0u)
     /// 以连接信息构造，并指定使用的数据库
     new(msg, database: string) =
-        let pool =
-            new AnySqlConnPool<MySqlConnection>(msg, database, 32u)
-
-        new MySqlManaged(pool, 0u)
+        let pool = new AnySqlConnPool(msg, database, 32u)
+        new AnySqlManaged(pool, 0u)
     /// 以连接信息构造，并指定使用的数据库和连接池大小
     new(msg, database, poolSize) =
         let pool =
-            new AnySqlConnPool<MySqlConnection>(msg, database, poolSize)
+            new AnySqlConnPool(msg, database, poolSize)
 
-        new MySqlManaged(pool, 0u)
+        new AnySqlManaged(pool, 0u)
     /// 以连接信息构造，并指定使用的数据库和连接池大小，附加队列同步间隔
     new(msg, database, poolSize, syncSpan) =
         let pool =
-            new AnySqlConnPool<MySqlConnection>(msg, database, poolSize)
+            new AnySqlConnPool(msg, database, poolSize)
 
-        new MySqlManaged(pool, syncSpan)
+        new AnySqlManaged(pool, syncSpan)
 
     interface IDbQueryQueue with
 
@@ -76,48 +71,8 @@ type MySqlManaged private (pool: IDbConnPoolAsync, syncSpan: u32) as self =
 
     interface IDbManaged with
 
-        /// 查询到表
-        override self.executeSelect sql =
-            pool.hostConnection
-            <| fun conn' ->
-                let conn: MySqlConnection = coerce conn'
-                let table = new DataTable()
-
-                table
-                |> (new MySqlDataAdapter(sql, conn)).Fill
-                |> ignore
-
-                table
-        /// 参数化查询到表
-        override self.executeSelect(sql, paras: (string * 't) list) =
-            let paras' =
-                foldMap (fun (k: string, v) -> List' [ MySqlParameter(k, v :> obj) ]) paras
-                |> unwrap
-
-            (self :> IDbManaged)
-                .executeSelect (sql, paras'.toArray ())
-        /// 参数化查询到表
-        override self.executeSelect(sql, para: #DbParameter array) =
-            pool.hostConnection
-            <| fun conn' ->
-                let conn: MySqlConnection = coerce conn'
-
-                conn.hostCommand
-                <| fun cmd' ->
-                    let cmd: MySqlCommand = coerce cmd'
-
-                    let table = new DataTable()
-
-                    cmd.CommandText <- sql
-                    cmd.Parameters.AddRange para //添加参数
-
-                    (new MySqlDataAdapter(cmd)).Fill table |> ignore
-
-                    table
-
-
         /// 查询到第一个值
-        override self.getFstVal sql =
+        member self.getFstVal sql =
             pool.hostConnection
             <| fun conn ->
                 conn.hostCommand
@@ -129,42 +84,44 @@ type MySqlManaged private (pool: IDbConnPoolAsync, syncSpan: u32) as self =
                     | null -> None
                     | x -> Some x
         /// 参数化查询到第一个值
-        override self.getFstVal(sql, paras: (string * 't) list) =
+        member self.getFstVal(sql, paras: (string * 't) list) =
             let paras' =
-                foldMap (fun (k: string, v) -> List' [ MySqlParameter(k, v :> obj) ]) paras
+                foldMap (fun (k: string, v) -> List' [ NpgsqlParameter(k, v :> obj) ]) paras
                 |> unwrap
 
             (self :> IDbManaged)
                 .getFstVal (sql, paras'.toArray ())
         /// 参数化查询到第一个值
-        override self.getFstVal(sql, para: #DbParameter array) =
+        member self.getFstVal(sql, paras: #DbParameter array) =
             pool.hostConnection
             <| fun conn ->
                 conn.hostCommand
                 <| fun cmd ->
                     cmd.CommandText <- sql
-                    cmd.Parameters.AddRange para
+                    cmd.Parameters.AddRange paras
 
                     //如果结果集为空，ExecuteScalar返回null
                     match cmd.ExecuteScalar() with
                     | null -> None
                     | x -> Some x
         /// 参数化查询到第一个值
-        override self.getFstVal(table: string, targetKey: string, (whereKey: string, whereKeyVal: 'V)) =
+        member self.getFstVal(table: string, targetKey: string, (whereKey: string, whereKeyVal: 'V)) =
             pool.hostConnection
             <| fun conn ->
                 conn.hostCommand
                 <| fun cmd ->
-                    cmd.CommandText <- $"SELECT `{targetKey}` FROM `{table}` WHERE `{whereKey}` = ?whereKeyVal"
+                    cmd.CommandText <- $"SELECT {targetKey} FROM {table} WHERE {whereKey} = :whereKeyVal"
 
-                    cmd.Parameters.AddRange [| MySqlParameter("whereKeyVal", whereKeyVal) |]
+                    cmd.Parameters.AddRange [| NpgsqlParameter("whereKeyVal", whereKeyVal) |]
 
                     //如果结果集为空，ExecuteScalar返回null
                     match cmd.ExecuteScalar() with
                     | null -> None
                     | x -> Some x
+
+
         /// 查询到第一行
-        override self.getFstRow sql =
+        member self.getFstRow sql =
             (self :> IDbManaged).executeSelect sql
             >>= fun t ->
                     Ok
@@ -173,15 +130,15 @@ type MySqlManaged private (pool: IDbConnPoolAsync, syncSpan: u32) as self =
                        | rows when rows.Count <> 0 -> Some rows.[0]
                        | _ -> None
         /// 参数化查询到第一行
-        override self.getFstRow(sql, paras: (string * 't) list) =
+        member self.getFstRow(sql, paras: (string * 't) list) =
             let paras' =
-                foldMap (fun (k: string, v) -> List' [ MySqlParameter(k, v :> obj) ]) paras
+                foldMap (fun (k: string, v) -> List' [ NpgsqlParameter(k, v :> obj) ]) paras
                 |> unwrap
 
             (self :> IDbManaged)
                 .getFstRow (sql, paras'.toArray ())
         /// 参数化查询到第一行
-        override self.getFstRow(sql, paras: #DbParameter array) =
+        member self.getFstRow(sql, paras: #DbParameter array) =
             (self :> IDbManaged).executeSelect (sql, paras)
             >>= fun t ->
                     Ok
@@ -190,107 +147,142 @@ type MySqlManaged private (pool: IDbConnPoolAsync, syncSpan: u32) as self =
                        | rows when rows.Count <> 0 -> Some rows.[0]
                        | _ -> None
 
-        /// 查询到指定列
-        override self.getCol(sql, key: string) =
-            (self :> IDbManaged).executeSelect sql
-            >>= fun t -> getColFromByKey (t, key) |> Ok
+        //TODO getCol样板代码还可以减少（根据索引类型）
 
+        /// 查询到指定列
+        member self.getCol(sql, key: string) =
+            (self :> IDbManaged).executeSelect sql
+            >>= fun t -> Ok <| getColFromByKey (t, key)
         /// 参数化查询到指定列
-        override self.getCol(sql, key: string, paras: (string * 't) list) =
+        member self.getCol(sql, key: string, paras: (string * 't) list) =
             let paras' =
-                foldMap (fun (k: string, v) -> List' [ MySqlParameter(k, v :> obj) ]) paras
+                foldMap (fun (k: string, v) -> List' [ NpgsqlParameter(k, v :> obj) ]) paras
                 |> unwrap
 
             (self :> IDbManaged)
                 .getCol (sql, key, paras'.toArray ())
         /// 参数化查询到指定列
-        override self.getCol(sql, key: string, paras: #DbParameter array) =
+        member self.getCol(sql, key: string, paras: #DbParameter array) =
             (self :> IDbManaged).executeSelect (sql, paras)
-            >>= fun t -> Ok <| getColFromByKey (t, key)
+            >>= fun t -> getColFromByKey (t, key) |> Ok
 
 
         /// 查询到指定列
-        override self.getCol(sql, index: u32) =
+        member self.getCol(sql, index: u32) =
             (self :> IDbManaged).executeSelect sql
-            >>= fun t -> getColFromByIndex (t, index) |> Ok
-
+            >>= fun t -> Ok <| getColFromByIndex (t, index)
         /// 参数化查询到指定列
-        override self.getCol(sql, index: u32, paras: (string * 't) list) =
+        member self.getCol(sql, index: u32, paras: (string * 't) list) =
             let paras' =
-                foldMap (fun (k: string, v) -> List' [ MySqlParameter(k, v :> obj) ]) paras
+                foldMap (fun (k: string, v) -> List' [ NpgsqlParameter(k, v :> obj) ]) paras
                 |> unwrap
 
             (self :> IDbManaged)
                 .getCol (sql, index, paras'.toArray ())
         /// 参数化查询到指定列
-        override self.getCol(sql, index: u32, paras: #DbParameter array) =
+        member self.getCol(sql, index: u32, paras: #DbParameter array) =
             (self :> IDbManaged).executeSelect (sql, paras)
-            >>= fun t -> Ok <| getColFromByIndex (t, index)
-
+            >>= fun t -> getColFromByIndex (t, index) |> Ok
 
         //partial...
 
-
-
-        override self.executeAny sql =
+        /// 从连接池取用 NpgsqlConnection 并在其上调用同名方法
+        member self.executeAny sql =
             pool.getConnection ()
             >>= fun conn ->
                     let result = conn.executeAny sql
 
                     lazy (pool.recycleConnection conn) |> result |> Ok
-
-        override self.executeAny(sql, paras: (string * 't) list) =
+        /// 从连接池取用 NpgsqlConnection 并在其上调用同名方法
+        member self.executeAny(sql, paras: (string * 't) list) =
             let paras' =
-                foldMap (fun (k: string, v) -> List' [ MySqlParameter(k, v :> obj) ]) paras
+                foldMap (fun (k: string, v) -> List' [ NpgsqlParameter(k, v :> obj) ]) paras
                 |> unwrap
 
             (self :> IDbManaged)
                 .executeAny (sql, paras'.toArray ())
-
-        override self.executeAny(sql, paras) =
+        /// 从连接池取用 NpgsqlConnection 并在其上调用同名方法
+        member self.executeAny(sql, paras) =
             pool.getConnection ()
             >>= fun conn ->
                     let result = conn.executeAny (sql, paras)
 
                     lazy (pool.recycleConnection conn) |> result |> Ok
 
+        /// 查询到表
+        member self.executeSelect sql =
+            pool.hostConnection
+            <| fun conn' ->
+                let conn: NpgsqlConnection = coerce conn'
+                let table = new DataTable()
 
-        override self.executeUpdate(table, (setKey, setKeyVal), (whereKey, whereKeyVal)) =
+                table
+                |> (new NpgsqlDataAdapter(sql, conn)).Fill
+                |> ignore
+
+                table
+        /// 参数化查询到表
+        member self.executeSelect(sql, paras: (string * 't) list) =
+            let paras' =
+                foldMap (fun (k: string, v) -> List' [ NpgsqlParameter(k, v :> obj) ]) paras
+                |> unwrap
+
+            (self :> IDbManaged)
+                .executeSelect (sql, paras'.toArray ())
+        /// 参数化查询到表
+        member self.executeSelect(sql, paras: #DbParameter array) =
+            pool.hostConnection
+            <| fun conn' ->
+                let conn: NpgsqlConnection = coerce conn'
+
+                conn.hostCommand
+                <| fun cmd' ->
+                    let cmd: NpgsqlCommand = coerce cmd'
+
+                    let table = new DataTable()
+
+                    cmd.CommandText <- sql
+                    cmd.Parameters.AddRange paras //添加参数
+
+                    (new NpgsqlDataAdapter(cmd)).Fill table |> ignore
+
+                    table
+
+        /// 从连接池取用 NpgsqlConnection 并在其上调用同名方法
+        member self.executeUpdate(table, (setKey, setKeyVal), (whereKey, whereKeyVal)) =
             pool.getConnection ()
             >>= fun conn' ->
-                    let conn: MySqlConnection = coerce conn'
+                    let conn: NpgsqlConnection = coerce conn'
 
                     let result =
                         conn.executeUpdate (table, (setKey, setKeyVal), (whereKey, whereKeyVal))
 
                     lazy (pool.recycleConnection conn) |> result |> Ok
-
-        override self.executeUpdate(table, key, newValue, oldValue) =
+        /// 从连接池取用 NpgsqlConnection 并在其上调用同名方法
+        member self.executeUpdate(table, key, newValue, oldValue) =
             pool.getConnection ()
             >>= fun conn' ->
-                    let conn: MySqlConnection = coerce conn'
-
+                    let conn: NpgsqlConnection = coerce conn'
 
                     let result =
                         conn.executeUpdate (table, key, newValue, oldValue)
 
                     lazy (pool.recycleConnection conn) |> result |> Ok
 
-
-
-        override self.executeInsert table pairs =
+        /// 从连接池取用 NpgsqlConnection 并在其上调用同名方法
+        member self.executeInsert table pairs =
             pool.getConnection ()
             >>= fun conn' ->
-                    let conn: MySqlConnection = coerce conn'
+                    let conn: NpgsqlConnection = coerce conn'
 
                     let result = conn.executeInsert table pairs
 
                     lazy (pool.recycleConnection conn) |> result |> Ok
-
-        override self.executeDelete table (whereKey, whereKeyVal) =
+        /// 从连接池取用 NpgsqlConnection 并在其上调用同名方法
+        member self.executeDelete table (whereKey, whereKeyVal) =
             pool.getConnection ()
             >>= fun conn' ->
-                    let conn: MySqlConnection = coerce conn'
+                    let conn: NpgsqlConnection = coerce conn'
 
                     let result =
                         conn.executeDelete table (whereKey, whereKeyVal)
@@ -312,7 +304,7 @@ type MySqlManaged private (pool: IDbConnPoolAsync, syncSpan: u32) as self =
         /// TODO exp async api
         member self.executeAnyAsync(sql, paras: (string * 't) list) =
             let paras' =
-                foldMap (fun (k: string, v) -> List' [ MySqlParameter(k, v :> obj) ]) paras
+                foldMap (fun (k: string, v) -> List' [ NpgsqlParameter(k, v :> obj) ]) paras
                 |> unwrap
 
             (self :> IDbManagedAsync)
@@ -328,3 +320,4 @@ type MySqlManaged private (pool: IDbConnPoolAsync, syncSpan: u32) as self =
                     lazy (pool.recycleConnectionAsync conn |> ignore)
                     |> result
                     |> Ok
+*)

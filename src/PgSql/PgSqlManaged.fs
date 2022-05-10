@@ -2,34 +2,56 @@
 
 open System
 open System.Data
+open System.Threading
 open System.Data.Common
+open System.Threading.Tasks
 open System.Text
+open DbManaged.AnySql
 open Npgsql
-open fsharper.typ
 open fsharper.op
+open fsharper.typ
+open fsharper.op.Alias
 open DbManaged
 open DbManaged.ext
 open DbManaged.PgSql.ext
 
 /// PgSql数据库管理器
-type PgSqlManaged private (pool: IDbConnPoolAsync) =
-
+type PgSqlManaged private (pool: IDbConnPoolAsync, syncSpan: u32) as self =
+    //TODO 实现一个按照时间间隔同步的查询队列，为此，队列需要实现拆分和异步化，并将接口泛化
+    //另外，可以通过类型参数的方式简化构造，不再区分Myql和Pgql控制器
     let queryQueue = StringBuilder()
+
+    let _ =
+        fun _ ->
+            while true do
+                (self :> IDbQueryQueue).forceLeftQueuedQuery ()
+                Thread.Sleep(i32 syncSpan)
+        |> Task.Run
 
     /// 以连接信息构造
     new(msg) =
-        let pool = new PgSqlConnPool(msg, "", 32u)
-        new PgSqlManaged(pool)
+        let pool =
+            new AnySqlConnPool<NpgsqlConnection>(msg, 32u)
+
+        new PgSqlManaged(pool, 0u)
     /// 以连接信息构造，并指定使用的数据库
-    new(msg, database) =
-        let pool = new PgSqlConnPool(msg, database, 32u)
-        new PgSqlManaged(pool)
+    new(msg, database: string) =
+        let pool =
+            new AnySqlConnPool<NpgsqlConnection>(msg, database, 32u)
+
+        new PgSqlManaged(pool, 0u)
     /// 以连接信息构造，并指定使用的数据库和连接池大小
     new(msg, database, poolSize) =
         let pool =
-            new PgSqlConnPool(msg, database, poolSize)
+            new AnySqlConnPool<NpgsqlConnection>(msg, database, poolSize)
 
-        new PgSqlManaged(pool)
+        new PgSqlManaged(pool, 0u)
+    /// 以连接信息构造，并指定使用的数据库和连接池大小，附加队列同步间隔
+    new(msg, database, poolSize, syncSpan) =
+        let pool =
+            new AnySqlConnPool<NpgsqlConnection>(msg, database, poolSize)
+
+        new PgSqlManaged(pool, syncSpan)
 
     interface IDbQueryQueue with
 
@@ -150,11 +172,11 @@ type PgSqlManaged private (pool: IDbConnPoolAsync) =
 
 
         /// 查询到指定列
-        member self.getCol(sql, index: uint) =
+        member self.getCol(sql, index: u32) =
             (self :> IDbManaged).executeSelect sql
             >>= fun t -> Ok <| getColFromByIndex (t, index)
         /// 参数化查询到指定列
-        member self.getCol(sql, index: uint, paras: (string * 't) list) =
+        member self.getCol(sql, index: u32, paras: (string * 't) list) =
             let paras' =
                 foldMap (fun (k: string, v) -> List' [ NpgsqlParameter(k, v :> obj) ]) paras
                 |> unwrap
@@ -162,7 +184,7 @@ type PgSqlManaged private (pool: IDbConnPoolAsync) =
             (self :> IDbManaged)
                 .getCol (sql, index, paras'.toArray ())
         /// 参数化查询到指定列
-        member self.getCol(sql, index: uint, paras: #DbParameter array) =
+        member self.getCol(sql, index: u32, paras: #DbParameter array) =
             (self :> IDbManaged).executeSelect (sql, paras)
             >>= fun t -> getColFromByIndex (t, index) |> Ok
 
