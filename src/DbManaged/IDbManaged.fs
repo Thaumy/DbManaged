@@ -4,6 +4,7 @@ open System
 open System.Data
 open System.Data.Common
 open fsharper.typ
+open fsharper.op.Alias
 
 /// PgSql数据库管理器
 type IDbManaged =
@@ -40,18 +41,18 @@ type IDbManaged =
 
 
     /// 查询到指定列
-    abstract member getCol : sql: string * index: uint -> Result'<Option'<obj list>, exn>
+    abstract member getCol : sql: string * index: u32 -> Result'<Option'<obj list>, exn>
     /// 参数化查询到指定列
-    abstract member getCol : sql: string * index: uint * paras: (string * 't) list -> Result'<Option'<obj list>, exn>
+    abstract member getCol : sql: string * index: u32 * paras: (string * 't) list -> Result'<Option'<obj list>, exn>
     /// 参数化查询到指定列
-    abstract member getCol : sql: string * index: uint * paras: #DbParameter array -> Result'<Option'<obj list>, exn>
+    abstract member getCol : sql: string * index: u32 * paras: #DbParameter array -> Result'<Option'<obj list>, exn>
 
     /// 从连接池取用 DbConnection 并在其上调用同名方法
-    abstract member executeAny : sql: string -> Result'<(int -> bool) -> int, exn>
+    abstract member executeAny : sql: string -> Result'<(i32 -> bool) -> int, exn>
     /// 从连接池取用 DbConnection 并在其上调用同名方法
-    abstract member executeAny : sql: string * paras: (string * 't) list -> Result'<(int -> bool) -> int, exn>
+    abstract member executeAny : sql: string * paras: (string * 't) list -> Result'<(i32 -> bool) -> int, exn>
     /// 从连接池取用 DbConnection 并在其上调用同名方法
-    abstract member executeAny : sql: string * paras: #DbParameter array -> Result'<(int -> bool) -> int, exn>
+    abstract member executeAny : sql: string * paras: #DbParameter array -> Result'<(i32 -> bool) -> int, exn>
 
     /// 查询到表
     abstract member executeSelect : sql: string -> Result'<DataTable, exn>
@@ -62,12 +63,12 @@ type IDbManaged =
 
     abstract member executeUpdate :
         table: string * setKey_setKeyVal: (string * 'd) * whereKey_whereKeyVal: (string * 'e) ->
-        Result'<(int -> bool) -> int, exn>
+        Result'<(i32 -> bool) -> int, exn>
 
     abstract member executeUpdate :
-        table: string * key: string * newValue: 'c * oldValue: 'c -> Result'<(int -> bool) -> int, exn>
+        table: string * key: string * newValue: 'c * oldValue: 'c -> Result'<(i32 -> bool) -> int, exn>
 
-    abstract member executeInsert : table: string -> pairs: (string * 't) list -> Result'<(int -> bool) -> int, exn>
+    abstract member executeInsert : table: string -> pairs: (string * 't) list -> Result'<(i32 -> bool) -> int, exn>
 
     abstract member executeDelete :
-        table: string -> whereKey: string * whereKeyVal: 'a -> Result'<(int -> bool) -> int, exn>
+        table: string -> whereKey: string * whereKeyVal: 'a -> Result'<(i32 -> bool) -> int, exn>

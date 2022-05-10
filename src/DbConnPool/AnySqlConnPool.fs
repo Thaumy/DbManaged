@@ -1,19 +1,20 @@
-namespace DbManaged.MySql
+namespace DbManaged.AnySql
 
 open System
-open System.Data
 open System.Data.Common
 open System.Threading.Tasks
 open System.Threading.Channels
 open System.Collections.Concurrent
-open MySql.Data.MySqlClient
+open Npgsql
 open fsharper.op
 open fsharper.typ
 open fsharper.op.Eq
+open fsharper.op.Alias
 open DbManaged
 
 /// PgSql数据库连接池
-type internal MySqlConnPool(msg: DbConnMsg, database, size: uint) =
+type internal AnySqlConnPool<'ConnType when 'ConnType :> DbConnection and 'ConnType: equality and 'ConnType: (new :
+    unit -> 'ConnType)> public (msg: DbConnMsg, database, size: u32) as self =
 
     /// 连接字符串
     let connStr = //启用连接池，最大超时1秒
@@ -32,40 +33,23 @@ type internal MySqlConnPool(msg: DbConnMsg, database, size: uint) =
 
     /// 空闲连接表
     let freeConnections =
-        Channel.CreateBounded<MySqlConnection>(int size)
+        Channel.CreateBounded<'ConnType>(i32 size)
 
     /// 忙碌连接表
-    let busyConnections =
-        ConcurrentDictionary<int, MySqlConnection>()
-
-    /// 池压力系数
-    /// 若池压力越大，该系数越接近1，反之接近0
-    let getPoolPressureCoef () =
-        let freeCount = float freeConnections.Reader.Count
-        let busyCount = float busyConnections.Count
-
-        //+1.0是为了防止算术错误
-        busyCount / (freeCount + busyCount + 1.0) //init is 0
-
-    /// 池占用率
-    let getPoolOccRate () =
-        let freeCount = float freeConnections.Reader.Count
-        let busyCount = float busyConnections.Count
-
-        (freeCount + busyCount) / float size //init is 0
+    let busyConnections = ConcurrentDictionary<int, 'ConnType>()
 
     /// 添加到忙碌连接表
     let busyConnectionsTryAdd conn =
         busyConnections.TryAdd(conn.GetHashCode(), conn)
 
-    /// 忙碌连接表移除
-    let busyConnectionsTryRemove (conn: MySqlConnection) =
+    /// 从忙碌连接表移除
+    let busyConnectionsTryRemove (conn: 'ConnType) =
         busyConnections.TryRemove(conn.GetHashCode())
 
-    /// 空闲连接表
+    /// 添加到空闲连接表
     let mutable freeConnectionsAdd = freeConnections.Writer.WriteAsync
 
-    /// 尝试取得空闲连接
+    /// 取得空闲连接
     let freeConnectionsGet () =
         freeConnections.Reader.ReadAsync().AsTask().Result
 
@@ -76,7 +60,8 @@ type internal MySqlConnPool(msg: DbConnMsg, database, size: uint) =
 
     /// 生成新连接
     let rec connGen () =
-        let conn = new MySqlConnection(connStr)
+        let conn = new 'ConnType()
+        conn.ConnectionString <- connStr
 
         conn.Open()
         conn
@@ -84,7 +69,7 @@ type internal MySqlConnPool(msg: DbConnMsg, database, size: uint) =
     /// 尝试生成新连接
     let rec connTryGen () =
         let count =
-            uint (
+            u32 (
                 freeConnections.Reader.Count
                 + busyConnections.Count
             )
@@ -95,10 +80,11 @@ type internal MySqlConnPool(msg: DbConnMsg, database, size: uint) =
             None
 
     let outputPoolStatus () =
-        let occ = (getPoolOccRate ()).ToString("0.00")
+        let occ =
+            (self :> IDbConnPool).occupancy.ToString "0.00"
 
         let pressure =
-            (getPoolPressureCoef ()).ToString("0.00")
+            (self :> IDbConnPool).pressure.ToString "0.00"
 
         let free =
             freeConnections.Reader.Count.ToString("00")
@@ -111,6 +97,8 @@ type internal MySqlConnPool(msg: DbConnMsg, database, size: uint) =
                 .ToString("00")
 
         printfn $"[占用 {occ}: {freeAndBusy} /{size}] [压力 {pressure}: 忙{busy} 闲{free}]"
+
+    new(msg: DbConnMsg, size: u32) = new AnySqlConnPool<'ConnType>(msg, "", size)
 
     interface IDisposable with
         /// 注销后不应进行新的查询
@@ -133,13 +121,28 @@ type internal MySqlConnPool(msg: DbConnMsg, database, size: uint) =
 
             loop ()
 
+
+
     interface IDbConnPool with
+        member self.pressure =
+            let freeCount = f64 freeConnections.Reader.Count
+            let busyCount = f64 busyConnections.Count
+
+            //+1.0是为了防止算术错误
+            busyCount / (freeCount + busyCount + 1.0) //init is 0
+
+        member self.occupancy =
+            let freeCount = f64 freeConnections.Reader.Count
+            let busyCount = f64 busyConnections.Count
+
+            (freeCount + busyCount) / f64 size //init is 0
+
         member self.recycleConnection conn =
 
             match busyConnectionsTryRemove (coerce conn) with
             | true, removed when refEq removed conn ->
 
-                if getPoolPressureCoef () < 0.1 then
+                if (self :> IDbConnPool).pressure < 0.3 then
                     conn.DisposeAsync() //增加池压力
                 else
                     //从busyConnections移除了连接，且被移除的连接是目标连接
@@ -155,7 +158,7 @@ type internal MySqlConnPool(msg: DbConnMsg, database, size: uint) =
             | false, _ ->
                 (*移除失败，这意味着下列情况之一：
                     1.曾经试图将这个连接加入busyConnections，但由于哈希冲突失败了
-                    2.这个连接根本不属于连接池
+                    2.这个连接根本不由连接池产生
                     对于这样的连接，直接进行销毁
                     不进行回收的原因如下：
                     *使用该连接可能进一步引发哈希冲突
@@ -163,41 +166,35 @@ type internal MySqlConnPool(msg: DbConnMsg, database, size: uint) =
                 conn.DisposeAsync()
             |> ignore
 
-        /// TODO exp async api
-
-
-        /// 从连接池取用 MySqlConnection
+        /// 从连接池取用 'ConnType
         member self.getConnection() =
             try
                 let result =
-                    if getPoolOccRate () < 0.8 then
-                        match getPoolPressureCoef () with
+                    if (self :> IDbConnPool).occupancy < 0.8 then
+                        match (self :> IDbConnPool).pressure with
                         | p when //池压力较小，复用连接以提升池压力系数
-                            p < 0.4
+                            p < 0.7
                             ->
                             freeConnectionsTryGet().unwrapOr connGen
                         | p when //池压力较大，新建连接以降低池压力系数
-                            p < 0.6
+                            p < 0.8
                             ->
                             connGen ()
                         | _ -> //池压力过大，新建更多连接以降低池压力系数
-                            (fun _ ->
-                                connTryGen()
-                                    .whenCanUnwrap (fun c -> freeConnectionsAdd c |> ignore)
-
-                                connTryGen()
-                                    .whenCanUnwrap (fun c -> freeConnectionsAdd c |> ignore))
-                            |> Task.Run
+                            Task.Run
+                                (fun _ ->
+                                    connTryGen()
+                                        .whenCanUnwrap (fun c -> freeConnectionsAdd c |> ignore))
                             |> ignore
 
-                            freeConnectionsGet ()
+                            connGen ()
                     else
                         freeConnectionsGet ()
                 (*加入忙碌列表，如果加入失败则表明该连接与已登记连接存在哈希冲突，
                 此时不进行登记，在回收阶段会检测到该连接并将其销毁*)
                 busyConnectionsTryAdd result |> ignore //添加到忙碌连接表
 
-                //Task.Run outputPoolStatus |> ignore
+                Task.Run outputPoolStatus |> ignore
 
                 result :> DbConnection |> Ok
             with
