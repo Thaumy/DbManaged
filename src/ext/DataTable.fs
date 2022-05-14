@@ -27,13 +27,12 @@ let getColFromByIndex (table: DataTable, index: u32) =
     else
         None
 /// 从DataTable中取出第一个 whereKey 等于 whereKeyVal 的行
-let getRowFrom (table: DataTable) (whereKey: string) whereKeyVal =
+let getRowFrom (table: DataTable) whereKey whereKeyVal =
     if
         table.Rows.Count <> 0
-        && table.Columns.Contains("whereKey")
+        && table.Columns.Contains(whereKey)
     then
         [ for r in table.Rows -> r ]
         |> filterOne (fun (row: DataRow) -> row.[whereKey].ToString() = whereKeyVal.ToString())
-        |> Some
     else
         None

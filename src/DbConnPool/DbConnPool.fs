@@ -13,7 +13,7 @@ open fsharper.op.Alias
 open DbManaged
 
 /// PgSql数据库连接池
-type internal AnySqlConnPool<'ConnType when 'ConnType :> DbConnection and 'ConnType: equality and 'ConnType: (new :
+type internal DbConnPool<'ConnType when 'ConnType :> DbConnection and 'ConnType: equality and 'ConnType: (new :
     unit -> 'ConnType)> public (msg: DbConnMsg, database, size: u32) as self =
 
     /// 连接字符串
@@ -98,7 +98,7 @@ type internal AnySqlConnPool<'ConnType when 'ConnType :> DbConnection and 'ConnT
 
         printfn $"[占用 {occ}: {freeAndBusy} /{size}] [压力 {pressure}: 忙{busy} 闲{free}]"
 
-    new(msg: DbConnMsg, size: u32) = new AnySqlConnPool<'ConnType>(msg, "", size)
+    new(msg: DbConnMsg, size: u32) = new DbConnPool<'ConnType>(msg, "", size)
 
     interface IDisposable with
         /// 注销后不应进行新的查询
@@ -200,7 +200,6 @@ type internal AnySqlConnPool<'ConnType when 'ConnType :> DbConnection and 'ConnT
             with
             | e -> Err e
 
-    interface IDbConnPoolAsync with
         member self.recycleConnectionAsync conn =
             Task.Run<unit>(fun _ -> (self :> IDbConnPool).recycleConnection conn)
 

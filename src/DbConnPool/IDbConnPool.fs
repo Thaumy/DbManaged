@@ -2,6 +2,7 @@ namespace DbManaged
 
 open System
 open System.Data.Common
+open System.Threading.Tasks
 open fsharper.op
 open fsharper.typ
 open fsharper.op.Alias
@@ -24,6 +25,14 @@ type internal IDbConnPool =
     /// 回收数据库连接
     abstract member recycleConnection : DbConnection -> unit
 
+    /// TODO exp async api
+    /// 异步获取数据库连接
+    abstract member getConnectionAsync : unit -> Task<Result'<DbConnection, exn>>
+
+    /// TODO exp async api
+    /// 异步回收数据库连接
+    abstract member recycleConnectionAsync : DbConnection -> Task<unit>
+
 [<AutoOpen>]
 module internal ext_IDbConnPool =
 
@@ -31,14 +40,34 @@ module internal ext_IDbConnPool =
 
         /// 创建一个数据库连接, 并以其为参数执行闭包 f
         /// 该连接的回收权交由闭包 f
-        member self.useConnection f =
-            self.getConnection () >>= fun conn -> f conn |> Ok
+        member pool.useConnection f =
+            pool.getConnection () >>= fun conn -> f conn |> Ok
 
         /// 托管一个数据库连接, 并以其为参数执行闭包 f
         /// 闭包执行完成后该连接会被自动回收
-        member self.hostConnection f =
-            self.useConnection
+        member pool.hostConnection f =
+            pool.useConnection
             <| fun conn ->
                 let result = f conn
-                self.recycleConnection conn
+                pool.recycleConnection conn
                 result
+
+        /// TODO exp async api
+        /// 异步使用数据库连接
+        member pool.useConnectionAsync f =
+            task {
+                let! conn = pool.getConnectionAsync ()
+                return conn >>= fun conn -> f conn |> Ok
+            }
+
+        /// TODO exp async api
+        /// 异步托管数据库连接
+        member pool.hostConnectionAsync f =
+            task {
+                return!
+                    pool.useConnectionAsync
+                    <| fun conn ->
+                        let result = f conn
+                        pool.recycleConnectionAsync conn |> ignore
+                        result
+            }
