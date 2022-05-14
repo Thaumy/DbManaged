@@ -21,7 +21,7 @@ let queueQuery_executeLeftQueuedQuery_test () =
             $"INSERT INTO {com.tab1} (col1, col2, col3, col4)\
                  VALUES (1, 'a', 'aaa', 'aaaa');"
 
-    m.executeLeftQueuedQuery ()
+    m.forceLeftQueuedQuery ()
 
     let count =
         com

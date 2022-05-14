@@ -3,6 +3,7 @@ module internal DbManaged.ext.DataTable
 
 open System.Data
 open fsharper.typ
+open fsharper.op.Alias
 
 /// 从DataTable中取出第一个值
 let getFstValFrom (table: DataTable) =
@@ -18,21 +19,20 @@ let getColFromByKey (table: DataTable, key: string) =
     else
         None
 /// 从DataTable中取出指定列
-let getColFromByIndex (table: DataTable, index: uint) =
+let getColFromByIndex (table: DataTable, index: u32) =
     if table.Columns.Count > 0
-       && int index < table.Columns.Count then
+       && i32 index < table.Columns.Count then
         Some [ for r in table.Rows do
-                   r.[int index] ]
+                   r.[i32 index] ]
     else
         None
 /// 从DataTable中取出第一个 whereKey 等于 whereKeyVal 的行
-let getRowFrom (table: DataTable) (whereKey: string) whereKeyVal =
+let getRowFrom (table: DataTable) whereKey whereKeyVal =
     if
         table.Rows.Count <> 0
-        && table.Columns.Contains("whereKey")
+        && table.Columns.Contains(whereKey)
     then
         [ for r in table.Rows -> r ]
         |> filterOne (fun (row: DataRow) -> row.[whereKey].ToString() = whereKeyVal.ToString())
-        |> Some
     else
         None
