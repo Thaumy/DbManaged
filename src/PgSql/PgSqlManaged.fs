@@ -1,8 +1,8 @@
 ﻿namespace DbManaged.PgSql
 
 open System
-open System.Collections.Concurrent
 open System.Data.Common
+open System.Collections.Concurrent
 open Npgsql
 open fsharper.op
 open fsharper.typ
@@ -58,9 +58,12 @@ type PgSqlManaged private (pool: IDbConnPool) =
                 let ret =
                     connResult
                     >>= fun conn ->
-                            let closureRet = f conn |> result
-                            pool.recycleConnectionAsync conn |> ignore
-                            closureRet |> Ok
+                            task {
+                                let! closureRet = f conn
+                                pool.recycleConnectionAsync conn |> ignore
+                                return closureRet |> Ok
+                            }
+                            |> result
 
                 return ret
             }

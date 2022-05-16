@@ -1,6 +1,5 @@
 module dbm_test.PgSql.Sync.ComplexQuery.getFstRow
 
-open System
 open NUnit.Framework
 open fsharper.typ
 open fsharper.typ.Ord

@@ -5,7 +5,6 @@ open fsharper.typ
 open fsharper.typ.Ord
 open fsharper.op.Boxing
 open DbManaged
-open DbManaged.MySql
 open DbManaged.MySql.ext.String
 open dbm_test.MySql.com
 open dbm_test.MySql.Async.init
@@ -41,6 +40,3 @@ let getFstRow_overload2_test () =
 
     Assert.AreEqual(0, result.["col1"])
     Assert.AreEqual("i", result.["col2"])
-
-
-//overload2 is based on overload3

@@ -4,6 +4,7 @@ module DbManaged.ext_DbCommand
 open System
 open System.Data
 open System.Data.Common
+open System.Threading.Tasks
 open fsharper.op
 open fsharper.typ
 open fsharper.op.Alias
@@ -54,16 +55,16 @@ type internal DbCommand with
     member cmd.commitForAffected conn =
         //如果结果集为空，ExecuteScalar返回null
         cmd.useConn(conn).ExecuteNonQuery()
-        
+
     //提交并取得第一行第一列的值
     member cmd.commitForValue conn =
         cmd.useConn(conn).ExecuteScalar()
         |> Option'<obj>.fromNullable
-        
-//提交并取得一个读取器
+
+    //提交并取得一个读取器
     member cmd.commitForReader conn = cmd.useConn(conn).ExecuteReader()
-    
-//提交并取得第一行
+
+    //提交并取得第一行
     member cmd.commitForFstRow conn =
         let reader = cmd.commitForReader conn
 
@@ -156,33 +157,38 @@ type internal DbCommand with
 
     member cmd.commitForValueAsync conn = cmd.useConn(conn).ExecuteScalarAsync()
 
-    member cmd.commitForTableAsync conn =
-        task {
-            let! reader = cmd.useConn(conn).ExecuteReaderAsync()
-            return! reader.GetSchemaTableAsync()
-        }
-
     member cmd.commitWhenAsync p (conn: DbConnection) =
         conn.useTransactionAsync
         <| fun tx ->
             task {
-                //TODO 有待重构
                 let! n = cmd.useConn(conn).useTx(tx).ExecuteNonQueryAsync() //耗时操作
+
+                let release () =
+                    tx
+                        .DisposeAsync()
+                        .AsTask()
+                        .ContinueWith(fun _ -> cmd.DisposeAsync())
+                    |> ignore
 
                 let affected =
                     if p n then
-                        tx.CommitAsync() |> wait |> ignore //符合期望影响行数规则则提交
-                        n
+                        //符合期望影响行数规则则提交
+                        tx
+                            .CommitAsync()
+                            .ContinueWith(fun _ ->
+                                release ()
+                                n)
                     else
-                        tx.RollbackAsync() |> wait |> ignore //否则回滚
-                        0
-
-                tx.DisposeAsync() |> ignore //资源释放
-                cmd.DisposeAsync() |> ignore
-                cmd.Transaction <- null
+                        //否则回滚
+                        tx
+                            .RollbackAsync()
+                            .ContinueWith(fun _ ->
+                                release ()
+                                0)
 
                 return affected
             }
+        |> result
         |> result
 
 type DbCommand with

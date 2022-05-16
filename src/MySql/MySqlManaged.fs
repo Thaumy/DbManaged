@@ -58,9 +58,12 @@ type MySqlManaged private (pool: IDbConnPool) =
                 let ret =
                     connResult
                     >>= fun conn ->
-                            let closureRet = f conn |> result
-                            pool.recycleConnectionAsync conn |> ignore
-                            closureRet |> Ok
+                            task {
+                                let! closureRet = f conn
+                                pool.recycleConnectionAsync conn |> ignore
+                                return closureRet |> Ok
+                            }
+                            |> result
 
                 return ret
             }
