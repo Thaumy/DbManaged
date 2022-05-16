@@ -9,7 +9,30 @@
 
     <ItemGroup>
         <Compile Include="err.fs" />
+        
+        <Compile Include="MySql\com.fs" />
 
+        <Compile Include="MySql\Async\init.fs" />
+        <Compile Include="MySql\Async\SimpleQuery\query.fs" />
+        <Compile Include="MySql\Async\SimpleQuery\delete.fs" />
+        <Compile Include="MySql\Async\SimpleQuery\insert.fs" />
+        <Compile Include="MySql\Async\SimpleQuery\select.fs" />
+        <Compile Include="MySql\Async\SimpleQuery\update.fs" />
+        <Compile Include="MySql\Async\ComplexQuery\getFstCol.fs" />
+        <Compile Include="MySql\Async\ComplexQuery\getFstRow.fs" />
+        <Compile Include="MySql\Async\ComplexQuery\getFstVal.fs" />
+
+        <Compile Include="MySql\Sync\init.fs" />
+        <Compile Include="MySql\Sync\SimpleQuery\query.fs" />
+        <Compile Include="MySql\Sync\SimpleQuery\delete.fs" />
+        <Compile Include="MySql\Sync\SimpleQuery\insert.fs" />
+        <Compile Include="MySql\Sync\SimpleQuery\select.fs" />
+        <Compile Include="MySql\Sync\SimpleQuery\update.fs" />
+        <Compile Include="MySql\Sync\ComplexQuery\getFstCol.fs" />
+        <Compile Include="MySql\Sync\ComplexQuery\getFstRow.fs" />
+        <Compile Include="MySql\Sync\ComplexQuery\getFstVal.fs" />
+        <Compile Include="MySql\Sync\queue\queueQuery.fs" />
+        
         <Compile Include="PgSql\com.fs" />
         
         <Compile Include="PgSql\Async\init.fs" />
@@ -32,29 +55,7 @@
         <Compile Include="PgSql\Sync\ComplexQuery\getFstRow.fs" />
         <Compile Include="PgSql\Sync\ComplexQuery\getFstVal.fs" />
         <Compile Include="PgSql\Sync\queue\queueQuery.fs" />
-
-        <Compile Include="MySql\com.fs" />
         
-        <Compile Include="MySql\Async\init.fs" />
-        <Compile Include="MySql\Async\SimpleQuery\query.fs" />
-        <Compile Include="MySql\Async\SimpleQuery\delete.fs" />
-        <Compile Include="MySql\Async\SimpleQuery\insert.fs" />
-        <Compile Include="MySql\Async\SimpleQuery\select.fs" />
-        <Compile Include="MySql\Async\SimpleQuery\update.fs" />
-        <Compile Include="MySql\Async\ComplexQuery\getFstCol.fs" />
-        <Compile Include="MySql\Async\ComplexQuery\getFstRow.fs" />
-        <Compile Include="MySql\Async\ComplexQuery\getFstVal.fs" />
-
-        <Compile Include="MySql\Sync\init.fs" />
-        <Compile Include="MySql\Sync\SimpleQuery\query.fs" />
-        <Compile Include="MySql\Sync\SimpleQuery\delete.fs" />
-        <Compile Include="MySql\Sync\SimpleQuery\insert.fs" />
-        <Compile Include="MySql\Sync\SimpleQuery\select.fs" />
-        <Compile Include="MySql\Sync\SimpleQuery\update.fs" />
-        <Compile Include="MySql\Sync\ComplexQuery\getFstCol.fs" />
-        <Compile Include="MySql\Sync\ComplexQuery\getFstRow.fs" />
-        <Compile Include="MySql\Sync\ComplexQuery\getFstVal.fs" />
-        <Compile Include="MySql\Sync\queue\queueQuery.fs" />
     </ItemGroup>
 
     <ItemGroup>
