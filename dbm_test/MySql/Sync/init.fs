@@ -11,40 +11,35 @@ open fsharper.op.Fmt
 
 let init () =
 
-    managed
-        .unwrap()
-        .executeAny $"drop table if exists {tab1};"
-    |> unwrap
-    <| (fun _ -> true)
+    mkCmd().query $"drop table if exists {tab1};"
+    <| always true
+    |> managed().executeQuery
     |> ignore
 
-    managed
-        .unwrap()
-        .executeAny $"create table {tab1}\
+    mkCmd()
+        .query $"create table {tab1}\
                         (\
                             col1 int         null,\
                             col2 char        null,\
                             col3 varchar(32) null,\
                             col4 text        null\
                         );"
-    |> unwrap
-    <| (fun _ -> true)
+    <| always true
+    |> managed().executeQuery
     |> ignore
 
     for _ in 1 .. 50 do
-        managed
-            .unwrap()
-            .executeAny $"INSERT INTO {tab1} (col1, col2, col3, col4)\
+        mkCmd()
+            .query $"INSERT INTO {tab1} (col1, col2, col3, col4)\
                  VALUES (0, 'i', 'init[001,050]', 'initinit');"
-        |> unwrap
         <| eq 1
+        |> managed().executeQuery
         |> ignore
 
     for _ in 1 .. 50 do
-        managed
-            .unwrap()
-            .executeAny $"INSERT INTO {tab1} (col1, col2, col3, col4)\
+        mkCmd()
+            .query $"INSERT INTO {tab1} (col1, col2, col3, col4)\
                  VALUES (0, 'i', 'init[050,100]', 'initinit');"
-        |> unwrap
         <| eq 1
+        |> managed().executeQuery
         |> ignore

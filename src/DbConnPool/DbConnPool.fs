@@ -5,7 +5,6 @@ open System.Data.Common
 open System.Threading.Tasks
 open System.Threading.Channels
 open System.Collections.Concurrent
-open Npgsql
 open fsharper.op
 open fsharper.typ
 open fsharper.op.Eq
