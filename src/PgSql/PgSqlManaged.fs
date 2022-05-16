@@ -2,19 +2,13 @@
 
 open System
 open System.Collections.Concurrent
-open System.Data
-open System.Threading
 open System.Data.Common
-open System.Threading.Tasks
-open DbManaged.AnySql
 open Npgsql
 open fsharper.op
 open fsharper.typ
 open fsharper.op.Async
-open fsharper.op.Alias
 open DbManaged
-open DbManaged.ext
-open DbManaged.PgSql.ext
+open DbManaged.AnySql
 
 /// PgSql数据库管理器
 type PgSqlManaged private (pool: IDbConnPool) =
@@ -50,14 +44,26 @@ type PgSqlManaged private (pool: IDbConnPool) =
         member self.makeCmd() = new NpgsqlCommand()
 
         member self.executeQuery f =
-            pool.getConnection () >>= fun conn -> f conn |> Ok
+            pool.getConnection ()
+            >>= fun conn ->
+                    let result = f conn
+                    pool.recycleConnection conn
+                    result |> Ok
 
         member self.executeQueryAsync f =
             task {
-                let! result = pool.getConnectionAsync ()
-                return result >>= fun conn -> f conn |> Ok
+                let! connResult = pool.getConnectionAsync ()
+
+                //TODO 有待优化
+                let ret =
+                    connResult
+                    >>= fun conn ->
+                            let closureRet = f conn |> result
+                            pool.recycleConnectionAsync conn |> ignore
+                            closureRet |> Ok
+
+                return ret
             }
-            |> result
 
         member self.queueQuery f = f .> ignore |> queuedQuery.Enqueue
 

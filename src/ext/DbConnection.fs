@@ -1,26 +1,7 @@
 [<AutoOpen>]
-module internal DbManaged.ext.DbConnection
+module internal DbManaged.ext_DbConnection
 
-open System.Threading.Tasks
-open DbManaged.ext
 open System.Data.Common
-open fsharper.op.Async
-open fsharper.op.Lazy
-open System.Data.Common
-open DbManaged.ext
-open System
-open System.Data
-open System.Threading
-open System.Data.Common
-open System.Threading.Tasks
-open Npgsql
-open fsharper.op
-open fsharper.typ
-open fsharper.op.Alias
-open fsharper.op.Async
-open DbManaged
-open DbManaged.ext
-
 
 type DbConnection with
 
@@ -49,4 +30,41 @@ type DbConnection with
         let result = f cmd
         cmd.Dispose()
         result
+
+type internal DbConnection with
+
+    /// 创建一个 DbTransaction, 并以其为参数执行闭包 f
+    /// DbTransaction 需手动销毁
+    member conn.useTransaction f =
+        let tx = conn.BeginTransaction()
+        f tx
+
+    /// 托管一个 DbTransaction, 并以其为参数执行闭包 f
+    /// 闭包执行完成后该 DbTransaction 会被销毁
+    member conn.hostTransaction f =
+        conn.useTransaction
+        <| fun tx ->
+            let result = f tx
+            tx.Dispose()
+            result
+
+type internal DbConnection with
+
+    //TODO exp async api
+    member conn.useTransactionAsync f =
+        task {
+            let! tx = conn.BeginTransactionAsync()
+            return f tx
+        }
+
+    //TODO exp async api
+    member conn.hostTransactionAsync f =
+        task {
+            return!
+                conn.useTransactionAsync
+                <| fun tx ->
+                    let result = f tx
+                    tx.DisposeAsync() |> ignore
+                    result
+        }
 
