@@ -1,6 +1,5 @@
 module dbm_test.PgSql.Sync.SimpleQuery.select
 
-open System
 open System.Data
 open NUnit.Framework
 open dbm_test.PgSql.com
