@@ -7,7 +7,6 @@ open dbm_test.MySql.Sync.init
 open fsharper.typ
 open fsharper.op.Boxing
 open DbManaged
-open DbManaged.MySql
 open DbManaged.MySql.ext.String
 
 [<OneTimeSetUp>]

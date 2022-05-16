@@ -6,8 +6,6 @@ open dbm_test.MySql.com
 open dbm_test.MySql.Sync.init
 open fsharper.typ
 open fsharper.op.Boxing
-open DbManaged
-open DbManaged.MySql
 
 [<OneTimeSetUp>]
 let OneTimeSetUp () = connect ()
