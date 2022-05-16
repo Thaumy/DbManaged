@@ -5,4 +5,5 @@
 	<s:String x:Key="/Default/Environment/AssemblyExplorer/XmlDocument/@EntryValue">&lt;AssemblyExplorer&gt;
   &lt;Assembly Path="/home/thaumy/repo/palaflake/impl/fs/palaflake/bin/Debug/net5.0/palaflake.dll" /&gt;
   &lt;Assembly Path="/home/thaumy/repo/fsharper/bin/Debug/net6.0/fsharper.dll" /&gt;
+  &lt;Assembly Path="/home/thaumy/.nuget/packages/npgsql/7.0.0-preview.3/lib/net6.0/Npgsql.dll" /&gt;
 &lt;/AssemblyExplorer&gt;</s:String></wpf:ResourceDictionary>

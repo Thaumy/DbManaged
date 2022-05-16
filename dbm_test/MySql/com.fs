@@ -2,19 +2,21 @@ module dbm_test.MySql.com
 
 open DbManaged
 open DbManaged.MySql
-open fsharper.op.Boxing
 open fsharper.typ
+open fsharper.op.Boxing
 open dbm_test
 
 let tab1 = "tab1"
 let size = 100u
-let mutable msg = Err ManagedNotInitException
-let mutable managed: Result'<IDbManagedAsync, exn> = Err ManagedNotInitException
+let mutable private msgResult = Err ManagedNotInitException
+let mutable private managedResult: Result'<IDbManaged, exn> = Err ManagedNotInitException
+let managed () = managedResult.unwrap ()
+let mkCmd () = managed().makeCmd ()
 
 let connect () =
-    match msg with
+    match msgResult with
     | Err _ ->
-        msg <-
+        msgResult <-
             Ok
                 { Host = "localhost"
                   Port = 3306us
@@ -22,9 +24,9 @@ let connect () =
                   Password = "65a1561425f744e2b541303f628963f8" }
     | _ -> ()
 
-    match managed with
+    match managedResult with
     | Err _ ->
-        managed <-
+        managedResult <-
             Ok
-            <| new MySqlManaged(unwrap msg, "dbm_test", size)
+            <| new MySqlManaged(unwrap msgResult, "dbm_test", size)
     | _ -> ()
