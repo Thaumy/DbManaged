@@ -1,71 +1,21 @@
 [<AutoOpen>]
-module internal DbManaged.ext.DbCommand
+module DbManaged.ext_DbCommand
 
-open System.Data.Common
-open System.Threading.Tasks
-open DbManaged.ext
-open System.Data.Common
-open fsharper.op.Async
-open fsharper.op.Lazy
-open System.Data.Common
-open DbManaged.ext
 open System
 open System.Data
-open System.Threading
 open System.Data.Common
-open System.Threading.Tasks
-open Npgsql
 open fsharper.op
 open fsharper.typ
 open fsharper.op.Alias
 open fsharper.op.Async
-open DbManaged
-open DbManaged.ext
 
-type DbCommand with
+type internal DbCommand with
 
     member cmd.CreateParameter(k, v) =
         let p = cmd.CreateParameter()
         p.ParameterName <- k
         p.Value <- v
         p
-
-type DbConnection with
-
-    /// 创建一个 DbTransaction, 并以其为参数执行闭包 f
-    /// DbTransaction 需手动销毁
-    member conn.useTransaction f =
-        let tx = conn.BeginTransaction()
-        f tx
-
-    /// 托管一个 DbTransaction, 并以其为参数执行闭包 f
-    /// 闭包执行完成后该 DbTransaction 会被销毁
-    member conn.hostTransaction f =
-        conn.useTransaction
-        <| fun tx ->
-            let result = f tx
-            tx.Dispose()
-            result
-
-type DbConnection with
-
-    //TODO exp async api
-    member conn.useTransactionAsync f =
-        task {
-            let! tx = conn.BeginTransactionAsync()
-            return f tx
-        }
-
-    //TODO exp async api
-    member conn.hostTransactionAsync f =
-        task {
-            return!
-                conn.useTransactionAsync
-                <| fun tx ->
-                    let result = f tx
-                    tx.DisposeAsync() |> ignore
-                    result
-        }
 
 type internal DbCommand with
     member cmd.letQuery sql =
@@ -83,7 +33,7 @@ type internal DbCommand with
     member cmd.addPara(name: string, value: 't) =
         cmd.CreateParameter(name, value) |> cmd.addPara
 
-    member cmd.addParas(paras: (string * 't) list) =
+    member cmd.addParas(paras: (string * #obj) list) =
         paras
         |> foldMap (fun (k: string, v) -> List' [ cmd.CreateParameter(k, v) ])
         |> unwrap
@@ -94,39 +44,114 @@ type internal DbCommand with
         cmd.Connection <- conn
         cmd
 
+    member cmd.useTx tx =
+        cmd.Transaction <- tx
+        cmd
+
 type internal DbCommand with
-    member cmd.commit conn =
+
+    //提交并返回受影响的行数
+    member cmd.commitForAffected conn =
         //如果结果集为空，ExecuteScalar返回null
         cmd.useConn(conn).ExecuteNonQuery()
+        
+    //提交并取得第一行第一列的值
+    member cmd.commitForValue conn =
+        cmd.useConn(conn).ExecuteScalar()
+        |> Option'<obj>.fromNullable
+        
+//提交并取得一个读取器
+    member cmd.commitForReader conn = cmd.useConn(conn).ExecuteReader()
+    
+//提交并取得第一行
+    member cmd.commitForFstRow conn =
+        let reader = cmd.commitForReader conn
 
-    member cmd.commitForValue conn = cmd.useConn(conn).ExecuteScalar()
+        if reader.Read() then
+            let table = reader.GetSchemaTable()
 
+            //初始化列元信息
+            for i in 0 .. reader.FieldCount - 1 do
+                new DataColumn(reader.GetName(i), reader.[i].GetType())
+                |> table.Columns.Add
+
+            let row = table.NewRow()
+
+            //逐个添加列值
+            for i in 0 .. reader.FieldCount - 1 do
+                row.[reader.GetName(i)] <- reader.[i]
+
+            Some row
+        else
+            None
+
+    //提交并取得第一列
+    member cmd.commitForFstCol conn =
+        let reader = cmd.commitForReader conn
+
+        if reader.Read() then
+            let rec loop () = //因为第一次读取过，所以采用do while形式
+                if reader.Read() then
+                    reader.[0] :: loop ()
+                else
+                    []
+
+            Some <| reader.[0] :: loop ()
+        else
+            None
+
+    //提交并取得一张表
     member cmd.commitForTable conn =
-        cmd.useConn(conn).ExecuteReader().GetSchemaTable()
+        let reader = cmd.commitForReader conn
 
-    member cmd.commitWhen p =
-        fun callback conn ->
-            (conn: DbConnection).useTransaction
-            <| fun tx ->
-                let affected =
-                    match cmd.useConn(conn).ExecuteNonQuery() with
-                    | n when p n -> //符合期望影响行数规则则提交
-                        tx.Commit()
-                        n
-                    | _ -> //否则回滚
-                        tx.Rollback()
-                        0
+        let table = reader.GetSchemaTable()
+        table.Rows.Clear() //刚开始会多出两行
 
-                tx.Dispose() //资源释放
-                cmd.Dispose()
-                cmd.Transaction <- null
+        let any = reader.Read()
 
-                callback () //执行回调（可用于连接销毁）
+        //初始化列元信息
+        for i in 0 .. reader.FieldCount - 1 do
+            new DataColumn(reader.GetName(i), reader.[i].GetType())
+            |> table.Columns.Add
 
-                affected
+        if any then
+            let rec loop () = //因为第一次读取过，所以采用do while形式
+                let row = table.NewRow()
+
+                for i in 0 .. reader.FieldCount - 1 do
+                    row.[reader.GetName(i)] <- reader.[i]
+
+                table.Rows.Add row
+
+                if reader.Read() then loop () else ()
+
+            loop ()
+        else
+            ()
+
+        table
+
+    //在受影响行数满足断言时提交
+    member cmd.commitWhen p (conn: DbConnection) =
+        conn.useTransaction
+        <| fun tx ->
+            let affected =
+                match cmd.useConn(conn).useTx(tx).ExecuteNonQuery() with
+                | n when p n -> //符合期望影响行数规则则提交
+                    tx.Commit()
+                    n
+                | _ -> //否则回滚
+                    tx.Rollback()
+                    0
+
+            tx.Dispose() //资源释放
+            cmd.Dispose()
+            cmd.Transaction <- null
+
+            affected
 
 type internal DbCommand with
-    member cmd.commitAsync conn =
+    member cmd.commitForAffectedAsync conn =
         cmd.useConn(conn).ExecuteNonQueryAsync()
 
     member cmd.commitForValueAsync conn = cmd.useConn(conn).ExecuteScalarAsync()
@@ -137,32 +162,28 @@ type internal DbCommand with
             return! reader.GetSchemaTableAsync()
         }
 
-    member cmd.commitWhenAsync p =
-        fun callback conn ->
-            (conn: DbConnection).useTransactionAsync
-            <| fun tx ->
-                task {
-                    //TODO 有待重构
-                    let! n = cmd.useConn(conn).ExecuteNonQueryAsync() //耗时操作
+    member cmd.commitWhenAsync p (conn: DbConnection) =
+        conn.useTransactionAsync
+        <| fun tx ->
+            task {
+                //TODO 有待重构
+                let! n = cmd.useConn(conn).useTx(tx).ExecuteNonQueryAsync() //耗时操作
 
-                    let affected =
-                        if p n then
-                            tx.CommitAsync() |> wait |> ignore //符合期望影响行数规则则提交
-                            n
-                        else
-                            tx.RollbackAsync() |> wait |> ignore //否则回滚
-                            0
+                let affected =
+                    if p n then
+                        tx.CommitAsync() |> wait |> ignore //符合期望影响行数规则则提交
+                        n
+                    else
+                        tx.RollbackAsync() |> wait |> ignore //否则回滚
+                        0
 
-                    tx.DisposeAsync() |> ignore //资源释放
-                    cmd.DisposeAsync() |> ignore
-                    cmd.Transaction <- null
+                tx.DisposeAsync() |> ignore //资源释放
+                cmd.DisposeAsync() |> ignore
+                cmd.Transaction <- null
 
-                    callback () //执行回调（可用于连接销毁）
-
-                    return affected
-                }
-            |> result
-
+                return affected
+            }
+        |> result
 
 type DbCommand with
 
@@ -174,19 +195,10 @@ type DbCommand with
 
 type DbCommand with
 
-    /// 查询到表
-    member cmd.select(sql) = cmd.letQuery(sql).commitForTable
-    /// 参数化查询到表
-    member cmd.select(sql, paras: (string * 't) list) =
-        cmd.letQuery(sql).addParas(paras).commitForTable
-
-
     /// 执行任意查询
     /// 返回的闭包用于检测受影响的行数，当断言成立时闭包会提交事务并返回受影响的行数
     /// 低级操作：查询执行完成后应注意注销该连接以避免连接泄漏
     member cmd.query sql = cmd.letQuery(sql).commitWhen
-
-
     /// 执行任意参数化查询
     /// 返回的闭包用于检测受影响的行数，当断言成立时闭包会提交事务并返回受影响的行数
     /// 低级操作：查询执行完成后应注意注销该连接以避免连接泄漏
@@ -194,119 +206,28 @@ type DbCommand with
         cmd.letQuery(sql).addParas(paras).commitWhen
 
 
-    /// 将 table 中 whereKey 等于 whereKeyVal 的行的 setKey 更新为 setKeyVal
-    /// 返回的闭包用于检测受影响的行数，当断言成立时闭包会提交事务并返回受影响的行数
-    member cmd.update(paraMark, table: string, (setKey: string, setKeyVal), (whereKey: string, whereKeyVal)) =
-        let sql =
-            $"UPDATE {table} \
-              SET    {setKey}   = {paraMark}setKeyVal \
-              WHERE  {whereKey} = {paraMark}whereKeyVal"
-
-        cmd.letQuery(sql).addParas(
-            [ ("setKeyVal", setKeyVal); ("whereKeyVal", whereKeyVal) ]
-        )
-            .commitWhen
-    /// 将 table 中 key 等于 oldValue 的行的 key 更新为 newValue
-    /// 返回的闭包用于检测受影响的行数，当断言成立时闭包会提交事务并返回受影响的行数
-    member cmd.update(paraMark, table, key, newValue: 'v, oldValue: 'v) =
-        (paraMark, table, (key, newValue), (key, oldValue))
-        |> cmd.update
-
-
-    /// 在 table 中插入一行
-    /// 返回的闭包用于检测受影响的行数，当断言成立时闭包会提交事务并返回受影响的行数
-    member cmd.insert paraMark (table: string) pairs =
-
-        let keys, values =
-            pairs
-            |> foldl
-                (fun (acc_k, acc_v) (k: string, v) ->
-
-                    cmd.addPara (k, v) //添加参数
-                    |> ignore
-
-                    //acc_k 为VALUES语句前半部分
-                    //acc_v 为VALUES语句后半部分
-                    ($"{acc_k}{k},", $"{acc_v}{paraMark}{k},"))
-                ("", "")
-
-        let sql =
-            $"INSERT INTO {table} \
-                     ({keys.withoutLast}) \
-                     VALUES \
-                     ({values.withoutLast})"
-
-        cmd.letQuery(sql).commitWhen
-
-
-    /// 删除 table 中 whereKey 等于 whereKeyVal 的行
-    /// 返回的闭包用于检测受影响的行数，当断言成立时闭包会提交事务并返回受影响的行数
-    member cmd.delete paraMark (table: string) (whereKey: string, whereKeyVal) =
-        let sql =
-            $"DELETE FROM {table} WHERE {whereKey} = {paraMark}Value"
-
-        cmd.letQuery(sql).addPara(
-            "Value",
-            whereKeyVal
-        )
-            .commitWhen
-
+    /// 查询到表
+    member cmd.select(sql) = cmd.letQuery(sql).commitForTable
+    /// 参数化查询到表
+    member cmd.select(sql, paras: (string * 't) list) =
+        cmd.letQuery(sql).addParas(paras).commitForTable
 
 type DbCommand with
 
     /// 查询到第一个值
-    member cmd.getFstVal sql =
-        cmd.letQuery(sql).commitForValue
-        .> Option'<obj>.fromNullable
+    member cmd.getFstVal sql = cmd.letQuery(sql).commitForValue
     /// 参数化查询到第一个值
     member cmd.getFstVal(sql, paras: (string * 't) list) =
         cmd.letQuery(sql).addParas(paras).commitForValue
-        .> Option'<obj>.fromNullable
-    /// 参数化查询到第一个值
-    member cmd.getFstVal(table: string, targetKey: string, (whereKey: string, whereKeyVal: 'v)) =
-        cmd
-            .letQuery(
-                $"SELECT {targetKey} FROM {table} WHERE {whereKey} = :whereKeyVal"
-            )
-            .addPara(
-            "whereKeyVal",
-            whereKeyVal
-        )
-            .commitForValue
-        .> Option'<obj>.fromNullable
+
     /// 查询到第一行
-    member cmd.getFstRow sql =
-        cmd.select sql
-        .> fun result ->
-            match result.Rows with
-            //仅当行数非零时有结果
-            | rows when rows.Count <> 0 -> Some rows.[0]
-            | _ -> None
-            |> Ok
+    member cmd.getFstRow sql = cmd.letQuery(sql).commitForFstRow
     /// 参数化查询到第一行
-    member cmd.getFstRow(sql, paras) =
-        cmd.select (sql, paras)
-        .> fun result ->
-            match result.Rows with
-            //仅当行数非零时有结果
-            | rows when rows.Count <> 0 -> Some rows.[0]
-            | _ -> None
-            |> Ok
+    member cmd.getFstRow(sql, paras: (string * 't) list) =
+        cmd.letQuery(sql).addParas(paras).commitForFstRow
 
-
-    /// 查询到指定列
-    member cmd.getCol(sql, key: string) =
-        cmd.select sql
-        .> fun t -> Ok <| getColFromByKey (t, key)
-    /// 参数化查询到指定列
-    member cmd.getCol(sql, key: string, paras) =
-        cmd.select (sql, paras)
-        .> fun t -> getColFromByKey (t, key) |> Ok
-    /// 查询到指定列
-    member cmd.getCol(sql, index: u32) =
-        cmd.select sql
-        .> fun t -> Ok <| getColFromByIndex (t, index)
-    /// 参数化查询到指定列
-    member cmd.getCol(sql, index: u32, paras) =
-        cmd.select (sql, paras)
-        .> fun t -> getColFromByIndex (t, index) |> Ok
+    /// 查询到第一列
+    member cmd.getFstCol(sql) = cmd.letQuery(sql).commitForFstCol
+    /// 参数化查询到第一列
+    member cmd.getFstCol(sql, paras: (string * 't) list) =
+        cmd.letQuery(sql).addParas(paras).commitForFstCol

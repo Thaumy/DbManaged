@@ -2,19 +2,21 @@ module dbm_test.PgSql.com
 
 open DbManaged
 open DbManaged.PgSql
-open fsharper.op.Boxing
 open fsharper.typ
+open fsharper.op.Boxing
 open dbm_test
 
 let tab1 = "sch1.tab1"
 let size = 100u
-let mutable msg = Err ConnMsgNotInitException
-let mutable managed: Result'<IDbManagedAsync, exn> = Err ManagedNotInitException
+let mutable private msgResult = Err ManagedNotInitException
+let mutable private managedResult: Result'<IDbManaged, exn> = Err ManagedNotInitException
+let managed () = managedResult.unwrap ()
+let mkCmd () = managed().makeCmd ()
 
 let connect () =
-    match msg with
+    match msgResult with
     | Err _ ->
-        msg <-
+        msgResult <-
             Ok
                 { Host = "localhost"
                   Port = 5432us
@@ -22,9 +24,9 @@ let connect () =
                   Password = "65a1561425f744e2b541303f628963f8" }
     | _ -> ()
 
-    match managed with
+    match managedResult with
     | Err _ ->
-        managed <-
+        managedResult <-
             Ok
-            <| new PgSqlManaged(unwrap msg, "dbm_test", size)
+            <| new PgSqlManaged(unwrap msgResult, "dbm_test", size)
     | _ -> ()
