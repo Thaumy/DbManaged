@@ -20,7 +20,7 @@ let getFstCol_overload1_test () =
         mkCmd()
             .getFstCol $"SELECT col3 FROM {tab1} WHERE col3 = 'init[001,050]'"
         |> managed().executeQuery
-        |> unwrap2
+        |> unwrap
 
     for it in result do
         Assert.AreEqual("init[001,050]", it)
@@ -33,7 +33,7 @@ let getFstCol_overload2_test () =
         mkCmd()
             .getFstCol (normalizeSql $"SELECT col3 FROM {tab1} WHERE col3 = <col3>", paras)
         |> managed().executeQuery
-        |> unwrap2
+        |> unwrap
 
     for it in result do
         Assert.AreEqual("init[050,100]", it)
