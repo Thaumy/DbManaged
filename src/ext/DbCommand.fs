@@ -49,6 +49,7 @@ type internal DbCommand with
         cmd.Transaction <- tx
         cmd
 
+//Sync
 type internal DbCommand with
 
     //提交并返回受影响的行数
@@ -57,7 +58,7 @@ type internal DbCommand with
         cmd.useConn(conn).ExecuteNonQuery()
 
     //提交并取得第一行第一列的值
-    member cmd.commitForValue conn =
+    member cmd.commitForScalar conn =
         cmd.useConn(conn).ExecuteScalar()
         |> Option'<obj>.fromNullable
 
@@ -90,32 +91,27 @@ type internal DbCommand with
     member cmd.commitForFstCol conn =
         let reader = cmd.commitForReader conn
 
-        if reader.Read() then
-            let rec loop () = //因为第一次读取过，所以采用do while形式
-                if reader.Read() then
-                    reader.[0] :: loop ()
-                else
-                    []
+        let rec loop () = //因为第一次读取过，所以采用do while形式
+            if reader.Read() then
+                reader.[0] :: loop ()
+            else
+                []
 
-            Some <| reader.[0] :: loop ()
-        else
-            None
+        loop ()
 
     //提交并取得一张表
     member cmd.commitForTable conn =
         let reader = cmd.commitForReader conn
 
-        let table = reader.GetSchemaTable()
-        table.Rows.Clear() //刚开始会多出两行
+        if reader.Read() then
+            let table = reader.GetSchemaTable()
+            table.Rows.Clear() //TODO 刚开始会多出两行的原因
 
-        let any = reader.Read()
+            //初始化列元信息
+            for i in 0 .. reader.FieldCount - 1 do
+                new DataColumn(reader.GetName(i), reader.[i].GetType())
+                |> table.Columns.Add
 
-        //初始化列元信息
-        for i in 0 .. reader.FieldCount - 1 do
-            new DataColumn(reader.GetName(i), reader.[i].GetType())
-            |> table.Columns.Add
-
-        if any then
             let rec loop () = //因为第一次读取过，所以采用do while形式
                 let row = table.NewRow()
 
@@ -124,13 +120,12 @@ type internal DbCommand with
 
                 table.Rows.Add row
 
-                if reader.Read() then loop () else ()
+                if reader.Read() then loop () else table
 
-            loop ()
+            //之所以返回option，是因为reader在无行可读时不能取得列元信息，其实是实现上的妥协
+            Some(loop ())
         else
-            ()
-
-        table
+            None
 
     //在受影响行数满足断言时提交
     member cmd.commitWhen p (conn: DbConnection) =
@@ -147,15 +142,98 @@ type internal DbCommand with
 
             tx.Dispose() //资源释放
             cmd.Dispose()
-            cmd.Transaction <- null
 
             affected
 
+//Async
 type internal DbCommand with
+
     member cmd.commitForAffectedAsync conn =
         cmd.useConn(conn).ExecuteNonQueryAsync()
 
-    member cmd.commitForValueAsync conn = cmd.useConn(conn).ExecuteScalarAsync()
+    member cmd.commitForScalarAsync conn = cmd.useConn(conn).ExecuteScalarAsync()
+
+    member cmd.commitForReaderAsync conn = cmd.useConn(conn).ExecuteReaderAsync()
+
+    member cmd.commitForFstRowAsync conn =
+        task {
+            let! reader = cmd.commitForReaderAsync conn
+            let! exist = reader.ReadAsync()
+
+            let result =
+                if exist then
+                    let table = reader.GetSchemaTable()
+
+                    //初始化列元信息
+                    for i in 0 .. reader.FieldCount - 1 do
+                        new DataColumn(reader.GetName(i), reader.[i].GetType())
+                        |> table.Columns.Add
+
+                    let row = table.NewRow()
+
+                    //逐个添加列值
+                    for i in 0 .. reader.FieldCount - 1 do
+                        row.[reader.GetName(i)] <- reader.[i]
+
+                    Some row
+                else
+                    None
+
+            //该实现受限于task的尾调用限制
+            return result
+        }
+
+    member cmd.commitForFstColAsync conn =
+        task {
+            let! reader = cmd.commitForReaderAsync conn
+
+            let! result =
+                task {
+                    return
+                        [ while reader.Read() do
+                              reader.[0] ]
+                }
+                
+            //受限于任务表达式的限制，此处不能采用递归实现
+            return result
+        }
+
+    member cmd.commitForTableAsync conn =
+        task {
+            let! reader = cmd.commitForReaderAsync conn
+            let! exist = reader.ReadAsync()
+
+            let result =
+                if exist then
+                    let table = reader.GetSchemaTable()
+                    table.Rows.Clear() //TODO 刚开始会多出两行的原因
+
+                    //初始化列元信息
+                    for i in 0 .. reader.FieldCount - 1 do
+                        new DataColumn(reader.GetName(i), reader.[i].GetType())
+                        |> table.Columns.Add
+
+                    let closure () =
+                        let row = table.NewRow()
+
+                        for i in 0 .. reader.FieldCount - 1 do
+                            row.[reader.GetName(i)] <- reader.[i]
+
+                        table.Rows.Add row
+
+                    //因为第一次读取过，所以采用do while形式
+                    closure ()
+                    //受限于任务表达式的限制，此处不能采用递归实现
+                    while reader.Read() do
+                        closure ()
+
+                    //之所以返回option，是因为reader在无行可读时不能取得列元信息，其实是实现上的妥协
+                    Some table
+                else
+                    None
+
+            return result
+        }
 
     member cmd.commitWhenAsync p (conn: DbConnection) =
         conn.useTransactionAsync
@@ -193,11 +271,20 @@ type internal DbCommand with
 
 type DbCommand with
 
+    /// 查询到表
+    member cmd.select(sql) = cmd.letQuery(sql).commitForTable
+    /// 参数化查询到表
+    member cmd.select(sql, paras: (string * 't) list) =
+        cmd.letQuery(sql).addParas(paras).commitForTable
+
     /// TODO exp async api
-    member cmd.queryAsync sql = cmd.letQuery(sql).commitWhenAsync
+    member cmd.selectAsync(sql) = cmd.letQuery(sql).commitForTableAsync
     /// TODO exp async api
-    member cmd.queryAsync(sql, paras: (string * 't) list) =
-        cmd.letQuery(sql).addParas(paras).commitWhenAsync
+    member cmd.selectAsync(sql, paras: (string * 't) list) =
+        cmd.letQuery(sql).addParas(
+            paras
+        )
+            .commitForTableAsync
 
 type DbCommand with
 
@@ -211,20 +298,30 @@ type DbCommand with
     member cmd.query(sql, paras: (string * 't) list) =
         cmd.letQuery(sql).addParas(paras).commitWhen
 
-
-    /// 查询到表
-    member cmd.select(sql) = cmd.letQuery(sql).commitForTable
-    /// 参数化查询到表
-    member cmd.select(sql, paras: (string * 't) list) =
-        cmd.letQuery(sql).addParas(paras).commitForTable
+    /// TODO exp async api
+    member cmd.queryAsync sql = cmd.letQuery(sql).commitWhenAsync
+    /// TODO exp async api
+    member cmd.queryAsync(sql, paras: (string * 't) list) =
+        cmd.letQuery(sql).addParas(paras).commitWhenAsync
 
 type DbCommand with
 
     /// 查询到第一个值
-    member cmd.getFstVal sql = cmd.letQuery(sql).commitForValue
+    member cmd.getFstVal sql = cmd.letQuery(sql).commitForScalar
     /// 参数化查询到第一个值
     member cmd.getFstVal(sql, paras: (string * 't) list) =
-        cmd.letQuery(sql).addParas(paras).commitForValue
+        cmd.letQuery(sql).addParas(paras).commitForScalar
+
+    /// TODO exp async api
+    member cmd.getFstValAsync sql = cmd.letQuery(sql).commitForScalarAsync
+    /// TODO exp async api
+    member cmd.getFstValAsync(sql, paras: (string * 't) list) =
+        cmd.letQuery(sql).addParas(
+            paras
+        )
+            .commitForScalarAsync
+
+type DbCommand with
 
     /// 查询到第一行
     member cmd.getFstRow sql = cmd.letQuery(sql).commitForFstRow
@@ -232,8 +329,28 @@ type DbCommand with
     member cmd.getFstRow(sql, paras: (string * 't) list) =
         cmd.letQuery(sql).addParas(paras).commitForFstRow
 
+    /// TODO exp async api
+    member cmd.getFstRowAsync sql = cmd.letQuery(sql).commitForFstRowAsync
+    /// TODO exp async api
+    member cmd.getFstRowAsync(sql, paras: (string * 't) list) =
+        cmd.letQuery(sql).addParas(
+            paras
+        )
+            .commitForFstRowAsync
+
+type DbCommand with
+
     /// 查询到第一列
     member cmd.getFstCol(sql) = cmd.letQuery(sql).commitForFstCol
     /// 参数化查询到第一列
     member cmd.getFstCol(sql, paras: (string * 't) list) =
         cmd.letQuery(sql).addParas(paras).commitForFstCol
+
+    /// TODO exp async api
+    member cmd.getFstColAsync(sql) = cmd.letQuery(sql).commitForFstColAsync
+    /// TODO exp async api
+    member cmd.getFstColAsync(sql, paras: (string * 't) list) =
+        cmd.letQuery(sql).addParas(
+            paras
+        )
+            .commitForFstColAsync

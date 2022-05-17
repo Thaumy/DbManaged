@@ -42,11 +42,29 @@
 	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=aead2cb5_002Da5ab_002D404a_002D88da_002D9fc96ac2e5c8/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" Name="getTable_overload2_test" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;
   &lt;ProjectFolder&gt;716DD3EB-4C62-445C-9346-385A966C9E55/d:MySql&lt;/ProjectFolder&gt;
 &lt;/SessionState&gt;</s:String>
-	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=cbf787f9_002D9064_002D4d14_002D8c83_002Da0dc25af16b9/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" IsActive="True" Name="select_overload1_test" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;
+	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=cbf787f9_002D9064_002D4d14_002D8c83_002Da0dc25af16b9/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" Name="select_overload1_test" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;
   &lt;Or&gt;
     &lt;ProjectFolder&gt;716DD3EB-4C62-445C-9346-385A966C9E55/d:PgSql&lt;/ProjectFolder&gt;
     &lt;ProjectFolder&gt;716DD3EB-4C62-445C-9346-385A966C9E55/d:MySql&lt;/ProjectFolder&gt;
   &lt;/Or&gt;
+&lt;/SessionState&gt;</s:String>
+	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=ce07c7d5_002D93d9_002D4be6_002Da73b_002D29409bf57e67/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" Name="Session #3" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;
+  &lt;Or&gt;
+    &lt;Not&gt;
+      &lt;TestAncestor&gt;
+        &lt;TestId&gt;NUnit3x::716DD3EB-4C62-445C-9346-385A966C9E55::net6.0::dbm_test.PgSql.Async.SimpleQuery.select.select_overload2_test&lt;/TestId&gt;
+      &lt;/TestAncestor&gt;
+    &lt;/Not&gt;
+    &lt;TestAncestor&gt;
+      &lt;TestId&gt;NUnit3x::716DD3EB-4C62-445C-9346-385A966C9E55::net6.0::dbm_test.PgSql.Async.SimpleQuery.select&lt;/TestId&gt;
+    &lt;/TestAncestor&gt;
+  &lt;/Or&gt;
+&lt;/SessionState&gt;</s:String>
+	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=d06cbedf_002Db347_002D4e83_002D86e2_002D5b9c1f703c15/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" Name="getFstRow_overload1_test #3" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;
+  &lt;TestAncestor&gt;
+    &lt;TestId&gt;NUnit3x::716DD3EB-4C62-445C-9346-385A966C9E55::net6.0::dbm_test.PgSql.Async.ComplexQuery.getFstRow.getFstRow_overload1_test&lt;/TestId&gt;
+    &lt;TestId&gt;NUnit3x::716DD3EB-4C62-445C-9346-385A966C9E55::net6.0::dbm_test.PgSql.Async.ComplexQuery.getFstRow.getFstRow_overload2_test&lt;/TestId&gt;
+  &lt;/TestAncestor&gt;
 &lt;/SessionState&gt;</s:String>
 	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=e85a4764_002D01f4_002D4fe6_002Dbbde_002De4ac4ed758e0/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" Name="executeUpdate_overload1_test #2" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;
   &lt;Or&gt;
@@ -61,18 +79,22 @@
     &lt;ProjectFolder&gt;716DD3EB-4C62-445C-9346-385A966C9E55/d:PgSql/d:Async&lt;/ProjectFolder&gt;
   &lt;/Or&gt;
 &lt;/SessionState&gt;</s:String>
-	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=f7ef556b_002Da153_002D4904_002Dbf9d_002De40b0ccba030/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" Name="Session" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;
+	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=f438bb3b_002D2226_002D41c8_002Dafbc_002D591c390a1867/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" Name="getFstRow_overload1_test #2" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;
+  &lt;TestAncestor&gt;
+    &lt;TestId&gt;NUnit3x::716DD3EB-4C62-445C-9346-385A966C9E55::net6.0::dbm_test.PgSql.Async.ComplexQuery.getFstRow.getFstRow_overload1_test&lt;/TestId&gt;
+    &lt;TestId&gt;NUnit3x::716DD3EB-4C62-445C-9346-385A966C9E55::net6.0::dbm_test.PgSql.Async.SimpleQuery.select.select_overload1_test&lt;/TestId&gt;
+  &lt;/TestAncestor&gt;
+&lt;/SessionState&gt;</s:String>
+	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=f7ef556b_002Da153_002D4904_002Dbf9d_002De40b0ccba030/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" IsActive="True" Name="Session" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;
   &lt;Or&gt;
+    &lt;Not&gt;
+      &lt;TestAncestor&gt;
+        &lt;TestId&gt;NUnit3x::716DD3EB-4C62-445C-9346-385A966C9E55::net6.0::dbm_test.PgSql.Async.SimpleQuery.select.select_overload2_test&lt;/TestId&gt;
+      &lt;/TestAncestor&gt;
+    &lt;/Not&gt;
     &lt;TestAncestor&gt;
-      &lt;TestId&gt;NUnit3x::716DD3EB-4C62-445C-9346-385A966C9E55::net6.0::dbm_test.MySql.excute.executeUpdate.executeUpdate_overload1_test&lt;/TestId&gt;
+      &lt;TestId&gt;NUnit3x::716DD3EB-4C62-445C-9346-385A966C9E55::net6.0::dbm_test.PgSql.Async.SimpleQuery.select&lt;/TestId&gt;
     &lt;/TestAncestor&gt;
-    &lt;ProjectFolder&gt;716DD3EB-4C62-445C-9346-385A966C9E55/d:PgSql/d:excute&lt;/ProjectFolder&gt;
-    &lt;ProjectFolder&gt;716DD3EB-4C62-445C-9346-385A966C9E55/d:MySql/d:excute&lt;/ProjectFolder&gt;
-    &lt;ProjectFolder&gt;716DD3EB-4C62-445C-9346-385A966C9E55/d:MySql/d:get&lt;/ProjectFolder&gt;
-    &lt;ProjectFolder&gt;716DD3EB-4C62-445C-9346-385A966C9E55/d:PgSql/d:get&lt;/ProjectFolder&gt;
-    &lt;ProjectFolder&gt;716DD3EB-4C62-445C-9346-385A966C9E55/d:PgSql/d:Sync&lt;/ProjectFolder&gt;
-    &lt;ProjectFolder&gt;716DD3EB-4C62-445C-9346-385A966C9E55/d:PgSql/d:Async&lt;/ProjectFolder&gt;
-    &lt;ProjectFolder&gt;716DD3EB-4C62-445C-9346-385A966C9E55/d:MySql&lt;/ProjectFolder&gt;
   &lt;/Or&gt;
 &lt;/SessionState&gt;</s:String>
 	

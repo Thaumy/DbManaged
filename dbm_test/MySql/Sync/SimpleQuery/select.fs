@@ -22,7 +22,7 @@ let select_overload1_test () =
         
         mkCmd().select $"SELECT col1,col2 FROM {tab1}"
         |>managed().executeQuery
-        |>unwrap
+        |>unwrap2
 
     for row in result.Rows do
         Assert.AreEqual(0, row.["col1"])
@@ -35,7 +35,7 @@ let select_overload2_test () =
 
         mkCmd().select (normalizeSql $"SELECT col1,col2 FROM {tab1} WHERE col3 = <col3>", paras)
         |>managed().executeQuery
-        |> unwrap
+        |> unwrap2
 
     for row in result.Rows do
         Assert.AreEqual(0, row.["col1"])
