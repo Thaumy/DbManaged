@@ -67,7 +67,7 @@ type internal DbCommand with
 
     //提交并取得第一行
     member cmd.commitForFstRow conn =
-        let reader = cmd.commitForReader conn
+        use reader = cmd.commitForReader conn
 
         if reader.Read() then
             let table = reader.GetSchemaTable()
@@ -89,7 +89,7 @@ type internal DbCommand with
 
     //提交并取得第一列
     member cmd.commitForFstCol conn =
-        let reader = cmd.commitForReader conn
+        use reader = cmd.commitForReader conn
 
         let rec loop () = //因为第一次读取过，所以采用do while形式
             if reader.Read() then
@@ -101,7 +101,7 @@ type internal DbCommand with
 
     //提交并取得一张表
     member cmd.commitForTable conn =
-        let reader = cmd.commitForReader conn
+        use reader = cmd.commitForReader conn
 
         if reader.Read() then
             let table = reader.GetSchemaTable()
@@ -157,7 +157,7 @@ type internal DbCommand with
 
     member cmd.commitForFstRowAsync conn =
         task {
-            let! reader = cmd.commitForReaderAsync conn
+            use! reader = cmd.commitForReaderAsync conn
             let! exist = reader.ReadAsync()
 
             let result =
@@ -185,7 +185,7 @@ type internal DbCommand with
 
     member cmd.commitForFstColAsync conn =
         task {
-            let! reader = cmd.commitForReaderAsync conn
+            use! reader = cmd.commitForReaderAsync conn
 
             let! result =
                 task {
@@ -200,7 +200,7 @@ type internal DbCommand with
 
     member cmd.commitForTableAsync conn =
         task {
-            let! reader = cmd.commitForReaderAsync conn
+            use! reader = cmd.commitForReaderAsync conn
             let! exist = reader.ReadAsync()
 
             let result =
