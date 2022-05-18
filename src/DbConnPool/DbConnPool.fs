@@ -12,8 +12,11 @@ open fsharper.op.Alias
 open DbManaged
 
 /// PgSql数据库连接池
+/// 对于不同的数据库，连接建立成本有所差异，应通过调节比例系数k来达到最佳池性能平衡
+/// 对于建立连接开销较大的数据库系统，k应大于1
+/// 反之，k应小于1
 type internal DbConnPool<'ConnType when 'ConnType :> DbConnection and 'ConnType: equality and 'ConnType: (new :
-    unit -> 'ConnType)> public (msg: DbConnMsg, database, size: u32) as self =
+    unit -> 'ConnType)> public (msg: DbConnMsg, database, size: u32, k) as self =
 
     /// 连接字符串
     let connStr = //启用连接池，最大超时1秒
@@ -48,25 +51,38 @@ type internal DbConnPool<'ConnType when 'ConnType :> DbConnection and 'ConnType:
     /// 添加到空闲连接表
     let mutable freeConnectionsAdd = freeConnections.Writer.WriteAsync
 
+    /// 异步取得空闲连接
+    let freeConnectionGetAsync () = freeConnections.Reader.ReadAsync()
+
     /// 取得空闲连接
-    let freeConnectionsGet () =
-        freeConnections.Reader.ReadAsync().AsTask().Result
+    let freeConnectionGet () =
+        freeConnectionGetAsync().AsTask().Result
 
     /// 尝试取得空闲连接
-    let rec freeConnectionsTryGet () =
+    let rec freeConnectionTryGet () =
         let ok, conn = freeConnections.Reader.TryRead()
         if ok then Some conn else None
 
     /// 生成新连接
-    let rec connGen () =
+    let genConn () =
         let conn = new 'ConnType()
         conn.ConnectionString <- connStr
 
         conn.Open()
         conn
 
+    let genConnAsync () =
+        let conn = new 'ConnType()
+        conn.ConnectionString <- connStr
+
+        task {
+            let! _ = conn.OpenAsync()
+            return conn
+        }
+        |> ValueTask<'ConnType>
+
     /// 尝试生成新连接
-    let rec connTryGen () =
+    let rec tryGenConn () =
         let count =
             u32 (
                 freeConnections.Reader.Count
@@ -74,30 +90,33 @@ type internal DbConnPool<'ConnType when 'ConnType :> DbConnection and 'ConnType:
             )
 
         if count < size then
-            Some(connGen ())
+            Some(genConn ())
         else
             None
 
     let outputPoolStatus () =
-        let occ =
-            (self :> IDbConnPool).occupancy.ToString "0.00"
+        fun _ ->
+            let occ =
+                (self :> IDbConnPool).occupancy.ToString "0.00"
 
-        let pressure =
-            (self :> IDbConnPool).pressure.ToString "0.00"
+            let pressure =
+                (self :> IDbConnPool).pressure.ToString "0.00"
 
-        let free =
-            freeConnections.Reader.Count.ToString("00")
+            let free =
+                freeConnections.Reader.Count.ToString("00")
 
-        let busy = busyConnections.Count.ToString("00")
+            let busy = busyConnections.Count.ToString("00")
 
-        let freeAndBusy =
-            (freeConnections.Reader.Count
-             + busyConnections.Count)
-                .ToString("00")
+            let freeAndBusy =
+                (freeConnections.Reader.Count
+                 + busyConnections.Count)
+                    .ToString("00")
 
-        printfn $"[占用 {occ}: {freeAndBusy} /{size}] [压力 {pressure}: 忙{busy} 闲{free}]"
+            printfn $"[占用 {occ}: {freeAndBusy} /{size}] [压力 {pressure}: 忙{busy} 闲{free}]"
+        |> Task.Run
+        |> ignore
 
-    new(msg: DbConnMsg, size: u32) = new DbConnPool<'ConnType>(msg, "", size)
+    new(msg: DbConnMsg, size: u32, k) = new DbConnPool<'ConnType>(msg, "", size, k)
 
     interface IDisposable with
         /// 注销后不应进行新的查询
@@ -128,7 +147,7 @@ type internal DbConnPool<'ConnType when 'ConnType :> DbConnection and 'ConnType:
             let busyCount = f64 busyConnections.Count
 
             //+1.0是为了防止算术错误
-            busyCount / (freeCount + busyCount + 1.0) //init is 0
+            busyCount / (freeCount + busyCount + 1.0) * k //init is 0
 
         member self.occupancy =
             let freeCount = f64 freeConnections.Reader.Count
@@ -141,7 +160,7 @@ type internal DbConnPool<'ConnType when 'ConnType :> DbConnection and 'ConnType:
             match busyConnectionsTryRemove (coerce conn) with
             | true, removed when refEq removed conn ->
 
-                if (self :> IDbConnPool).pressure < 0.3 then
+                if (self :> IDbConnPool).pressure < 0.2 then
                     conn.DisposeAsync() //增加池压力
                 else
                     //从busyConnections移除了连接，且被移除的连接是目标连接
@@ -169,31 +188,29 @@ type internal DbConnPool<'ConnType when 'ConnType :> DbConnection and 'ConnType:
         member self.getConnection() =
             try
                 let result =
+                    //始终保留一部分连接以供其他用途
                     if (self :> IDbConnPool).occupancy < 0.8 then
+
                         match (self :> IDbConnPool).pressure with
                         | p when //池压力较小，复用连接以提升池压力系数
-                            p < 0.7
-                            ->
-                            freeConnectionsTryGet().unwrapOr connGen
-                        | p when //池压力较大，新建连接以降低池压力系数
                             p < 0.8
                             ->
-                            connGen ()
-                        | _ -> //池压力过大，新建更多连接以降低池压力系数
-                            Task.Run
-                                (fun _ ->
-                                    connTryGen()
-                                        .whenCanUnwrap (fun c -> freeConnectionsAdd c |> ignore))
+                            freeConnectionTryGet().unwrapOr genConn
+                        | _ -> //池压力较大，新建连接以降低池压力系数
+                            (fun _ ->
+                                (fun c -> freeConnectionsAdd c |> ignore)
+                                |> tryGenConn().whenCanUnwrap)
+                            |> Task.Run
                             |> ignore
 
-                            connGen ()
+                            freeConnectionTryGet().unwrapOr genConn
                     else
-                        freeConnectionsGet ()
+                        freeConnectionGet ()
                 (*加入忙碌列表，如果加入失败则表明该连接与已登记连接存在哈希冲突，
                 此时不进行登记，在回收阶段会检测到该连接并将其销毁*)
                 busyConnectionsTryAdd result |> ignore //添加到忙碌连接表
 
-                Task.Run outputPoolStatus |> ignore
+                outputPoolStatus ()
 
                 result :> DbConnection |> Ok
             with
@@ -202,6 +219,45 @@ type internal DbConnPool<'ConnType when 'ConnType :> DbConnection and 'ConnType:
         member self.recycleConnectionAsync conn =
             Task.Run<unit>(fun _ -> (self :> IDbConnPool).recycleConnection conn)
 
-        /// TODO exp async api
+        /// 异步从连接池取用 'ConnType
         member self.getConnectionAsync() =
-            Task.Run (self :> IDbConnPool).getConnection
+            fun _ ->
+                task {
+                    try
+                        let connTask =
+                            //始终保留一部分连接以供其他用途
+                            if (self :> IDbConnPool).occupancy < 0.8 then
+                                match (self :> IDbConnPool).pressure with
+                                | p when //池压力较小，复用连接以提升池压力系数
+                                    p < 0.8
+                                    ->
+                                    match freeConnectionTryGet () with
+                                    | Some c -> ValueTask<'ConnType>(c)
+                                    | None -> genConnAsync ()
+
+                                | _ -> //池压力较大，新建连接以降低池压力系数
+                                    (fun _ ->
+                                        (fun c -> freeConnectionsAdd c |> ignore)
+                                        |> tryGenConn().whenCanUnwrap)
+                                    |> Task.Run
+                                    |> ignore
+
+                                    match freeConnectionTryGet () with
+                                    | Some c -> ValueTask<'ConnType>(c)
+                                    | None -> genConnAsync ()
+                            else
+                                freeConnectionGetAsync ()
+
+                        outputPoolStatus ()
+
+                        let! conn = connTask
+                        busyConnectionsTryAdd conn |> ignore //添加到忙碌连接表
+                        return conn :> DbConnection |> Ok
+                    with
+                    | e -> return Err e
+                }
+            |> Task.Run<Result'<DbConnection, exn>>
+(*
+        member self.getConnectionAsync() =
+                    Task.Run (self :> IDbConnPool).getConnection
+*)
