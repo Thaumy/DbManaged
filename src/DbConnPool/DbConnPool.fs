@@ -12,11 +12,9 @@ open fsharper.op.Alias
 open DbManaged
 
 /// PgSql数据库连接池
-/// 对于不同的数据库，连接建立成本有所差异，应通过调节比例系数k来达到最佳池性能平衡
-/// 对于建立连接开销较大的数据库系统，k应大于1
-/// 反之，k应小于1
+/// 对于不同的数据库，连接建立成本有所差异，应通过调节比例系数来达到最佳池性能平衡
 type internal DbConnPool<'ConnType when 'ConnType :> DbConnection and 'ConnType: equality and 'ConnType: (new :
-    unit -> 'ConnType)> public (msg: DbConnMsg, database, size: u32, k) as self =
+    unit -> 'ConnType)> public (msg: DbConnMsg, database, size: u32, d, n) as self =
 
     /// 连接字符串
     let connStr = //启用连接池，最大超时1秒
@@ -116,7 +114,7 @@ type internal DbConnPool<'ConnType when 'ConnType :> DbConnection and 'ConnType:
         |> Task.Run
         |> ignore
 
-    new(msg: DbConnMsg, size: u32, k) = new DbConnPool<'ConnType>(msg, "", size, k)
+    new(msg: DbConnMsg, size: u32, d, n) = new DbConnPool<'ConnType>(msg, "", size, d, n)
 
     interface IDisposable with
         /// 注销后不应进行新的查询
@@ -147,7 +145,7 @@ type internal DbConnPool<'ConnType when 'ConnType :> DbConnection and 'ConnType:
             let busyCount = f64 busyConnections.Count
 
             //+1.0是为了防止算术错误
-            busyCount / (freeCount + busyCount + 1.0) * k //init is 0
+            busyCount / (freeCount + busyCount + 1.0) //init is 0
 
         member self.occupancy =
             let freeCount = f64 freeConnections.Reader.Count
@@ -160,7 +158,7 @@ type internal DbConnPool<'ConnType when 'ConnType :> DbConnection and 'ConnType:
             match busyConnectionsTryRemove (coerce conn) with
             | true, removed when refEq removed conn ->
 
-                if (self :> IDbConnPool).pressure < 0.2 then
+                if (self :> IDbConnPool).pressure < d then
                     conn.DisposeAsync() //增加池压力
                 else
                     //从busyConnections移除了连接，且被移除的连接是目标连接
@@ -193,7 +191,7 @@ type internal DbConnPool<'ConnType when 'ConnType :> DbConnection and 'ConnType:
 
                         match (self :> IDbConnPool).pressure with
                         | p when //池压力较小，复用连接以提升池压力系数
-                            p < 0.8
+                            p < n
                             ->
                             freeConnectionTryGet().unwrapOr genConn
                         | _ -> //池压力较大，新建连接以降低池压力系数
