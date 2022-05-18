@@ -5,6 +5,7 @@ open dbm_test.PgSql.com
 open dbm_test.PgSql.Async.init
 open fsharper.typ
 open fsharper.typ.Ord
+open fsharper.op.Async
 open fsharper.op.Boxing
 open DbManaged
 open DbManaged.PgSql
@@ -26,13 +27,18 @@ let insert_test () =
                   ("col3", "ccc")
                   ("col4", "cccc") ]
 
-            mkCmd().insert $"{tab1}" paras <| eq 1
-            |> managed().executeQuery
+            mkCmd().insertAsync $"{tab1}" paras <| eq 1
+            |> managed().executeQueryAsync
+            |> result
+            |> unwrap
 
-        Assert.AreEqual(1, query |> unwrap)
+        Assert.AreEqual(1, query)
 
     let count =
-        mkCmd().getFstVal $"SELECT COUNT(*) FROM {tab1};"
-        |> managed().executeQuery
+        mkCmd()
+            .getFstValAsync $"SELECT COUNT(*) FROM {tab1};"
+        |> managed().executeQueryAsync
+        |> result
+        |> unwrap
 
-    Assert.AreEqual(200, count |> unwrap2)
+    Assert.AreEqual(200, count)

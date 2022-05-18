@@ -18,19 +18,19 @@ type MySqlManaged private (pool: IDbConnPool) =
     /// 以连接信息构造
     new(msg) =
         let pool =
-            new DbConnPool<MySqlConnection>(msg, 32u)
+            new DbConnPool<MySqlConnection>(msg, 32u, 0.8)
 
         new MySqlManaged(pool)
     /// 以连接信息构造，并指定使用的数据库
     new(msg, database) =
         let pool =
-            new DbConnPool<MySqlConnection>(msg, database, 32u)
+            new DbConnPool<MySqlConnection>(msg, database, 0.8)
 
         new MySqlManaged(pool)
     /// 以连接信息构造，并指定使用的数据库和连接池大小
     new(msg, database, poolSize) =
         let pool =
-            new DbConnPool<MySqlConnection>(msg, database, poolSize)
+            new DbConnPool<MySqlConnection>(msg, database, poolSize, 0.8)
 
         new MySqlManaged(pool)
 
