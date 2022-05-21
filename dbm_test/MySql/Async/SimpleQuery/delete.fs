@@ -19,7 +19,7 @@ let SetUp () = init ()
 let delete_test () =
 
     let query =
-        mkCmd().deleteAsync $"{tab1}" ("col1", 0)
+        mkCmd().deleteAsync ($"{tab1}", "col1", 0)
         <| eq 100
         |> managed().executeQueryAsync
         |> result

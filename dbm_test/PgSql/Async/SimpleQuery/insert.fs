@@ -27,7 +27,7 @@ let insert_test () =
                   ("col3", "ccc")
                   ("col4", "cccc") ]
 
-            mkCmd().insertAsync $"{tab1}" paras <| eq 1
+            mkCmd().insertAsync ($"{tab1}", paras) <| eq 1
             |> managed().executeQueryAsync
             |> result
             |> unwrap

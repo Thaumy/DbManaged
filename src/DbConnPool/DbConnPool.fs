@@ -13,8 +13,9 @@ open DbManaged
 
 /// PgSql数据库连接池
 /// 对于不同的数据库，连接建立成本有所差异，应通过调节比例系数来达到最佳池性能平衡
+/// d为销毁连接系数，n为新建连接系数，min为最小使用率，max为最大连接使用率
 type internal DbConnPool<'ConnType when 'ConnType :> DbConnection and 'ConnType: equality and 'ConnType: (new :
-    unit -> 'ConnType)> public (msg: DbConnMsg, database, size: u32, d, n) as self =
+    unit -> 'ConnType)> public (msg: DbConnMsg, database, size: u32, d, n, min, max) as self =
 
     /// 连接字符串
     let connStr = //启用连接池，最大超时1秒
@@ -58,8 +59,8 @@ type internal DbConnPool<'ConnType when 'ConnType :> DbConnection and 'ConnType:
 
     /// 尝试取得空闲连接
     let rec freeConnectionTryGet () =
-        let ok, conn = freeConnections.Reader.TryRead()
-        if ok then Some conn else None
+        freeConnections.Reader.TryRead()
+        |> Option'.fromOkComma
 
     /// 生成新连接
     let genConn () =
@@ -92,6 +93,15 @@ type internal DbConnPool<'ConnType when 'ConnType :> DbConnection and 'ConnType:
         else
             None
 
+    do
+        //建立一部分连接以满足最小连接数
+        (fun _ ->
+            for _ in [ 0 .. i32 (f64 size * min) ] do
+                (fun c -> freeConnectionsAdd c |> ignore)
+                |> tryGenConn().whenCanUnwrap)
+        |> Task.Run
+        |> ignore
+
     let outputPoolStatus () =
         fun _ ->
             let occ =
@@ -114,7 +124,7 @@ type internal DbConnPool<'ConnType when 'ConnType :> DbConnection and 'ConnType:
         |> Task.Run
         |> ignore
 
-    new(msg: DbConnMsg, size: u32, d, n) = new DbConnPool<'ConnType>(msg, "", size, d, n)
+    new(msg: DbConnMsg, size: u32, d, n, min, max) = new DbConnPool<'ConnType>(msg, "", size, d, n, min, max)
 
     interface IDisposable with
         /// 注销后不应进行新的查询
@@ -158,7 +168,9 @@ type internal DbConnPool<'ConnType when 'ConnType :> DbConnection and 'ConnType:
             match busyConnectionsTryRemove (coerce conn) with
             | true, removed when refEq removed conn ->
 
-                if (self :> IDbConnPool).pressure < d then
+                if (self :> IDbConnPool).pressure < d
+                   //保证连接数不小于最小值
+                   && (self :> IDbConnPool).occupancy > min then
                     conn.DisposeAsync() //增加池压力
                 else
                     //从busyConnections移除了连接，且被移除的连接是目标连接
@@ -186,8 +198,8 @@ type internal DbConnPool<'ConnType when 'ConnType :> DbConnection and 'ConnType:
         member self.getConnection() =
             try
                 let result =
-                    //始终保留一部分连接以供其他用途
-                    if (self :> IDbConnPool).occupancy < 0.8 then
+                    //保证连接数不大于最大值
+                    if (self :> IDbConnPool).occupancy < max then
 
                         match (self :> IDbConnPool).pressure with
                         | p when //池压力较小，复用连接以提升池压力系数
@@ -223,11 +235,11 @@ type internal DbConnPool<'ConnType when 'ConnType :> DbConnection and 'ConnType:
                 task {
                     try
                         let connTask =
-                            //始终保留一部分连接以供其他用途
-                            if (self :> IDbConnPool).occupancy < 0.8 then
+                            //保证连接数不大于最大值
+                            if (self :> IDbConnPool).occupancy < max then
                                 match (self :> IDbConnPool).pressure with
                                 | p when //池压力较小，复用连接以提升池压力系数
-                                    p < 0.8
+                                    p < n
                                     ->
                                     match freeConnectionTryGet () with
                                     | Some c -> ValueTask<'ConnType>(c)

@@ -30,8 +30,9 @@ let query_overload1_test () =
     let count =
         mkCmd().getFstVal $"SELECT COUNT(*) FROM {tab1};"
         |> managed().executeQuery
+        |> unwrap2
 
-    Assert.AreEqual(200, count |> unwrap2)
+    Assert.AreEqual(200, count)
 
 open Npgsql
 
@@ -53,11 +54,13 @@ let query_overload2_test () =
         let query =
             mkCmd().query (sql, paras) <| eq 1
             |> managed().executeQuery
+            |> unwrap
 
-        Assert.AreEqual(1, query |> unwrap)
+        Assert.AreEqual(1, query)
 
     let count =
         mkCmd().getFstVal $"SELECT COUNT(*) FROM {tab1};"
         |> managed().executeQuery
+        |> unwrap2
 
-    Assert.AreEqual(200, count |> unwrap2)
+    Assert.AreEqual(200, count)

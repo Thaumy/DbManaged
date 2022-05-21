@@ -18,13 +18,15 @@ let SetUp () = init ()
 let delete_test () =
 
     let query =
-        mkCmd().delete $"{tab1}" ("col1", 0) <| eq 100
+        mkCmd().delete ($"{tab1}", "col1", 0) <| eq 100
         |> managed().executeQuery
-
-    Assert.AreEqual(100, query |> unwrap)
+        |> unwrap
+        
+    Assert.AreEqual(100, query )
 
     let count =
         mkCmd().getFstVal $"SELECT COUNT(*) FROM {tab1};"
         |> managed().executeQuery
-
-    Assert.AreEqual(0, count |> unwrap2)
+        |> unwrap2
+        
+    Assert.AreEqual(0, count )
