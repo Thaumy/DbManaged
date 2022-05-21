@@ -4,7 +4,8 @@ module DbManaged.PgSql.ext_DbCommand
 open System.Data.Common
 open fsharper.typ
 open DbManaged
-let private paraMark= ":"
+
+let private paraMark = ":"
 
 type DbCommand with
 
@@ -48,7 +49,7 @@ type DbCommand with
 
     /// 在 table 中插入一行
     /// 返回的闭包用于检测受影响的行数，当断言成立时闭包会提交事务并返回受影响的行数
-    member cmd.insert (table: string) pairs =
+    member cmd.insert(table: string, pairs) =
 
         let keys, values =
             pairs
@@ -72,7 +73,7 @@ type DbCommand with
         cmd.letQuery(sql).commitWhen
 
     /// TODO exp async api
-    member cmd.insertAsync (table: string) pairs =
+    member cmd.insertAsync(table: string, pairs) =
 
         let keys, values =
             pairs
@@ -99,7 +100,7 @@ type DbCommand with
 
     /// 删除 table 中 whereKey 等于 whereKeyVal 的行
     /// 返回的闭包用于检测受影响的行数，当断言成立时闭包会提交事务并返回受影响的行数
-    member cmd.delete (table: string) (whereKey: string, whereVal) =
+    member cmd.delete(table: string, whereKey: string, whereVal) =
         let sql =
             $"DELETE FROM {table} WHERE {whereKey} = {paraMark}whereVal"
 
@@ -110,7 +111,7 @@ type DbCommand with
             .commitWhen
 
     /// TODO exp async api
-    member cmd.deleteAsync (table: string) (whereKey: string, whereVal) =
+    member cmd.deleteAsync(table: string, whereKey: string, whereVal) =
         let sql =
             $"DELETE FROM {table} WHERE {whereKey} = {paraMark}whereVal"
 
@@ -133,7 +134,7 @@ type DbCommand with
             whereVal
         )
             .commitForScalar
-            
+
     /// TODO exp async api
     member cmd.getFstValAsync(table: string, targetKey: string, (whereKey: string, whereVal: 'v)) =
         cmd

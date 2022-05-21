@@ -15,24 +15,19 @@ type PgSqlManaged private (pool: IDbConnPool) =
 
     let queuedQuery = ConcurrentQueue<DbConnection -> unit>()
 
-    /// 以连接信息构造
-    new(msg) =
-        let pool =
-            new DbConnPool<NpgsqlConnection>(msg, 32u, 0.3, 0.8)
-
-        new PgSqlManaged(pool)
-    /// 以连接信息构造，并指定使用的数据库
-    new(msg, database) =
-        let pool =
-            new DbConnPool<NpgsqlConnection>(msg, database, 32u, 0.3, 0.8)
-
-        new PgSqlManaged(pool)
     /// 以连接信息构造，并指定使用的数据库和连接池大小
     new(msg, database, poolSize) =
         let pool =
-            new DbConnPool<NpgsqlConnection>(msg, database, poolSize, 0.1, 0.9)
+            new DbConnPool<NpgsqlConnection>(msg, database, poolSize, 0.1, 0.7, 0.1, 0.8)
 
         new PgSqlManaged(pool)
+    /// 以连接信息构造，并指定连接池大小
+    new(msg, poolSize) = new PgSqlManaged(msg, "", poolSize)
+    /// 以连接信息构造，并指定使用的数据库
+    new(msg, database) = new PgSqlManaged(msg, database, 100u)
+    /// 以连接信息构造
+    new(msg: DbConnMsg) = new PgSqlManaged(msg, "", 100u)
+
 
     interface IDisposable with
         member self.Dispose() =
@@ -41,7 +36,7 @@ type PgSqlManaged private (pool: IDbConnPool) =
 
     interface IDbManaged with
 
-        member self.makeCmd() = new NpgsqlCommand()
+        member self.mkCmd() = new NpgsqlCommand()
 
         member self.executeQuery f =
             pool.getConnection ()
