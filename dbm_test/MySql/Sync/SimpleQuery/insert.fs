@@ -26,7 +26,7 @@ let insert_test () =
                   ("col3", "ccc")
                   ("col4", "cccc") ]
 
-            mkCmd().insert $"{tab1}" paras <| eq 1
+            mkCmd().insert ($"{tab1}", paras) <| eq 1
             |> managed().executeQuery
 
         Assert.AreEqual(1, query |> unwrap)

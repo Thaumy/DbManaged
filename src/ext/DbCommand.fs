@@ -60,7 +60,7 @@ type internal DbCommand with
     //提交并取得第一行第一列的值
     member cmd.commitForScalar conn =
         cmd.useConn(conn).ExecuteScalar()
-        |> Option'<obj>.fromNullable
+        |> Option'.fromNullable
 
     //提交并取得一个读取器
     member cmd.commitForReader conn = cmd.useConn(conn).ExecuteReader()
