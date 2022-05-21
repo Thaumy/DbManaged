@@ -26,13 +26,15 @@ let insert_test () =
                   ("col3", "ccc")
                   ("col4", "cccc") ]
 
-            mkCmd().insert $"{tab1}" paras <| eq 1
+            mkCmd().insert ($"{tab1}", paras) <| eq 1
             |> managed().executeQuery
+            |> unwrap
 
-        Assert.AreEqual(1, query |> unwrap)
+        Assert.AreEqual(1, query)
 
     let count =
         mkCmd().getFstVal $"SELECT COUNT(*) FROM {tab1};"
         |> managed().executeQuery
+        |> unwrap2
 
-    Assert.AreEqual(200, count |> unwrap2)
+    Assert.AreEqual(200, count)

@@ -28,5 +28,6 @@ let queueQuery_test () =
     let count =
         mkCmd().getFstVal $"SELECT COUNT(*) FROM {tab1};"
         |> managed().executeQuery
+        |> unwrap2
 
-    Assert.AreEqual(1100, count |> unwrap2)
+    Assert.AreEqual(1100, count)
