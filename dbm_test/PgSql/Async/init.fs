@@ -56,7 +56,7 @@ let init () =
     let ts3 =
         Task.Run
             (fun _ ->
-                [| for i in 1 .. 40000 do
+                [| for i in 1 .. 4000 do
                        mkCmd().queryAsync $"SELECT * FROM {tab1}" <| eq 1
                        |> managed().executeQueryAsync
                        :> Task |]

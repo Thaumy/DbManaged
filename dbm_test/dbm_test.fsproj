@@ -31,7 +31,9 @@
         <Compile Include="MySql\Sync\ComplexQuery\getFstCol.fs" />
         <Compile Include="MySql\Sync\ComplexQuery\getFstRow.fs" />
         <Compile Include="MySql\Sync\ComplexQuery\getFstVal.fs" />
-        <Compile Include="MySql\Sync\queue\queueQuery.fs" />
+        <Compile Include="MySql\Set\init.fs" />
+        <Compile Include="MySql\Set\queue.fs" />
+        <Compile Include="MySql\Set\delay.fs" />
         
         <Compile Include="PgSql\com.fs" />
         
@@ -54,7 +56,9 @@
         <Compile Include="PgSql\Sync\ComplexQuery\getFstCol.fs" />
         <Compile Include="PgSql\Sync\ComplexQuery\getFstRow.fs" />
         <Compile Include="PgSql\Sync\ComplexQuery\getFstVal.fs" />
-        <Compile Include="PgSql\Sync\queue\queueQuery.fs" />
+        <Compile Include="PgSql\Set\init.fs" />
+        <Compile Include="PgSql\Set\queue.fs" />
+        <Compile Include="PgSql\Set\delay.fs" />
         
     </ItemGroup>
 
