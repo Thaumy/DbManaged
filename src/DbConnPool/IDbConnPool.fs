@@ -12,9 +12,13 @@ type internal IDbConnPool =
 
     inherit IDisposable
 
+    /// 连接池大小
+    abstract member size : u32
+    
     /// 池压力系数
     /// 池瞬时压力越大，该系数越接近1，反之接近0
     abstract member pressure : f64
+    
     /// 池占用率
     /// 池冗余量越大，该系数越接近1，反之接近0
     abstract member occupancy : f64

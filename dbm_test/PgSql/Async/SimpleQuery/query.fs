@@ -1,5 +1,6 @@
 module dbm_test.PgSql.Async.SimpleQuery.query
 
+open System.Threading
 open NUnit.Framework
 open dbm_test.PgSql.com
 open dbm_test.PgSql.Async.init
@@ -44,7 +45,7 @@ open Npgsql
 [<Test>]
 let query_overload2_test () =
 
-    for i in 1 .. 100 do
+    for i in 1 .. 1000 do
         let paras: (string * obj) list =
             [ ("col1", 1)
               ("col2", 'a')
@@ -61,9 +62,9 @@ let query_overload2_test () =
             |> managed().executeQueryAsync
             |> result
             |> unwrap
-
+            
         Assert.AreEqual(1, query)
-
+        
     let count =
         mkCmd()
             .getFstValAsync $"SELECT COUNT(*) FROM {tab1};"
@@ -71,4 +72,4 @@ let query_overload2_test () =
         |> result
         |> unwrap
 
-    Assert.AreEqual(200, count)
+    Assert.AreEqual(1100, count)

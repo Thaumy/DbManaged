@@ -7,21 +7,52 @@ open System.Collections.Concurrent
 open MySql.Data.MySqlClient
 open fsharper.op
 open fsharper.typ
+open fsharper.op.Alias
 open fsharper.op.Async
 open DbManaged
-open DbManaged.AnySql
 
-/// PgSql数据库管理器
-type MySqlManaged private (pool: IDbConnPool) =
+/// MySql数据库管理器
+type MySqlManaged private (msg, database, poolSize, d, n, min, max) as managed =
+    let pool =
+        new DbConnPool(msg, database, (fun _ -> new MySqlConnection()), poolSize, d, n, min, max)
 
     let queuedQuery = ConcurrentQueue<DbConnection -> unit>()
+    let delayedQuery = ConcurrentBag<DbConnection -> unit>()
+
+    let getQueuedQuery () =
+        queuedQuery.TryDequeue() |> Option'.fromOkComma
+
+    let getDelayedQuery () =
+        delayedQuery.TryTake() |> Option'.fromOkComma
+
+    /// 对延迟查询集合复用包装后的回收连接
+    /// 该函数会在如下情况时真正回收连接并返回：
+    /// * 连接池压力大于销毁阈值时
+    /// * 查询队列为空时
+    let recycleConn conn =
+        async {
+            let rec loop () =
+                //如果连接池压力小于阈值，调用回收后连接很有可能被销毁
+                //为提高连接利用率，此时从延迟查询集合中取出查询任务复用该连接
+                if pool.pressure < 0.1 then
+                    getDelayedQuery () |> ifCanUnwrapOr
+                    <| fun query ->
+                        query conn
+                        loop ()
+                    <| (getQueuedQuery .> ifCanUnwrapOr
+                        <. fun query ->
+                            lock queuedQuery (fun _ -> query conn)
+                            loop ()
+                        <. fun _ -> pool.recycleConnectionAsync conn |> ignore)
+                else
+                    pool.recycleConnectionAsync conn |> ignore
+
+            loop ()
+        }
+        |> Async.Start
 
     /// 以连接信息构造，并指定使用的数据库和连接池大小
-    new(msg, database, poolSize) =
-        let pool =
-            new DbConnPool<MySqlConnection>(msg, database, poolSize, 0.1, 0.7, 0.1, 0.4)
-
-        new MySqlManaged(pool)
+    new(msg, database, poolSize) = new MySqlManaged(msg, database, poolSize, 0.1, 0.7, 0.1, 0.4)
     /// 以连接信息构造，并指定连接池大小
     new(msg, poolSize) = new MySqlManaged(msg, "", poolSize)
     /// 以连接信息构造，并指定使用的数据库
@@ -29,59 +60,83 @@ type MySqlManaged private (pool: IDbConnPool) =
     /// 以连接信息构造
     new(msg: DbConnMsg) = new MySqlManaged(msg, "", 100u)
 
+    member self.Dispose() =
+        self.forceLeftQueuedQuery ()
+        self.forceLeftDelayedQuery ()
+        pool.Dispose()
+
+    member self.mkCmd() = new MySqlCommand()
+
+    member self.executeQuery f =
+        pool.getConnection ()
+        >>= fun conn ->
+                let result = f conn
+                recycleConn conn
+                result |> Ok
+
+    member self.executeQueryAsync(f: DbConnection -> Task<'a>) =
+        (fun _ -> self.executeQuery f |> unwrap |> result |> Ok)
+        |> Task.Run<Result'<_, exn>>
+
+    (*
+    //TODO MySql控制器的异步连接建立性能非常差劲，未能知晓其原因
+    member self.executeQueryAsync f =
+        task {
+            let! connResult = pool.getConnectionAsync ()
+
+            //TODO 有待优化
+            let ret =
+                connResult
+                >>= fun conn ->
+                        task {
+                            let! closureRet = f conn
+                            recycleConn conn
+                            return closureRet |> Ok
+                        }
+                        |> result
+
+            return ret
+        }
+*)
+    member self.delayQuery f = f .> ignore |> delayedQuery.Add
+
+    member self.forceLeftDelayedQuery() =
+        getDelayedQuery .> ifCanUnwrapOr
+        <. fun q -> Option.Some(async { self.executeQuery q |> ignore }, ())
+        <. fun _ -> Option.None
+        |> Seq.unfold
+        <| ()
+        |> fun s -> Async.Parallel(s, i32 (d * f64 poolSize))
+        |> Async.Ignore
+        |> Async.RunSynchronously
+
+    member self.queueQuery f = f .> ignore |> queuedQuery.Enqueue
+
+    member self.forceLeftQueuedQuery() =
+        getQueuedQuery .> ifCanUnwrapOr
+        <. fun q -> Option.Some(async { managed.executeQuery q |> ignore }, ())
+        <. fun _ -> Option.None
+        |> Seq.unfold
+        <| ()
+        |> Async.Sequential
+        |> Async.Ignore
+        |> Async.RunSynchronously
+
     interface IDisposable with
-        member self.Dispose() =
-            (self :> IDbManaged).forceLeftQueuedQuery ()
-            pool.Dispose()
+        member i.Dispose() = managed.Dispose()
 
     interface IDbManaged with
 
-        member self.mkCmd() = new MySqlCommand()
+        member i.mkCmd() = managed.mkCmd ()
 
-        member self.executeQuery f =
-            pool.getConnection ()
-            >>= fun conn ->
-                    let result = f conn
-                    pool.recycleConnection conn
-                    result |> Ok
+        member i.executeQuery f = managed.executeQuery f
 
-        member self.executeQueryAsync f =
-            (fun _ ->
-                let ret = (self :> IDbManaged).executeQuery f
+        member i.executeQueryAsync f = managed.executeQueryAsync f
 
-                ret |> unwrap |> result |> Ok)
-            |> Task.Run<Result'<'b, exn>>
+        member i.delayQuery f = managed.delayQuery f
 
-        //TODO MySql控制器的异步连接建立性能非常差劲，未能知晓其原因
-        (*
-        member self.executeQueryAsync f =
-            task {
-                let! connResult = pool.getConnectionAsync ()
+        member i.forceLeftDelayedQuery() = managed.forceLeftDelayedQuery ()
 
-                //TODO 有待优化
-                let ret =
-                    connResult
-                    >>= fun conn ->
-                            task {
-                                let! closureRet = f conn
-                                pool.recycleConnectionAsync conn |> ignore
-                                return closureRet |> Ok
-                            }
-                            |> result
+        member i.queueQuery f = managed.queueQuery f
 
-                return ret
-            }
-        *)
-
-        member self.queueQuery f = f .> ignore |> queuedQuery.Enqueue
-
-        member self.forceLeftQueuedQuery() =
-
-            let rec loop () =
-                match queuedQuery.TryDequeue() with
-                | true, q ->
-                    (self :> IDbManaged).executeQuery q |> ignore
-                    loop ()
-                | _ -> ()
-
-            loop ()
+        member i.forceLeftQueuedQuery() = managed.forceLeftQueuedQuery ()
