@@ -12,9 +12,9 @@ open fsharper.op.Async
 open DbManaged
 
 /// MySql数据库管理器
-type MySqlManaged private (msg, database, poolSize, d, n, min, max) as managed =
+type MySqlManaged private (msg, database, d, n, min, max) as managed =
     let pool =
-        new DbConnPool(msg, database, (fun _ -> new MySqlConnection()), poolSize, d, n, min, max)
+        new DbConnPool(msg, database, (fun _ -> new MySqlConnection()), d, n, min, max)
 
     let queuedQuery = ConcurrentQueue<DbConnection -> unit>()
     let delayedQuery = ConcurrentBag<DbConnection -> unit>()
@@ -43,16 +43,15 @@ type MySqlManaged private (msg, database, poolSize, d, n, min, max) as managed =
                         <. fun query ->
                             lock queuedQuery (fun _ -> query conn)
                             loop ()
-                        <. fun _ -> pool.recycleConnectionAsync conn |> ignore)
+                        <. fun _ -> pool.recycleConnAsync conn |> ignore)
                 else
-                    pool.recycleConnectionAsync conn |> ignore
+                    pool.recycleConnAsync conn |> ignore
 
             loop ()
         }
         |> Async.Start
-
     /// 以连接信息构造，并指定使用的数据库和连接池大小
-    new(msg, database, poolSize) = new MySqlManaged(msg, database, poolSize, 0.1, 0.7, 0.1, 0.4)
+    new(msg, database, poolSize: u32) = new MySqlManaged(msg, database, 0.1, 0.7, u32 (f64 poolSize * 0.1), poolSize)
     /// 以连接信息构造，并指定连接池大小
     new(msg, poolSize) = new MySqlManaged(msg, "", poolSize)
     /// 以连接信息构造，并指定使用的数据库
@@ -68,15 +67,14 @@ type MySqlManaged private (msg, database, poolSize, d, n, min, max) as managed =
     member self.mkCmd() = new MySqlCommand()
 
     member self.executeQuery f =
-        pool.getConnection ()
-        >>= fun conn ->
-                let result = f conn
-                recycleConn conn
-                result |> Ok
+        let conn = pool.fetchConn ()
+        let result = f conn
+        recycleConn conn
+        result
 
     member self.executeQueryAsync(f: DbConnection -> Task<'a>) =
-        (fun _ -> self.executeQuery f |> unwrap |> result |> Ok)
-        |> Task.Run<Result'<_, exn>>
+        (fun _ -> self.executeQuery f |> result)
+        |> Task.Run<_>
 
     (*
     //TODO MySql控制器的异步连接建立性能非常差劲，未能知晓其原因
@@ -106,7 +104,7 @@ type MySqlManaged private (msg, database, poolSize, d, n, min, max) as managed =
         <. fun _ -> Option.None
         |> Seq.unfold
         <| ()
-        |> fun s -> Async.Parallel(s, i32 (d * f64 poolSize))
+        |> fun s -> Async.Parallel(s, i32 max)
         |> Async.Ignore
         |> Async.RunSynchronously
 
