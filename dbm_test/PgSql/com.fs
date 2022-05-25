@@ -7,7 +7,7 @@ open fsharper.op.Boxing
 open dbm_test
 
 let tab1 = "sch1.tab1"
-let size = 100u
+let size = 80u
 let mutable private msgResult = Err ManagedNotInitException
 let mutable private managedResult: Result'<IDbManaged, exn> = Err ManagedNotInitException
 let managed () = managedResult.unwrap ()

@@ -11,301 +11,277 @@ open fsharper.op.Eq
 open fsharper.op.Alias
 open DbManaged
 
-//TODO let it crash
-
 /// PgSql数据库连接池
 /// 对于不同的数据库，连接建立成本有所差异，应通过调节比例系数来达到最佳池性能平衡
-/// d为销毁连接系数，n为新建连接系数，min为最小使用率，max为最大连接使用率
+/// d为销毁连接系数，n为新建连接系数，min为最小连接数，max为最大连接数
 type internal DbConnPool
     (
         msg: DbConnMsg,
         database,
         DbConnectionConstructor: unit -> DbConnection,
-        size: u32,
         d,
         n,
-        min,
-        max
+        min: u32,
+        max: u32
     ) as pool =
 
     /// 连接字符串
-    let connStr = //启用连接池，最大超时1秒
+    let connStr =
         $"\
-                    Host = {msg.Host};\
-                    Port = {msg.Port};\
-                  UserID = {msg.User};\
-                Password = {msg.Password};\
-                 Pooling = False;\
-             MaxPoolSize = {size};\
+                 Host = {msg.Host};\
+                 Port = {msg.Port};\
+               UserID = {msg.User};\
+             Password = {msg.Password};\
+              Pooling = False;\
+          MaxPoolSize = {max};\
        "
         + if database = "" then
               ""
           else
               $"DataBase = {database};"
 
+    let connCountMutex = obj () //连接计数锁
+    let mutable connCount = 0u //连接计数
+
+    let getConnCountAndUp () =
+        fun _ ->
+            let r = connCount
+            connCount <- connCount + 1u
+            r
+        |> lock connCountMutex
+
+    let setConnCountDn () =
+        lock connCountMutex (fun _ -> connCount <- connCount - 1u)
+
     /// 空闲连接表
-    let freeConnections =
-        Channel.CreateBounded<DbConnection>(i32 size)
+    let freeConns =
+        Channel.CreateBounded<DbConnection>(i32 max)
 
     /// 忙碌连接表
-    let busyConnections =
-        ConcurrentDictionary<i32, DbConnection>()
+    let busyConns =
+        ConcurrentDictionary<i32, DbConnection>(i32 max, i32 max)
 
-    /// 添加到忙碌连接表
-    let busyConnectionsTryAdd conn =
-        busyConnections.TryAdd(conn.GetHashCode(), conn)
+    /// 尝试添加到忙碌连接表
+    let busyConnsTryAdd conn =
+        busyConns.TryAdd(conn.GetHashCode(), conn)
 
-    /// 从忙碌连接表移除
-    let busyConnectionsTryRemove (conn: DbConnection) =
-        busyConnections.TryRemove(conn.GetHashCode())
+    /// 尝试从忙碌连接表移除
+    let busyConnsTryRm (conn: DbConnection) = busyConns.TryRemove(conn.GetHashCode())
 
     /// 添加到空闲连接表
-    let mutable freeConnectionsAdd = freeConnections.Writer.WriteAsync
-
-    /// 异步取得空闲连接
-    let freeConnectionGetAsync () = freeConnections.Reader.ReadAsync()
+    let mutable freeConnsAdd = freeConns.Writer.WriteAsync
 
     /// 取得空闲连接
-    let freeConnectionGet () =
-        freeConnectionGetAsync().AsTask().Result
+    let getFreeConn () = freeConns.Reader.ReadAsync()
 
     /// 尝试取得空闲连接
-    let rec freeConnectionTryGet () =
-        freeConnections.Reader.TryRead()
-        |> Option'.fromOkComma
+    let rec tryGetFreeConn () =
+        freeConns.Reader.TryRead() |> Option'.fromOkComma
 
-    /// 生成新连接
-    let genConn () =
-        lock pool
-        <| fun _ ->
-            if pool.occupancy < max then
+    /// 生成新连接或取得空闲连接
+    let openConnOrFreeConn () =
+        if getConnCountAndUp () < max then
+            let conn = DbConnectionConstructor()
+            conn.ConnectionString <- connStr
+
+            conn.Open()
+            conn
+        else
+            setConnCountDn ()
+            getFreeConn().AsTask().Result
+
+    let openConnOrFreeConnAsync () =
+        task {
+            if getConnCountAndUp () < max then
                 let conn = DbConnectionConstructor()
                 conn.ConnectionString <- connStr
 
-                conn.Open()
-                conn
+                let! _ = conn.OpenAsync()
+                return conn
             else
-                freeConnectionGet ()
+                setConnCountDn ()
+                return! getFreeConn().AsTask()
+        }
 
-    let genConnAsync () =
-        lock pool
-        <| fun _ ->
-            if pool.occupancy < max then
-                let conn = DbConnectionConstructor()
-                conn.ConnectionString <- connStr
+    let disposeConn (conn: DbConnection) =
+        conn.Dispose()
+        setConnCountDn ()
 
-                task {
-                    let! _ = conn.OpenAsync()
-                    return conn
-                }
-                |> ValueTask<DbConnection>
-            else
-                freeConnectionGetAsync ()
+    let disposeConnAsync (conn: DbConnection) : Task =
+        task {
+            let! _ = conn.DisposeAsync()
+            setConnCountDn ()
+        }
 
     /// 尝试生成新连接
-    let rec tryGenConn () =
-        let count =
-            u32 (
-                freeConnections.Reader.Count
-                + busyConnections.Count
-            )
-
-        if count < size then
-            Some(genConn ())
+    let rec tryOpenConn () =
+        if connCount < max then
+            Some(openConnOrFreeConn ())
         else
             None
-
+            
     do
         //建立一部分连接以满足最小连接数
         async {
-            for _ in 0 .. i32 (f64 size * min) do
-                freeConnectionsAdd .> ignore
-                |> tryGenConn().ifCanUnwrap
+            for _ in 1 .. i32 min do
+                freeConnsAdd .> ignore
+                |> tryOpenConn().ifCanUnwrap
         }
         |> Async.Start
-
+        
     let outputPoolStatus () =
         async {
             let occ = pool.occupancy.ToString("0.00")
 
             let pressure = pool.pressure.ToString("0.00")
 
-            let free =
-                freeConnections.Reader.Count.ToString("00")
+            let free = freeConns.Reader.Count.ToString("00")
 
-            let busy = busyConnections.Count.ToString("00")
+            let busy = busyConns.Count.ToString("00")
 
             let freeAndBusy =
-                (freeConnections.Reader.Count
-                 + busyConnections.Count)
+                (freeConns.Reader.Count + busyConns.Count)
                     .ToString("00")
 
-            printfn $"[占用 {occ}: {freeAndBusy} /{size}] [压力 {pressure}: 忙{busy} 闲{free}]"
+            printfn $"[占用 {occ}: {freeAndBusy} /{max}] [压力 {pressure}: 忙{busy} 闲{free}]"
         }
         |> Async.Start
 
     /// 注销后不应进行新的查询
     member self.Dispose() =
         //对加入空闲连接表的请求进行拦截，注销要求加入的连接
-        freeConnectionsAdd <- fun conn -> conn.DisposeAsync()
+        freeConnsAdd <- disposeConnAsync .> ValueTask
 
         let en =
-            freeConnections
+            freeConns
                 .Reader
                 .ReadAllAsync()
                 .GetAsyncEnumerator()
 
-        let rec loop () =
-            match en.MoveNextAsync().Result with
-            | true ->
-                en.Current.DisposeAsync() |> ignore
+        let rec loop () = //注销空闲的连接
+            if en.MoveNextAsync().Result then
+                disposeConn en.Current
                 loop ()
-            | _ -> ()
+            else
+                ()
 
         loop ()
 
-    member self.size = size
-
     member self.pressure: f64 =
-        let freeCount = f64 freeConnections.Reader.Count
-        let busyCount = f64 busyConnections.Count
-
-        //+0.01是为了防止算术错误
-        busyCount / (freeCount + busyCount + 0.01) //init is 0
+        //此值只能作为一个近似值使用，因为对下列计数的访问不是互斥的
+        //为防止算术错误+0.01
+        f64 busyConns.Count / (f64 connCount + 0.01) //init is 0
 
     member self.occupancy: f64 =
-        let freeCount = freeConnections.Reader.Count
-        let busyCount = busyConnections.Count
+        //此值只能作为一个近似值使用，因为对下列计数的访问不是互斥的
+        f64 connCount / f64 max //init is 0
 
-        f64 (freeCount + busyCount) / f64 size //init is 0
-
-    member self.recycleConnection conn =
-        match busyConnectionsTryRemove conn with
+    member self.recycleConnAsync conn =
+        match busyConnsTryRm conn with
         | true, removed when refEq removed conn ->
+            //从busyConns移除了连接，且被移除的连接是目标连接
 
-            if self.pressure < d
-               //保证连接数不小于最小值
-               && self.occupancy > min then
-                conn.DisposeAsync() //增加池压力
+            //在以下任一情况满足时，连接池需要连接
+            // *池压力大于销毁阈值，这意味着需要连接以减小池压力
+            // *池连接总数低于最低要求，这意味着需要连接以满足最小连接数要求
+            let isNeedConn = self.pressure > d || connCount < min
+
+            if isNeedConn then
+                freeConnsAdd conn //加入空闲连接表
             else
-                //从busyConnections移除了连接，且被移除的连接是目标连接
-                freeConnectionsAdd conn //加入空闲连接表
+                disposeConnAsync conn |> ValueTask
 
         | true, removed ->
-            (*从busyConnections移除了连接，但被移除的连接不是目标连接
+            (*从busyConns移除了连接，但被移除的连接不是目标连接
                 这意味着哈希冲突，此时需将removed返还到忙碌连接表，同时销毁目标连接
                 不进行回收的原因如下：
                 *使用该连接可能进一步引发哈希冲突*)
-            busyConnectionsTryAdd removed |> ignore
-            conn.DisposeAsync()
+            let success = busyConnsTryAdd removed
+
+            if not success then //如果添加失败，则表明存在哈希冲突，被移除的连接同样需要被销毁
+                disposeConnAsync removed |> ignore
+
+            disposeConnAsync conn |> ValueTask
 
         | false, _ ->
             (*移除失败，这意味着下列情况之一：
-                1.曾经试图将这个连接加入busyConnections，但由于哈希冲突失败了
+                1.曾经试图将这个连接加入busyConns，但由于哈希冲突失败了
                 2.这个连接根本不由连接池产生
                 对于这样的连接，直接进行销毁
                 不进行回收的原因如下：
                 *使用该连接可能进一步引发哈希冲突
                 *该连接不受连接池管制，可能引发安全性问题*)
-            conn.DisposeAsync()
-        |> ignore
+            disposeConnAsync conn |> ValueTask
 
     /// 从连接池取用连接
-    member self.getConnection() =
-        try
-            let result =
-                //保证连接数不大于最大值
-                if self.occupancy < max then
-
-                    match self.pressure with
-                    | p when //池压力较小，复用连接以提升池压力系数
-                        p < n
-                        ->
-                        freeConnectionTryGet().unwrapOr genConn
-                    | _ -> //池压力较大，新建连接以降低池压力系数
-                        async {
-                            tryGenConn()
-                                .ifCanUnwrap (freeConnectionsAdd .> ignore)
-                        }
-                        |> Async.Start
-
-                        freeConnectionTryGet().unwrapOr genConn
-                else
-                    freeConnectionGet ()
-            (*加入忙碌列表，如果加入失败则表明该连接与已登记连接存在哈希冲突，
-            此时不进行登记，在回收阶段会检测到该连接并将其销毁*)
-            busyConnectionsTryAdd result |> ignore //添加到忙碌连接表
-
+    member self.fetchConn() =
+        let conn =
+            //用近似值估计，因为精确值带来的锁开销是没有必要的
+            if connCount < max then
+                //满足新建阈值，尝试新建连接以降低池压力
+                if self.pressure > n then
+                    async { tryOpenConn().ifCanUnwrap (freeConnsAdd .> ignore) }
+                    |> Async.Start
+                tryGetFreeConn().unwrapOr openConnOrFreeConn
+            else
+                //不允许进行新建连接的尝试，阻塞等待空闲连接
+                getFreeConn().AsTask().Result
+        //尝试加入忙碌列表
+        let success = busyConnsTryAdd conn
+        //如果加入失败则表明该连接与已登记连接存在哈希冲突，直接销毁
+        if not success then
+            disposeConnAsync conn |> ignore
+            self.fetchConn () //进行下一轮尝试
+        else
             outputPoolStatus ()
+            conn
 
-            result |> Ok
-        with
-        | e -> Err e
+    /// 异步从连接池取用连接
+    member self.fetchConnAsync() =
+        task {
+            let! conn =
+                //用近似值估计，因为精确值带来的锁开销是没有必要的
+                if connCount < max then
+                    //满足降压条件，尝试新建连接以降低池压力
+                    if self.pressure > n then
+                        async { tryOpenConn().ifCanUnwrap (freeConnsAdd .> ignore) }
+                        |> Async.Start
+                    tryGetFreeConn () |> ifCanUnwrapOr
+                    <| fun c -> task { return c }
+                    <| openConnOrFreeConnAsync
+                else
+                    //不允许进行新建连接的尝试，阻塞等待空闲连接
+                    getFreeConn().AsTask()
 
-    member self.recycleConnectionAsync conn =
-        Task.Run<_>(fun _ -> self.recycleConnection conn)
-
+            //尝试加入忙碌列表
+            let success = busyConnsTryAdd conn
+            //如果加入失败则表明该连接与已登记连接存在哈希冲突，直接销毁
+            if not success then
+                disposeConnAsync conn |> ignore
+                return! self.fetchConnAsync () //进行下一轮尝试
+            else
+                outputPoolStatus ()
+                return conn
+        }
     (*
     member self.getConnectionAsync() =
                 Task.Run (self :> IDbConnPool).getConnection
 *)
 
-    /// 异步从连接池取用连接
-    member self.getConnectionAsync() =
-        fun _ ->
-            task {
-                try
-                    let connTask =
-                        //保证连接数不大于最大值
-                        if self.occupancy < max then
-                            match self.pressure with
-                            | p when //池压力较小，复用连接以提升池压力系数
-                                p < n
-                                ->
-                                freeConnectionTryGet () |> ifCanUnwrapOr
-                                <| ValueTask<_>
-                                <| genConnAsync
-
-                            | _ -> //池压力较大，新建连接以降低池压力系数
-                                async {
-                                    tryGenConn()
-                                        .ifCanUnwrap (freeConnectionsAdd .> ignore)
-                                }
-                                |> Async.Start
-
-                                freeConnectionTryGet () |> ifCanUnwrapOr
-                                <| ValueTask<_>
-                                <| genConnAsync
-                        else
-                            freeConnectionGetAsync ()
-
-                    outputPoolStatus ()
-
-                    let! conn = connTask
-                    busyConnectionsTryAdd conn |> ignore //添加到忙碌连接表
-                    return conn |> Ok
-                with
-                | e -> return Err e
-            }
-        |> Task.Run<Result'<_, _>>
-
-
     interface IDisposable with
 
-        member self.Dispose() = pool.Dispose()
+        member i.Dispose() = pool.Dispose()
 
     interface IDbConnPool with
 
-        member i.size = pool.size
+        member i.size = connCount 
 
         member i.pressure = pool.pressure
 
         member i.occupancy = pool.occupancy
 
-        member i.recycleConnection conn = pool.recycleConnection conn
+        member i.fetchConn() = pool.fetchConn ()
 
-        member i.getConnection() = pool.getConnection ()
+        member i.fetchConnAsync() = pool.fetchConnAsync ()
 
-        member i.recycleConnectionAsync conn = pool.recycleConnectionAsync conn
-
-        member i.getConnectionAsync() = pool.getConnectionAsync ()
+        member i.recycleConnAsync conn = pool.recycleConnAsync conn

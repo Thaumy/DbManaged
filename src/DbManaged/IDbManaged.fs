@@ -9,8 +9,8 @@ type IDbManaged =
 
     abstract member mkCmd : unit -> DbCommand
     
-    abstract member executeQuery : f: (DbConnection -> 'r) -> Result'<'r, exn>
-    abstract member executeQueryAsync : f: (DbConnection -> Task<'r>) -> Task<Result'<'r,exn>>
+    abstract member executeQuery : f: (DbConnection -> 'r) -> 'r
+    abstract member executeQueryAsync : f: (DbConnection -> Task<'r>) -> Task<'r>
 
     /// 延迟查询任务，以平衡负载
     /// 当查询任务不需要立即执行，且对执行顺序不敏感时适用

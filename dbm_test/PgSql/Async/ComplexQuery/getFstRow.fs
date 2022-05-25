@@ -23,7 +23,7 @@ let getFstRow_overload1_test () =
         mkCmd()
             .getFstRowAsync $"SELECT col1,col2 FROM {tab1}"
         |> managed().executeQueryAsync
-        |> waitResult
+        |> result
         |> unwrap2
 
     Assert.AreEqual(0, result.["col1"])
