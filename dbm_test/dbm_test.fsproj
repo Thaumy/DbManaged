@@ -9,6 +9,7 @@
 
     <ItemGroup>
         <Compile Include="err.fs" />
+        <Compile Include="util.fs" />
 
         <!--
         <Compile Include="MySql\com.fs"/>
@@ -41,16 +42,16 @@
         
         <Compile Include="PgSql\Async\init.fs" />
         <Compile Include="PgSql\Async\initOk.fs" />
-        <!--
         <Compile Include="PgSql\Async\SimpleQuery\query.fs" />
-        <Compile Include="PgSql\Async\SimpleQuery\delete.fs"/>
-        <Compile Include="PgSql\Async\SimpleQuery\insert.fs"/>
-        <Compile Include="PgSql\Async\SimpleQuery\select.fs"/>
-        <Compile Include="PgSql\Async\SimpleQuery\update.fs"/>
-        <Compile Include="PgSql\Async\ComplexQuery\getFstCol.fs"/>
-        <Compile Include="PgSql\Async\ComplexQuery\getFstRow.fs"/>
-        <Compile Include="PgSql\Async\ComplexQuery\getFstVal.fs"/>
-        
+        <Compile Include="PgSql\Async\SimpleQuery\delete.fs" />
+        <Compile Include="PgSql\Async\SimpleQuery\insert.fs" />
+        <Compile Include="PgSql\Async\SimpleQuery\select.fs" />
+        <Compile Include="PgSql\Async\SimpleQuery\update.fs" />
+        <Compile Include="PgSql\Async\ComplexQuery\getFstCol.fs" />
+        <Compile Include="PgSql\Async\ComplexQuery\getFstRow.fs" />
+        <Compile Include="PgSql\Async\ComplexQuery\getFstVal.fs" />
+
+        <!--
         <Compile Include="PgSql\Sync\init.fs"/>
         <Compile Include="PgSql\Sync\SimpleQuery\query.fs"/>
         <Compile Include="PgSql\Sync\SimpleQuery\delete.fs" />

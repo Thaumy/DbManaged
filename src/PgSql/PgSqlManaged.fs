@@ -14,7 +14,7 @@ open DbManaged
 /// PgSql数据库管理器
 type PgSqlManaged private (msg, database, d, n, min, max) as managed =
     let pool =
-        new DbConnPool(msg, database, (fun _ -> new NpgsqlConnection()), d, n, min, max)
+        new DbConnPool(msg, database, (fun s -> new NpgsqlConnection(s)), d, n, min, max)
 
     let queuedQuery = ConcurrentQueue<DbConnection -> unit>()
     let delayedQuery = ConcurrentBag<DbConnection -> unit>()
@@ -34,7 +34,7 @@ type PgSqlManaged private (msg, database, d, n, min, max) as managed =
             let rec loop () =
                 //如果连接池压力小于阈值，调用回收后连接很有可能被销毁
                 //为提高连接利用率，此时从延迟查询集合中取出查询任务复用该连接
-                if pool.pressure < 0.1 then
+                if pool.pressure < d then
                     getDelayedQuery () |> ifCanUnwrapOr
                     <| fun query ->
                         query conn
@@ -69,23 +69,23 @@ type PgSqlManaged private (msg, database, d, n, min, max) as managed =
 
     member self.executeQuery f =
         let conn = pool.fetchConn ()
-        let result = f conn
+        let r = f conn
         reuseConn conn
-        result
+        r
 
     member self.executeQueryAsync f =
         task {
             let! conn = pool.fetchConnAsync ()
-            let! closureRet = f conn
+            let! r = f conn
             reuseConn conn
-            return closureRet
+            return r
         }
 
     member self.delayQuery f = f .> ignore |> delayedQuery.Add
 
     member self.forceLeftDelayedQuery() =
         getDelayedQuery .> ifCanUnwrapOr
-        <. fun q -> Option.Some(async { self.executeQuery q |> ignore }, ())
+        <. fun q -> Option.Some(async { self.executeQuery q }, ())
         <. fun _ -> Option.None
         |> Seq.unfold
         <| ()
@@ -97,7 +97,7 @@ type PgSqlManaged private (msg, database, d, n, min, max) as managed =
 
     member self.forceLeftQueuedQuery() =
         getQueuedQuery .> ifCanUnwrapOr
-        <. fun q -> Option.Some(async { managed.executeQuery q |> ignore }, ())
+        <. fun q -> Option.Some(async { managed.executeQuery q }, ())
         <. fun _ -> Option.None
         |> Seq.unfold
         <| ()

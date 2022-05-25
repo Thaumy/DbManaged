@@ -14,7 +14,7 @@ open DbManaged
 /// MySql数据库管理器
 type MySqlManaged private (msg, database, d, n, min, max) as managed =
     let pool =
-        new DbConnPool(msg, database, (fun _ -> new MySqlConnection()), d, n, min, max)
+        new DbConnPool(msg, database, (fun s -> new MySqlConnection(s)), d, n, min, max)
 
     let queuedQuery = ConcurrentQueue<DbConnection -> unit>()
     let delayedQuery = ConcurrentBag<DbConnection -> unit>()
@@ -50,6 +50,7 @@ type MySqlManaged private (msg, database, d, n, min, max) as managed =
             loop ()
         }
         |> Async.Start
+        
     /// 以连接信息构造，并指定使用的数据库和连接池大小
     new(msg, database, poolSize: u32) = new MySqlManaged(msg, database, 0.1, 0.7, u32 (f64 poolSize * 0.1), poolSize)
     /// 以连接信息构造，并指定连接池大小

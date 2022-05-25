@@ -26,7 +26,7 @@ let select_overload1_test () =
                 .selectAsync $"SELECT col1,col2 FROM {tab1}"
             |> managed().executeQueryAsync
             |> result
-            |> unwrap2
+            |> unwrap
 
         for row in table.Rows do
             Assert.AreEqual(0, row.["col1"])
@@ -42,7 +42,7 @@ let select_overload2_test () =
             .selectAsync (normalizeSql $"SELECT col1,col2 FROM {tab1} WHERE col3 = <col3>", paras)
         |> managed().executeQueryAsync
         |> result
-        |> unwrap2
+        |> unwrap
 
     for row in table.Rows do
         Assert.AreEqual(0, row.["col1"])

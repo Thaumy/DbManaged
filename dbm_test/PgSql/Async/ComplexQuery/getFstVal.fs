@@ -24,7 +24,6 @@ let getFstVal_overload1_test () =
         mkCmd().getFstValAsync $"SELECT col2 FROM {tab1}"
         |> managed().executeQueryAsync
         |> result
-        |> unwrap
 
     Assert.AreEqual("i", result)
 
@@ -37,7 +36,6 @@ let getFstVal_overload2_test () =
             .getFstValAsync (normalizeSql $"SELECT col2 FROM {tab1} WHERE col3 = <col3>", paras)
         |> managed().executeQueryAsync
         |> result
-        |> unwrap
 
     Assert.AreEqual("i", result)
 
@@ -48,6 +46,5 @@ let getFstVal_overload3_test () =
             .getFstValAsync ($"{tab1}", "col2", ("col3", "init[050,100]"))
         |> managed().executeQueryAsync
         |> result
-        |> unwrap
 
     Assert.AreEqual("i", result)

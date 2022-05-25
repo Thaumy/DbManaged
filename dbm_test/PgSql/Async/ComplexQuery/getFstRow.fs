@@ -24,7 +24,7 @@ let getFstRow_overload1_test () =
             .getFstRowAsync $"SELECT col1,col2 FROM {tab1}"
         |> managed().executeQueryAsync
         |> result
-        |> unwrap2
+        |> unwrap
 
     Assert.AreEqual(0, result.["col1"])
     Assert.AreEqual("i", result.["col2"])
@@ -38,7 +38,7 @@ let getFstRow_overload2_test () =
             .getFstRowAsync (normalizeSql $"SELECT col1,col2 FROM {tab1} WHERE col3 = <col3>", paras)
         |> managed().executeQueryAsync
         |> result
-        |> unwrap2
+        |> unwrap
 
     Assert.AreEqual(0, result.["col1"])
     Assert.AreEqual("i", result.["col2"])

@@ -18,7 +18,7 @@ type internal DbConnPool
     (
         msg: DbConnMsg,
         database,
-        DbConnectionConstructor: unit -> DbConnection,
+        DbConnectionConstructor: string -> DbConnection,
         d,
         n,
         min: u32,
@@ -81,8 +81,7 @@ type internal DbConnPool
     /// 生成新连接或取得空闲连接
     let openConnOrFreeConn () =
         if getConnCountAndUp () < max then
-            let conn = DbConnectionConstructor()
-            conn.ConnectionString <- connStr
+            let conn = DbConnectionConstructor(connStr)
 
             conn.Open()
             conn
@@ -93,8 +92,7 @@ type internal DbConnPool
     let openConnOrFreeConnAsync () =
         task {
             if getConnCountAndUp () < max then
-                let conn = DbConnectionConstructor()
-                conn.ConnectionString <- connStr
+                let conn = DbConnectionConstructor(connStr)
 
                 let! _ = conn.OpenAsync()
                 return conn
@@ -119,7 +117,7 @@ type internal DbConnPool
             Some(openConnOrFreeConn ())
         else
             None
-            
+
     do
         //建立一部分连接以满足最小连接数
         async {
@@ -128,7 +126,7 @@ type internal DbConnPool
                 |> tryOpenConn().ifCanUnwrap
         }
         |> Async.Start
-        
+
     let outputPoolStatus () =
         async {
             let occ = pool.occupancy.ToString("0.00")
@@ -222,6 +220,7 @@ type internal DbConnPool
                 if self.pressure > n then
                     async { tryOpenConn().ifCanUnwrap (freeConnsAdd .> ignore) }
                     |> Async.Start
+
                 tryGetFreeConn().unwrapOr openConnOrFreeConn
             else
                 //不允许进行新建连接的尝试，阻塞等待空闲连接
@@ -246,6 +245,7 @@ type internal DbConnPool
                     if self.pressure > n then
                         async { tryOpenConn().ifCanUnwrap (freeConnsAdd .> ignore) }
                         |> Async.Start
+
                     tryGetFreeConn () |> ifCanUnwrapOr
                     <| fun c -> task { return c }
                     <| openConnOrFreeConnAsync
@@ -274,7 +274,7 @@ type internal DbConnPool
 
     interface IDbConnPool with
 
-        member i.size = connCount 
+        member i.size = connCount
 
         member i.pressure = pool.pressure
 
