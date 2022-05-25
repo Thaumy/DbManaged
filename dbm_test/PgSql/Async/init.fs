@@ -8,11 +8,7 @@ open fsharper.typ.Ord
 open fsharper.op.Async
 open dbm_test.PgSql.com
 open DbManaged
-
-exception InitErrException
-
-let ISO8601Now () =
-    DateTime.Now.ToString("yyyy-MM-ddTHH:mm:sszzz")
+open dbm_test
 
 let init () =
     mkCmd().query $"drop table if exists {tab1};"

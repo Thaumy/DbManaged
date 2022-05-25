@@ -23,7 +23,6 @@ let delete_test () =
         <| eq 100
         |> managed().executeQueryAsync
         |> result
-        |> unwrap
 
     Assert.AreEqual(100, query)
 
@@ -32,6 +31,5 @@ let delete_test () =
             .getFstValAsync $"SELECT COUNT(*) FROM {tab1};"
         |> managed().executeQueryAsync
         |> result
-        |> unwrap
 
     Assert.AreEqual(0, count)

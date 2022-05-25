@@ -12,6 +12,7 @@ open fsharper.op.Async
 open fsharper.op.Boxing
 open DbManaged
 open DbManaged.PgSql.ext.String
+open dbm_test
 
 [<OneTimeSetUp>]
 let OneTimeSetUp () = connect ()
@@ -20,7 +21,6 @@ let OneTimeSetUp () = connect ()
 let SetUp () = init ()
 
 [<Test>]
-[<Timeout 2000>]
 let query_overload1_test () =
 
     let test_name =
@@ -61,14 +61,13 @@ let query_overload2_test () =
                    let paras: (string * obj) list =
                        [ ("index", i)
                          ("test_name", test_name)
-                         ("time", DateTime.Now)
+                         ("time", Now())
                          ("content", "_") ]
 
                    let sql =
                        normalizeSql
                            $"INSERT INTO {tab1} (index,   test_name,  time,  content)\
-                                      VALUES (<index>,<test_name>,<time>,<content>);"
-
+                                         VALUES (<index>,<test_name>,<time>,<content>);"
 
                    mkCmd().queryAsync (sql, paras) <| eq 1
                    |> managed().executeQueryAsync

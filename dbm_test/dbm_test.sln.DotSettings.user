@@ -12,9 +12,12 @@
   &lt;/TestAncestor&gt;
 &lt;/SessionState&gt;</s:String>
 	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=dfde01fe_002D6895_002D4b04_002Da4ef_002Dd6d89e741fe3/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" IsActive="True" Name="query_overload1_test #2" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;
-  &lt;TestAncestor&gt;
-    &lt;TestId&gt;NUnit3x::716DD3EB-4C62-445C-9346-385A966C9E55::net6.0::dbm_test.PgSql.Async.initOk.initOk_test&lt;/TestId&gt;
-  &lt;/TestAncestor&gt;
+  &lt;Or&gt;
+    &lt;TestAncestor&gt;
+      &lt;TestId&gt;NUnit3x::716DD3EB-4C62-445C-9346-385A966C9E55::net6.0::dbm_test.PgSql.Async.initOk.initOk_test&lt;/TestId&gt;
+    &lt;/TestAncestor&gt;
+    &lt;ProjectFile&gt;716DD3EB-4C62-445C-9346-385A966C9E55/d:PgSql/d:Async/d:SimpleQuery/f:query.fs&lt;/ProjectFile&gt;
+  &lt;/Or&gt;
 &lt;/SessionState&gt;</s:String>
 	
 	

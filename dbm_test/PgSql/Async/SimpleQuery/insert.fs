@@ -30,7 +30,6 @@ let insert_test () =
             mkCmd().insertAsync ($"{tab1}", paras) <| eq 1
             |> managed().executeQueryAsync
             |> result
-            |> unwrap
 
         Assert.AreEqual(1, query)
 
@@ -39,6 +38,5 @@ let insert_test () =
             .getFstValAsync $"SELECT COUNT(*) FROM {tab1};"
         |> managed().executeQueryAsync
         |> result
-        |> unwrap
 
     Assert.AreEqual(200, count)

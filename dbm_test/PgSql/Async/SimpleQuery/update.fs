@@ -25,7 +25,6 @@ let update_overload1_test () =
         <| eq 50
         |> managed().executeQueryAsync
         |> result
-        |> unwrap
 
     Assert.AreEqual(50, query)
 
@@ -38,6 +37,5 @@ let update_overload2_test () =
         <| eq 50
         |> managed().executeQueryAsync
         |> result
-        |> unwrap
 
     Assert.AreEqual(50, query)
