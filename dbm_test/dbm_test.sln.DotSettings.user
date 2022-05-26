@@ -3,22 +3,14 @@
 	<s:Boolean x:Key="/Default/AddReferences/RecentPaths/=_002Fhome_002Fthaumy_002Frepo_002FDbManaged_002Fdbm_005Ftest_002Fbin_002FDebug_002Fnet6_002E0_002FDbManaged_002Edll/@EntryIndexedValue">True</s:Boolean>
 	<s:Boolean x:Key="/Default/AddReferences/RecentPaths/=_002Fhome_002Fthaumy_002Frepo_002Ffsharper_002Fbin_002FDebug_002Fnet6_002E0_002Ffsharper_002Edll/@EntryIndexedValue">True</s:Boolean>
 	<s:String x:Key="/Default/Environment/Highlighting/HighlightingSourceSnapshotLocation/@EntryValue">/home/thaumy/.cache/JetBrains/Rider2021.3/resharper-host/temp/Rider/vAny/CoverageData/_dbm_test.-1462094190/Snapshot/snapshot.utdcvr</s:String>
-	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=16258659_002D39b7_002D4de5_002Db64b_002D71eeb20e0380/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" Name="All tests from query.fs" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;
-  &lt;ProjectFile&gt;716DD3EB-4C62-445C-9346-385A966C9E55/d:PgSql/d:Async/f:initOk.fs&lt;/ProjectFile&gt;
+	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=76fe06e7_002D212f_002D43d8_002D9854_002D9651bcff4b15/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" IsActive="True" Name="Session" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;
+  &lt;Project Location="/home/thaumy/repo/DbManaged/dbm_test" Presentation="&amp;lt;dbm_test&amp;gt;" /&gt;
 &lt;/SessionState&gt;</s:String>
-	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=d2a08b03_002D085c_002D4766_002D9cd8_002D26958528b33c/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" Name="query_overload1_test" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;
-  &lt;TestAncestor&gt;
-    &lt;TestId&gt;NUnit3x::716DD3EB-4C62-445C-9346-385A966C9E55::net6.0::dbm_test.PgSql.Async.SimpleQuery.query.query_overload1_test&lt;/TestId&gt;
-  &lt;/TestAncestor&gt;
-&lt;/SessionState&gt;</s:String>
-	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=dfde01fe_002D6895_002D4b04_002Da4ef_002Dd6d89e741fe3/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" IsActive="True" Name="query_overload1_test #2" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;
-  &lt;Or&gt;
-    &lt;TestAncestor&gt;
-      &lt;TestId&gt;NUnit3x::716DD3EB-4C62-445C-9346-385A966C9E55::net6.0::dbm_test.PgSql.Async.initOk.initOk_test&lt;/TestId&gt;
-    &lt;/TestAncestor&gt;
-    &lt;ProjectFile&gt;716DD3EB-4C62-445C-9346-385A966C9E55/d:PgSql/d:Async/d:SimpleQuery/f:query.fs&lt;/ProjectFile&gt;
-  &lt;/Or&gt;
-&lt;/SessionState&gt;</s:String>
+	
+	
+	
+	
+	
 	
 	
 	

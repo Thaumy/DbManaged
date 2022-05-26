@@ -1,14 +1,15 @@
 module dbm_test.PgSql.Sync.ComplexQuery.getFstVal
 
-open NUnit.Framework
-open fsharper.typ
-open fsharper.typ.Ord
-open fsharper.op.Boxing
+open System
+open System.Threading.Tasks
+open fsharper.op.Async
 open DbManaged
 open DbManaged.PgSql
 open DbManaged.PgSql.ext.String
+open NUnit.Framework
 open dbm_test.PgSql.com
 open dbm_test.PgSql.Sync.init
+open fsharper.typ
 
 [<OneTimeSetUp>]
 let OneTimeSetUp () = connect ()
@@ -19,31 +20,44 @@ let SetUp () = init ()
 
 [<Test>]
 let getFstVal_overload1_test () =
-    let result =
-        mkCmd().getFstVal $"SELECT col2 FROM {tab1}"
-        |> managed().executeQuery
-        |> unwrap2
+    let tasks =
+        [| for i in 1 .. 1000 do
+               fun _ ->
+                   mkCmd()
+                       .getFstVal $"SELECT content FROM {tab1} WHERE index = {i};"
+                   |> managed().executeQuery
+               |> Task.Run<Option'<_>> |]
 
-    Assert.AreEqual("i", result)
+    for r in resultAll tasks do
+        Assert.Contains(r.unwrap(), [| "ts1_insert"; "ts2_insert" |])
 
 [<Test>]
 let getFstVal_overload2_test () =
-    let result =
-        let paras: (string * obj) list = [ ("col3", "init[050,100]") ]
+    let tasks =
+        [| for i in 1 .. 1000 do
+               fun _ ->
+                   let paras: (string * obj) list = [ ("index", i) ]
 
-        mkCmd()
-            .getFstVal (normalizeSql $"SELECT col2 FROM {tab1} WHERE col3 = <col3>", paras)
-        |> managed().executeQuery
-        |> unwrap2
+                   let sql =
+                       normalizeSql $"SELECT content FROM {tab1} WHERE index = <index>;"
 
-    Assert.AreEqual("i", result)
+                   mkCmd().getFstVal (sql, paras)
+                   |> managed().executeQuery
+               |> Task.Run<Option'<_>> |]
+
+    for r in resultAll tasks do
+        Assert.Contains(r.unwrap(), [| "ts1_insert"; "ts2_insert" |])
 
 [<Test>]
 let getFstVal_overload3_test () =
-    let result =
-        mkCmd()
-            .getFstVal ($"{tab1}", "col2", ("col3", "init[050,100]"))
-        |> managed().executeQuery
-        |> unwrap2
 
-    Assert.AreEqual("i", result)
+    let tasks =
+        [| for i in 1 .. 1000 do
+               fun _ ->
+                   mkCmd()
+                       .getFstVal (tab1, "content", "index", i)
+                   |> managed().executeQuery
+               |> Task.Run<Option'<_>> |]
+
+    for r in resultAll tasks do
+        Assert.Contains(r.unwrap(), [| "ts1_insert"; "ts2_insert" |])

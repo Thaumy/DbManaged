@@ -1,14 +1,16 @@
 module dbm_test.PgSql.Async.SimpleQuery.insert
 
-open NUnit.Framework
-open dbm_test.PgSql.com
-open dbm_test.PgSql.Async.init
-open fsharper.typ
+open System
+open System.Threading.Tasks
 open fsharper.typ.Ord
 open fsharper.op.Async
 open fsharper.op.Boxing
 open DbManaged
 open DbManaged.PgSql
+open NUnit.Framework
+open dbm_test
+open dbm_test.PgSql.com
+open dbm_test.PgSql.Async.init
 
 [<OneTimeSetUp>]
 let OneTimeSetUp () = connect ()
@@ -19,24 +21,30 @@ let SetUp () = init ()
 [<Test>]
 let insert_test () =
 
-    for i in 1 .. 100 do
-        let query =
-            let paras: (string * obj) list =
-                [ ("col1", 3)
-                  ("col2", "c")
-                  ("col3", "ccc")
-                  ("col4", "cccc") ]
+    let test_name =
+        "dbm_test.PgSql.Async.SimpleQuery.insert.insert_test"
 
-            mkCmd().insertAsync ($"{tab1}", paras) <| eq 1
-            |> managed().executeQueryAsync
-            |> result
+    let tasks =
+        [| for i in 1 .. 2000 ->
+               fun _ ->
+                   let paras: (string * obj) list =
+                       [ ("index", i)
+                         ("test_name", test_name)
+                         ("time", Now())
+                         ("content", "_") ]
 
-        Assert.AreEqual(1, query)
+                   mkCmd().insertAsync ($"{tab1}", paras) <| eq 1
+                   |> managed().executeQueryAsync
+               |> Task.Run<int> |]
+
+    for r in resultAll tasks do
+        Assert.AreEqual(1, r)
 
     let count =
         mkCmd()
-            .getFstValAsync $"SELECT COUNT(*) FROM {tab1};"
+            .getFstValAsync $"SELECT COUNT(*) FROM {tab1} WHERE test_name = '{test_name}';"
         |> managed().executeQueryAsync
         |> result
+        |> unwrap
 
-    Assert.AreEqual(200, count)
+    Assert.AreEqual(2000, count)

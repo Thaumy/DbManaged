@@ -1,11 +1,12 @@
 module dbm_test.PgSql.Async.SimpleQuery.delete
 
-open NUnit.Framework
+open System
 open fsharper.typ.Ord
 open fsharper.op.Async
 open fsharper.op.Boxing
 open DbManaged
 open DbManaged.PgSql
+open NUnit.Framework
 open dbm_test.PgSql.com
 open dbm_test.PgSql.Async.init
 
@@ -17,19 +18,30 @@ let SetUp () = init ()
 
 [<Test>]
 let delete_test () =
-
+    
     let query =
-        mkCmd().deleteAsync ($"{tab1}", "col1", 0)
-        <| eq 100
-        |> managed().executeQueryAsync
-        |> result
-
-    Assert.AreEqual(100, query)
-
-    let count =
         mkCmd()
-            .getFstValAsync $"SELECT COUNT(*) FROM {tab1};"
+            .deleteAsync ($"{tab1}", "content", "ts1_insert")
+        <| eq 1000
         |> managed().executeQueryAsync
         |> result
 
-    Assert.AreEqual(0, count)
+    Assert.AreEqual(1000, query)
+
+    let ts1_count =
+        mkCmd()
+            .getFstValAsync $"SELECT COUNT(*) FROM {tab1} WHERE content = 'ts1_insert';"
+        |> managed().executeQueryAsync
+        |> result
+        |> unwrap
+
+    Assert.AreEqual(0, ts1_count)
+
+    let ts2_count =
+        mkCmd()
+            .getFstValAsync $"SELECT COUNT(*) FROM {tab1} WHERE content = 'ts2_insert';"
+        |> managed().executeQueryAsync
+        |> result
+        |> unwrap
+
+    Assert.AreEqual(1000, ts2_count)

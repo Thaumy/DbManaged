@@ -1,9 +1,9 @@
 module dbm_test.PgSql.com
 
-open DbManaged
-open DbManaged.PgSql
 open fsharper.typ
 open fsharper.op.Boxing
+open DbManaged
+open DbManaged.PgSql
 open dbm_test
 
 let tab1 = "sch1.tab1"

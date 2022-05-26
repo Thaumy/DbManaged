@@ -225,6 +225,7 @@ type internal DbConnPool
             else
                 //不允许进行新建连接的尝试，阻塞等待空闲连接
                 getFreeConn().AsTask().Result
+                
         //尝试加入忙碌列表
         let success = busyConnsTryAdd conn
         //如果加入失败则表明该连接与已登记连接存在哈希冲突，直接销毁

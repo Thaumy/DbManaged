@@ -3,12 +3,11 @@ module dbm_test.PgSql.Async.init
 open System
 open System.Threading.Tasks
 open fsharper.typ
-open fsharper.op.Fmt
 open fsharper.typ.Ord
 open fsharper.op.Async
-open dbm_test.PgSql.com
 open DbManaged
 open dbm_test
+open dbm_test.PgSql.com
 
 let init () =
     mkCmd().query $"drop table if exists {tab1};"

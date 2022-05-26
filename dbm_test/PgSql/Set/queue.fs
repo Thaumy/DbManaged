@@ -1,12 +1,14 @@
 module dbm_test.PgSql.Set.queue
 
+open System
 open System.Threading
-open DbManaged
-open NUnit.Framework
-open dbm_test.PgSql.com
-open dbm_test.PgSql.Set.init
 open fsharper.typ
 open fsharper.op.Boxing
+open DbManaged
+open NUnit.Framework
+open dbm_test
+open dbm_test.PgSql.com
+open dbm_test.PgSql.Set.init
 
 [<OneTimeSetUp>]
 let OneTimeSetUp () = connect ()
@@ -17,37 +19,44 @@ let SetUp () = init ()
 [<Test>]
 let queueQuery_test () =
 
-    for i in 1 .. 100 do
+    let test_name =
+        "dbm_test.PgSql.Set.queue.queueQuery_test"
+
+    for i in 1 .. 2000 do
         mkCmd()
-            .query $"INSERT INTO {tab1} (col1, col2, col3, col4)\
-                 VALUES (1, 'a', 'aaa', 'aaaa');"
+            .query $"INSERT INTO {tab1} (index, test_name, time, content)\
+                     VALUES ({i}, '{test_name}', '{ISO8601Now()}', '_');"
         <| always true
         |> managed().queueQuery
 
     let beforeCount =
         mkCmd()
-            .getFstVal ($"SELECT COUNT(*) FROM {tab1};")
+            .getFstVal $"SELECT COUNT(*) FROM {tab1} WHERE test_name = '{test_name}';"
         |> managed().executeQuery
-        |> unwrap2
+        |> unwrap
 
-    Assert.AreEqual(100, beforeCount)
-    Thread.Sleep(200)
+    Assert.AreEqual(0, beforeCount)
+
+    Thread.Sleep(2000) //wait for queue executing
 
     let afterCount =
         mkCmd()
-            .getFstVal $"SELECT COUNT(*) FROM {tab1} WHERE col4 = 'aaaa';"
+            .getFstVal $"SELECT COUNT(*) FROM {tab1} WHERE test_name = '{test_name}';"
         |> managed().executeQuery
-        |> unwrap2
+        |> unwrap
 
-    Assert.AreEqual(100, afterCount)
+    Assert.AreEqual(2000, afterCount)
 
 [<Test>]
 let forceLeftQueuedQuery_test () =
 
-    for i in 1 .. 1000 do
+    let test_name =
+        "dbm_test.PgSql.Set.queue.forceLeftQueuedQuery_test"
+
+    for i in 1 .. 2000 do
         mkCmd()
-            .query $"INSERT INTO {tab1} (col1, col2, col3, col4)\
-                 VALUES (1, 'a', 'aaa', 'aaaa');"
+            .query $"INSERT INTO {tab1} (index, test_name, time, content)\
+                     VALUES ({i}, '{test_name}', '{ISO8601Now()}', '_');"
         <| always true
         |> managed().queueQuery
 
@@ -55,8 +64,8 @@ let forceLeftQueuedQuery_test () =
 
     let count =
         mkCmd()
-            .getFstVal $"SELECT COUNT(*) FROM {tab1} WHERE col4 = 'aaaa';"
+            .getFstVal $"SELECT COUNT(*) FROM {tab1} WHERE test_name = '{test_name}';"
         |> managed().executeQuery
-        |> unwrap2
+        |> unwrap
 
-    Assert.AreEqual(1000, count)
+    Assert.AreEqual(2000, count)

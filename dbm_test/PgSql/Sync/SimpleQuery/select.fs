@@ -1,14 +1,15 @@
 module dbm_test.PgSql.Sync.SimpleQuery.select
 
 open System.Data
-open NUnit.Framework
-open dbm_test.PgSql.com
-open dbm_test.PgSql.Sync.init
+open System.Threading.Tasks
 open fsharper.typ
+open fsharper.op.Async
 open fsharper.op.Boxing
 open DbManaged
 open DbManaged.PgSql.ext.String
-
+open NUnit.Framework
+open dbm_test.PgSql.com
+open dbm_test.PgSql.Sync.init
 
 [<OneTimeSetUp>]
 let OneTimeSetUp () = connect ()
@@ -19,25 +20,45 @@ let SetUp () = init ()
 
 [<Test>]
 let select_overload1_test () =
-    let result =
-        
-        mkCmd().select $"SELECT col1,col2 FROM {tab1}"
-        |>managed().executeQuery
-        |>unwrap2
 
-    for row in result.Rows do
-        Assert.AreEqual(0, row.["col1"])
-        Assert.AreEqual("i", row.["col2"])
+    let tasks =
+        [| for i in 1 .. 1000 do
+               fun _ ->
+                   mkCmd()
+                       .select $"SELECT test_name, content FROM {tab1} WHERE index = {i};"
+                   |> managed().executeQuery
+               |> Task.Run<Option'<_>> |]
+
+    for r in resultAll tasks do
+        let table = r.unwrap ()
+
+        Assert.AreEqual(2, table.Rows.Count)
+
+        for row in table.Rows do
+            Assert.AreEqual("init", row.["test_name"])
+            Assert.Contains(row.["content"], [| "ts1_insert"; "ts2_insert" |])
+
 
 [<Test>]
 let select_overload2_test () =
-    let result =
-        let paras: (string * obj) list = [ ("col3", "init[050,100]") ]
 
-        mkCmd().select (normalizeSql $"SELECT col1,col2 FROM {tab1} WHERE col3 = <col3>", paras)
-        |>managed().executeQuery
-        |> unwrap2
+    let tasks =
+        [| for i in 1 .. 1000 do
+               fun _ ->
+                   let paras: (string * obj) list = [ ("index", i) ]
 
-    for row in result.Rows do
-        Assert.AreEqual(0, row.["col1"])
-        Assert.AreEqual("i", row.["col2"])
+                   let sql =
+                       normalizeSql $"SELECT test_name, content FROM {tab1} WHERE index = <index>;"
+
+                   mkCmd().select (sql, paras)
+                   |> managed().executeQuery
+               |> Task.Run<Option'<_>> |]
+
+    for r in resultAll tasks do
+        let table = r.unwrap ()
+
+        Assert.AreEqual(2, table.Rows.Count)
+
+        for row in table.Rows do
+            Assert.AreEqual("init", row.["test_name"])
+            Assert.Contains(row.["content"], [| "ts1_insert"; "ts2_insert" |])

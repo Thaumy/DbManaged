@@ -30,26 +30,23 @@ type PgSqlManaged private (msg, database, d, n, min, max) as managed =
     /// * 连接池压力大于销毁阈值时
     /// * 查询队列为空时
     let reuseConn conn =
-        async {
-            let rec loop () =
-                //如果连接池压力小于阈值，调用回收后连接很有可能被销毁
-                //为提高连接利用率，此时从延迟查询集合中取出查询任务复用该连接
-                if pool.pressure < d then
-                    getDelayedQuery () |> ifCanUnwrapOr
-                    <| fun query ->
-                        query conn
+        let rec loop () =
+            //如果连接池压力小于阈值，调用回收后连接很有可能被销毁
+            //为提高连接利用率，此时从延迟查询集合中取出查询任务复用该连接
+            if pool.pressure < d then
+                getDelayedQuery () |> ifCanUnwrapOr
+                <| fun query ->
+                    query conn
+                    loop ()
+                <| (getQueuedQuery .> ifCanUnwrapOr
+                    <. fun query ->
+                        lock queuedQuery (fun _ -> query conn)
                         loop ()
-                    <| (getQueuedQuery .> ifCanUnwrapOr
-                        <. fun query ->
-                            lock queuedQuery (fun _ -> query conn)
-                            loop ()
-                        <. fun _ -> pool.recycleConnAsync conn |> ignore)
-                else
-                    pool.recycleConnAsync conn |> ignore
+                    <. fun _ -> pool.recycleConnAsync conn |> ignore)
+            else
+                pool.recycleConnAsync conn |> ignore
 
-            loop ()
-        }
-        |> Async.Start
+        loop ()
 
     /// 以连接信息构造，并指定使用的数据库和连接池大小
     new(msg, database, poolSize: u32) = new PgSqlManaged(msg, database, 0.1, 0.7, u32 (f64 poolSize * 0.1), poolSize)
@@ -70,14 +67,17 @@ type PgSqlManaged private (msg, database, d, n, min, max) as managed =
     member self.executeQuery f =
         let conn = pool.fetchConn ()
         let r = f conn
-        reuseConn conn
+        //TODO 此处无法使用Async.Start，未能知晓原因
+        Task.Run(fun _ -> reuseConn conn) |> ignore  
+        //pool.recycleConnAsync conn |> ignore
         r
 
     member self.executeQueryAsync f =
         task {
             let! conn = pool.fetchConnAsync ()
             let! r = f conn
-            reuseConn conn
+            Async.Start(async { reuseConn conn })
+            //pool.recycleConnAsync conn |> ignore
             return r
         }
 

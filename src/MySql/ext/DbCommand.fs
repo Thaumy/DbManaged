@@ -131,7 +131,7 @@ type DbCommand with
 
     /// 参数化查询到第一个值
     [<CompiledName("getFstVal")>]
-    member cmd.getFstVal(table: string, targetKey: string, (whereKey: string, whereVal: 'v)) =
+    member cmd.getFstVal(table: string, targetKey: string, whereKey: string, whereVal: 'v) =
         cmd
             .letQuery(
                 $"SELECT {targetKey} FROM {table} WHERE {whereKey} = {paraMark}whereVal"
@@ -144,7 +144,7 @@ type DbCommand with
 
     /// TODO exp async api
     [<CompiledName("getFstValAsync")>]
-    member cmd.getFstValAsync(table: string, targetKey: string, (whereKey: string, whereVal: 'v)) =
+    member cmd.getFstValAsync(table: string, targetKey: string, whereKey: string, whereVal: 'v) =
         cmd
             .letQuery(
                 $"SELECT {targetKey} FROM {table} WHERE {whereKey} = {paraMark}whereVal"

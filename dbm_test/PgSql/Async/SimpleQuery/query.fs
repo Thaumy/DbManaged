@@ -1,18 +1,16 @@
 module dbm_test.PgSql.Async.SimpleQuery.query
 
 open System
-open System.Threading
 open System.Threading.Tasks
-open NUnit.Framework
-open dbm_test.PgSql.com
-open dbm_test.PgSql.Async.init
-open fsharper.typ
 open fsharper.typ.Ord
 open fsharper.op.Async
 open fsharper.op.Boxing
 open DbManaged
 open DbManaged.PgSql.ext.String
+open NUnit.Framework
 open dbm_test
+open dbm_test.PgSql.com
+open dbm_test.PgSql.Async.init
 
 [<OneTimeSetUp>]
 let OneTimeSetUp () = connect ()
@@ -36,18 +34,17 @@ let query_overload1_test () =
                    |> managed().executeQueryAsync
                |> Task.Run<int> |]
 
-    for result in resultAll tasks do
-        Assert.AreEqual(1, result)
+    for r in resultAll tasks do
+        Assert.AreEqual(1, r)
 
     let count =
         mkCmd()
             .getFstValAsync $"SELECT COUNT(*) FROM {tab1} WHERE test_name = '{test_name}';"
         |> managed().executeQueryAsync
         |> result
+        |> unwrap
 
     Assert.AreEqual(2000, count)
-
-open Npgsql
 
 [<Test>]
 let query_overload2_test () =
@@ -73,13 +70,14 @@ let query_overload2_test () =
                    |> managed().executeQueryAsync
                |> Task.Run<int> |]
 
-    for result in resultAll tasks do
-        Assert.AreEqual(1, result)
+    for r in resultAll tasks do
+        Assert.AreEqual(1, r)
 
     let count =
         mkCmd()
             .getFstValAsync $"SELECT COUNT(*) FROM {tab1} WHERE test_name = '{test_name}';"
         |> managed().executeQueryAsync
         |> result
+        |> unwrap
 
     Assert.AreEqual(2000, count)

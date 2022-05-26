@@ -151,7 +151,11 @@ type internal DbCommand with
     member cmd.commitForAffectedAsync conn =
         cmd.useConn(conn).ExecuteNonQueryAsync()
 
-    member cmd.commitForScalarAsync conn = cmd.useConn(conn).ExecuteScalarAsync()
+    member cmd.commitForScalarAsync conn =
+        cmd
+            .useConn(conn)
+            .ExecuteScalarAsync()
+            .ContinueWith(fun (t: Task<_>) -> t.Result |> Option'.fromNullable)
 
     member cmd.commitForReaderAsync conn = cmd.useConn(conn).ExecuteReaderAsync()
 
