@@ -1,12 +1,16 @@
 module dbm_test.PgSql.Sync.SimpleQuery.query
 
-open NUnit.Framework
-open dbm_test.PgSql.com
-open dbm_test.PgSql.Sync.init
+open System
+open System.Threading.Tasks
 open fsharper.typ.Ord
+open fsharper.op.Async
 open fsharper.op.Boxing
 open DbManaged
 open DbManaged.PgSql.ext.String
+open NUnit.Framework
+open dbm_test
+open dbm_test.PgSql.com
+open dbm_test.PgSql.Sync.init
 
 [<OneTimeSetUp>]
 let OneTimeSetUp () = connect ()
@@ -17,50 +21,61 @@ let SetUp () = init ()
 [<Test>]
 let query_overload1_test () =
 
-    for i in 1 .. 100 do
-        let query =
-            mkCmd()
-                .query $"INSERT INTO {tab1} (col1, col2, col3, col4)\
-                                     VALUES (1, 'a', 'aaa', 'aaaa');"
-            <| eq 1
-            |> managed().executeQuery
+    let test_name =
+        "dbm_test.PgSql.Async.SimpleQuery.query.query_overload1_test"
 
-        Assert.AreEqual(1, query |> unwrap)
+    let tasks =
+        [| for i in 1 .. 2000 do
+               fun _ ->
+                   mkCmd()
+                       .query $"INSERT INTO {tab1} (index, test_name, time, content)\
+                                      VALUES ({i}, '{test_name}', '{ISO8601Now()}', '_');"
+                   <| eq 1
+                   |> managed().executeQuery
+               |> Task.Run<int> |]
+
+    for r in resultAll tasks do
+        Assert.AreEqual(1, r)
 
     let count =
-        mkCmd().getFstVal $"SELECT COUNT(*) FROM {tab1};"
+        mkCmd()
+            .getFstVal $"SELECT COUNT(*) FROM {tab1} WHERE test_name = '{test_name}';"
         |> managed().executeQuery
-        |> unwrap2
+        |> unwrap
 
-    Assert.AreEqual(200, count)
-
-open Npgsql
+    Assert.AreEqual(2000, count)
 
 [<Test>]
 let query_overload2_test () =
 
-    for i in 1 .. 100 do
-        let paras: (string * obj) list =
-            [ ("col1", 1)
-              ("col2", 'a')
-              ("col3", "aaa")
-              ("col4", "aaaa") ]
+    let test_name =
+        "dbm_test.PgSql.Async.SimpleQuery.query.query_overload2_test"
 
-        let sql =
-            normalizeSql
-                $"INSERT INTO {tab1} ( col1,  col2,  col3,  col4)\
-                              VALUES (<col1>,<col2>,<col3>,<col4>);"
+    let tasks =
+        [| for i in 1 .. 2000 do
+               fun _ ->
+                   let paras: (string * obj) list =
+                       [ ("index", i)
+                         ("test_name", test_name)
+                         ("time", Now())
+                         ("content", "_") ]
 
-        let query =
-            mkCmd().query (sql, paras) <| eq 1
-            |> managed().executeQuery
-            |> unwrap
+                   let sql =
+                       normalizeSql
+                           $"INSERT INTO {tab1} (index,   test_name,  time,  content)\
+                                         VALUES (<index>,<test_name>,<time>,<content>);"
 
-        Assert.AreEqual(1, query)
+                   mkCmd().query (sql, paras) <| eq 1
+                   |> managed().executeQuery
+               |> Task.Run<int> |]
+
+    for r in resultAll tasks do
+        Assert.AreEqual(1, r)
 
     let count =
-        mkCmd().getFstVal $"SELECT COUNT(*) FROM {tab1};"
+        mkCmd()
+            .getFstVal $"SELECT COUNT(*) FROM {tab1} WHERE test_name = '{test_name}';"
         |> managed().executeQuery
-        |> unwrap2
+        |> unwrap
 
-    Assert.AreEqual(200, count)
+    Assert.AreEqual(2000, count)

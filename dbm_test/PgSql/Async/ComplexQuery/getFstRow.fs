@@ -1,12 +1,12 @@
 module dbm_test.PgSql.Async.ComplexQuery.getFstRow
 
-open NUnit.Framework
+open System
+open System.Threading.Tasks
 open fsharper.typ
-open fsharper.typ.Ord
 open fsharper.op.Async
-open fsharper.op.Boxing
 open DbManaged
 open DbManaged.PgSql.ext.String
+open NUnit.Framework
 open dbm_test.PgSql.com
 open dbm_test.PgSql.Async.init
 
@@ -19,26 +19,32 @@ let SetUp () = init ()
 
 [<Test>]
 let getFstRow_overload1_test () =
-    let result =
-        mkCmd()
-            .getFstRowAsync $"SELECT col1,col2 FROM {tab1}"
-        |> managed().executeQueryAsync
-        |> result
-        |> unwrap
+    let tasks =
+        [| for i in 1 .. 1000 do
+               fun _ ->
+                   mkCmd()
+                       .getFstRowAsync $"SELECT * FROM {tab1} WHERE index = {i};"
+                   |> managed().executeQueryAsync
+               |> Task.Run<Option'<_>> |]
 
-    Assert.AreEqual(0, result.["col1"])
-    Assert.AreEqual("i", result.["col2"])
+    for r in resultAll tasks do
+        let row = r.unwrap ()
+        Assert.Contains(row.["content"], [| "ts1_insert"; "ts2_insert" |])
 
 [<Test>]
 let getFstRow_overload2_test () =
-    let result =
-        let paras: (string * obj) list = [ ("col3", "init[050,100]") ]
+    let tasks =
+        [| for i in 1 .. 1000 do
+               fun _ ->
+                   let paras: (string * obj) list = [ ("index", i) ]
 
-        mkCmd()
-            .getFstRowAsync (normalizeSql $"SELECT col1,col2 FROM {tab1} WHERE col3 = <col3>", paras)
-        |> managed().executeQueryAsync
-        |> result
-        |> unwrap
+                   let sql =
+                       normalizeSql $"SELECT * FROM {tab1} WHERE index = <index>;"
 
-    Assert.AreEqual(0, result.["col1"])
-    Assert.AreEqual("i", result.["col2"])
+                   mkCmd().getFstRowAsync (sql, paras)
+                   |> managed().executeQueryAsync
+               |> Task.Run<Option'<_>> |]
+
+    for r in resultAll tasks do
+        let row = r.unwrap ()
+        Assert.Contains(row.["content"], [| "ts1_insert"; "ts2_insert" |])

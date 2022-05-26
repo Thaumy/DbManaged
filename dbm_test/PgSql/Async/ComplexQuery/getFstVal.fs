@@ -1,15 +1,16 @@
 module dbm_test.PgSql.Async.ComplexQuery.getFstVal
 
-open NUnit.Framework
-open fsharper.typ
-open fsharper.typ.Ord
+open System
+open System.Threading.Tasks
 open fsharper.op.Async
-open fsharper.op.Boxing
 open DbManaged
 open DbManaged.PgSql
 open DbManaged.PgSql.ext.String
+open NUnit.Framework
 open dbm_test.PgSql.com
 open dbm_test.PgSql.Async.init
+open fsharper.typ
+open fsharper.typ.Option'
 
 [<OneTimeSetUp>]
 let OneTimeSetUp () = connect ()
@@ -20,31 +21,44 @@ let SetUp () = init ()
 
 [<Test>]
 let getFstVal_overload1_test () =
-    let result =
-        mkCmd().getFstValAsync $"SELECT col2 FROM {tab1}"
-        |> managed().executeQueryAsync
-        |> result
+    let tasks =
+        [| for i in 1 .. 1000 do
+               fun _ ->
+                   mkCmd()
+                       .getFstValAsync $"SELECT content FROM {tab1} WHERE index = {i};"
+                   |> managed().executeQueryAsync
+               |> Task.Run<Option'<_>> |]
 
-    Assert.AreEqual("i", result)
+    for r in resultAll tasks do
+        Assert.Contains(r.unwrap(), [| "ts1_insert"; "ts2_insert" |])
 
 [<Test>]
 let getFstVal_overload2_test () =
-    let result =
-        let paras: (string * obj) list = [ ("col3", "init[050,100]") ]
+    let tasks =
+        [| for i in 1 .. 1000 do
+               fun _ ->
+                   let paras: (string * obj) list = [ ("index", i) ]
 
-        mkCmd()
-            .getFstValAsync (normalizeSql $"SELECT col2 FROM {tab1} WHERE col3 = <col3>", paras)
-        |> managed().executeQueryAsync
-        |> result
+                   let sql =
+                       normalizeSql $"SELECT content FROM {tab1} WHERE index = <index>;"
 
-    Assert.AreEqual("i", result)
+                   mkCmd().getFstValAsync (sql, paras)
+                   |> managed().executeQueryAsync
+               |> Task.Run<Option'<_>> |]
+
+    for r in resultAll tasks do
+        Assert.Contains(r.unwrap(), [| "ts1_insert"; "ts2_insert" |])
 
 [<Test>]
 let getFstVal_overload3_test () =
-    let result =
-        mkCmd()
-            .getFstValAsync ($"{tab1}", "col2", ("col3", "init[050,100]"))
-        |> managed().executeQueryAsync
-        |> result
 
-    Assert.AreEqual("i", result)
+    let tasks =
+        [| for i in 1 .. 1000 do
+               fun _ ->
+                   mkCmd()
+                       .getFstValAsync (tab1, "content", "index", i)
+                   |> managed().executeQueryAsync
+               |> Task.Run<Option'<_>> |]
+
+    for r in resultAll tasks do
+        Assert.Contains(r.unwrap(), [| "ts1_insert"; "ts2_insert" |])

@@ -1,7 +1,6 @@
-module dbm_test.PgSql.Async.initOk
+module dbm_test.PgSql.Sync.initOk
 
 open System
-open fsharper.op.Async
 open fsharper.op.Boxing
 open DbManaged
 open NUnit.Framework
@@ -19,18 +18,16 @@ let initOk_test () =
    
     let ts1_count =
         mkCmd()
-            .getFstValAsync $"SELECT COUNT(*) FROM {tab1} WHERE test_name = 'init' AND content = 'ts1_insert';"
-        |> managed().executeQueryAsync
-        |> result
+            .getFstVal $"SELECT COUNT(*) FROM {tab1} WHERE test_name = 'init' AND content = 'ts1_insert';"
+        |> managed().executeQuery
         |> unwrap
 
     Assert.AreEqual(1000, ts1_count)
 
     let ts2_count =
         mkCmd()
-            .getFstValAsync $"SELECT COUNT(*) FROM {tab1} WHERE test_name = 'init' AND content = 'ts2_insert';"
-        |> managed().executeQueryAsync
-        |> result
+            .getFstVal $"SELECT COUNT(*) FROM {tab1} WHERE test_name = 'init' AND content = 'ts2_insert';"
+        |> managed().executeQuery
         |> unwrap
 
     Assert.AreEqual(1000, ts2_count)

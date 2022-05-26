@@ -1,10 +1,12 @@
 module dbm_test.PgSql.Sync.ComplexQuery.getFstCol
 
-open NUnit.Framework
-open fsharper.typ
+open System
+open System.Threading.Tasks
+open fsharper.op.Async
 open fsharper.op.Boxing
 open DbManaged
 open DbManaged.PgSql.ext.String
+open NUnit.Framework
 open dbm_test.PgSql.com
 open dbm_test.PgSql.Sync.init
 
@@ -16,26 +18,38 @@ let SetUp () = init ()
 
 [<Test>]
 let getFstCol_overload1_test () =
-    let result =
-        mkCmd()
-            .getFstCol $"SELECT col3 FROM {tab1} WHERE col3 = 'init[001,050]'"
-        |> managed().executeQuery
-        |> unwrap
+    let tasks =
+        [| for i in 1 .. 1000 do
+               fun _ ->
+                   mkCmd()
+                       .getFstCol $"SELECT content FROM {tab1} WHERE index = {i};"
+                   |> managed().executeQuery
+               |> Task.Run<obj list> |]
 
-    for it in result do
-        Assert.AreEqual("init[001,050]", it)
+    for r in resultAll tasks do
+        Assert.AreEqual(2, r.Length)
 
-
+        for it in r do
+            Assert.Contains(it, [| "ts1_insert"; "ts2_insert" |])
 
 [<Test>]
 let getFstCol_overload2_test () =
-    let result =
-        let paras: (string * obj) list = [ ("col3", "init[050,100]") ]
 
-        mkCmd()
-            .getFstCol (normalizeSql $"SELECT col3 FROM {tab1} WHERE col3 = <col3>", paras)
-        |> managed().executeQuery
-        |> unwrap
+    let tasks =
+        [| for i in 1 .. 1000 do
+               fun _ ->
+                   let paras: (string * obj) list = [ ("index", i) ]
 
-    for it in result do
-        Assert.AreEqual("init[050,100]", it)
+                   let sql =
+                       normalizeSql $"SELECT content FROM {tab1} WHERE index = <index>;"
+
+                   mkCmd().getFstCol (sql, paras)
+                   |> managed().executeQuery
+               |> Task.Run<obj list> |]
+
+    for r in resultAll tasks do
+
+        Assert.AreEqual(2, r.Length)
+
+        for it in r do
+            Assert.Contains(it, [| "ts1_insert"; "ts2_insert" |])

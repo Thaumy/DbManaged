@@ -2,13 +2,13 @@ module dbm_test.PgSql.Set.delay
 
 open System
 open System.Threading
-open DbManaged
-open NUnit.Framework
-open System.Threading.Tasks
-open dbm_test.PgSql.com
-open dbm_test.PgSql.Sync.init
 open fsharper.typ
 open fsharper.op.Boxing
+open DbManaged
+open NUnit.Framework
+open dbm_test
+open dbm_test.PgSql.com
+open dbm_test.PgSql.Set.init
 
 [<OneTimeSetUp>]
 let OneTimeSetUp () = connect ()
@@ -19,38 +19,44 @@ let SetUp () = init ()
 [<Test>]
 let delayQuery_test () =
 
-    for i in 1 .. 3000 do
+    let test_name =
+        "dbm_test.PgSql.Set.delay.delayQuery_test"
+
+    for i in 1 .. 2000 do
         mkCmd()
-            .query $"INSERT INTO {tab1} (col1, col2, col3, col4)\
-                 VALUES (1, 'a', 'aaa', 'aaaa');"
+            .query $"INSERT INTO {tab1} (index, test_name, time, content)\
+                     VALUES ({i}, '{test_name}', '{ISO8601Now()}', '_');"
         <| always true
         |> managed().delayQuery
 
     let beforeCount =
         mkCmd()
-            .getFstVal ($"SELECT COUNT(*) FROM {tab1};")
+            .getFstVal $"SELECT COUNT(*) FROM {tab1} WHERE test_name = '{test_name}';"
         |> managed().executeQuery
-        |> unwrap2
+        |> unwrap
 
-    Assert.AreEqual(100, beforeCount)
-    
-    Thread.Sleep(4000)
+    Assert.AreEqual(0, beforeCount)
+
+    Thread.Sleep(2000) //wait for delay executing
 
     let afterCount =
         mkCmd()
-            .getFstVal $"SELECT COUNT(*) FROM {tab1} WHERE col4 = 'aaaa';"
+            .getFstVal $"SELECT COUNT(*) FROM {tab1} WHERE test_name = '{test_name}';"
         |> managed().executeQuery
-        |> unwrap2
+        |> unwrap
 
-    Assert.AreEqual(3000, afterCount)
+    Assert.AreEqual(2000, afterCount)
 
 [<Test>]
 let forceLeftDelayedQuery_test () =
 
-    for i in 1 .. 3000 do
+    let test_name =
+        "dbm_test.PgSql.Set.delay.forceLeftDelayedQuery_test"
+
+    for i in 1 .. 2000 do
         mkCmd()
-            .query $"INSERT INTO {tab1} (col1, col2, col3, col4)\
-                 VALUES (1, 'a', 'aaa', 'aaaa');"
+            .query $"INSERT INTO {tab1} (index, test_name, time, content)\
+                     VALUES ({i}, '{test_name}', '{ISO8601Now()}', '_');"
         <| always true
         |> managed().delayQuery
 
@@ -58,8 +64,8 @@ let forceLeftDelayedQuery_test () =
 
     let count =
         mkCmd()
-            .getFstVal $"SELECT COUNT(*) FROM {tab1} WHERE col4 = 'aaaa';"
+            .getFstVal $"SELECT COUNT(*) FROM {tab1} WHERE test_name = '{test_name}';"
         |> managed().executeQuery
-        |> unwrap2
+        |> unwrap
 
-    Assert.AreEqual(3000, count)
+    Assert.AreEqual(2000, count)
