@@ -2,6 +2,7 @@ module dbm_test.PgSql.Set.delay
 
 open System
 open System.Threading
+open System.Threading.Tasks
 open fsharper.typ
 open fsharper.op.Boxing
 open DbManaged
@@ -29,13 +30,10 @@ let delayQuery_test () =
         <| always true
         |> managed().delayQuery
 
-    let beforeCount =
-        mkCmd()
-            .getFstVal $"SELECT COUNT(*) FROM {tab1} WHERE test_name = '{test_name}';"
+    for _ in 1 .. 20 do //用于触发执行
+        mkCmd().query "SELECT 1" <| always true
         |> managed().executeQuery
-        |> unwrap
-
-    Assert.AreEqual(0, beforeCount)
+        |> ignore
 
     Thread.Sleep(2000) //wait for delay executing
 

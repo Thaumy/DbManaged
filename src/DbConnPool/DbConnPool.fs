@@ -2,6 +2,7 @@ namespace DbManaged
 
 open System
 open System.Data.Common
+open System.Threading
 open System.Threading.Tasks
 open System.Threading.Channels
 open System.Collections.Concurrent
@@ -40,18 +41,20 @@ type internal DbConnPool
           else
               $"DataBase = {database};"
 
-    let connCountMutex = obj () //连接计数锁
+    let connCountLock = obj ()
     let mutable connCount = 0u //连接计数
-
+    
+(*
     let getConnCountAndUp () =
         fun _ ->
             let r = connCount
             connCount <- connCount + 1u
             r
-        |> lock connCountMutex
-
+        |> lock connCountLock
+*)
+    
     let setConnCountDn () =
-        lock connCountMutex (fun _ -> connCount <- connCount - 1u)
+        lock connCountLock (fun _ -> connCount <- connCount - 1u)
 
     /// 空闲连接表
     let freeConns =
@@ -80,6 +83,22 @@ type internal DbConnPool
 
     /// 生成新连接或取得空闲连接
     let openConnOrFreeConn () =
+        Monitor.Enter(connCountLock)
+
+        let r =
+            if connCount < max then
+                connCount <- connCount + 1u
+                Monitor.Exit(connCountLock)
+                
+                let conn = DbConnectionConstructor(connStr)
+                conn.Open()
+                conn
+            else
+                Monitor.Exit(connCountLock)
+                getFreeConn().AsTask().Result
+
+        r
+    (*
         if getConnCountAndUp () < max then
             let conn = DbConnectionConstructor(connStr)
 
@@ -88,9 +107,23 @@ type internal DbConnPool
         else
             setConnCountDn ()
             getFreeConn().AsTask().Result
-
+        *)
     let openConnOrFreeConnAsync () =
         task {
+            Monitor.Enter(connCountLock)
+
+            if connCount < max then
+                connCount <- connCount + 1u
+                Monitor.Exit(connCountLock)
+
+                let conn = DbConnectionConstructor(connStr)
+                let! _ = conn.OpenAsync()
+                return conn
+            else
+                Monitor.Exit(connCountLock)
+                return! getFreeConn().AsTask()
+
+        (*
             if getConnCountAndUp () < max then
                 let conn = DbConnectionConstructor(connStr)
 
@@ -99,6 +132,7 @@ type internal DbConnPool
             else
                 setConnCountDn ()
                 return! getFreeConn().AsTask()
+        *)
         }
 
     let disposeConn (conn: DbConnection) =
@@ -137,9 +171,7 @@ type internal DbConnPool
 
             let busy = busyConns.Count.ToString("00")
 
-            let freeAndBusy =
-                (freeConns.Reader.Count + busyConns.Count)
-                    .ToString("00")
+            let freeAndBusy = connCount.ToString("00")
 
             printfn $"[占用 {occ}: {freeAndBusy} /{max}] [压力 {pressure}: 忙{busy} 闲{free}]"
         }
@@ -225,7 +257,7 @@ type internal DbConnPool
             else
                 //不允许进行新建连接的尝试，阻塞等待空闲连接
                 getFreeConn().AsTask().Result
-                
+
         //尝试加入忙碌列表
         let success = busyConnsTryAdd conn
         //如果加入失败则表明该连接与已登记连接存在哈希冲突，直接销毁
