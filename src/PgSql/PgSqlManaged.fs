@@ -1,7 +1,9 @@
 ﻿namespace DbManaged.PgSql
 
 open System
+open System.Threading
 open System.Data.Common
+open System.Diagnostics
 open System.Threading.Tasks
 open System.Collections.Concurrent
 open Npgsql
@@ -20,7 +22,17 @@ type PgSqlManaged private (msg, database, d, n, min, max) as managed =
     let delayedQuery = ConcurrentBag<DbConnection -> unit>()
 
     let getQueuedQuery () =
-        queuedQuery.TryDequeue() |> Option'.fromOkComma
+        (*该实现使得每次仅有一个线程能够取得查询任务
+        且在被获取的查询任务执行完毕前，其他线程均不能取得任务
+        从而保证队列的按序执行*)
+        if Monitor.TryEnter(queuedQuery) then
+            match queuedQuery.TryDequeue() with
+            | true, q -> Some q
+            | _ ->
+                Monitor.Exit(queuedQuery)
+                None
+        else
+            None
 
     let getDelayedQuery () =
         delayedQuery.TryTake() |> Option'.fromOkComma
@@ -34,13 +46,19 @@ type PgSqlManaged private (msg, database, d, n, min, max) as managed =
             //如果连接池压力小于阈值，调用回收后连接很有可能被销毁
             //为提高连接利用率，此时从延迟查询集合中取出查询任务复用该连接
             if pool.pressure < d then
+                //优先考虑延迟查询集合任务，因为它能实现更高的并行性
                 getDelayedQuery () |> ifCanUnwrapOr
-                <| fun query ->
-                    query conn
+                <| fun q ->
+                    Console.WriteLine($"delay {Thread.CurrentThread.ManagedThreadId}")
+                    q conn
                     loop ()
                 <| (getQueuedQuery .> ifCanUnwrapOr
-                    <. fun query ->
-                        lock queuedQuery (fun _ -> query conn)
+                    <. fun q ->
+                        //减小权重并出让调度权以缓解其他线程对getQueueQuery的阻塞
+                        Thread.CurrentThread.Priority <- ThreadPriority.BelowNormal
+                        Thread.Yield() |> ignore
+                        q conn
+                        Monitor.Exit(queuedQuery)
                         loop ()
                     <. fun _ -> pool.recycleConnAsync conn |> ignore)
             else
@@ -68,7 +86,7 @@ type PgSqlManaged private (msg, database, d, n, min, max) as managed =
         let conn = pool.fetchConn ()
         let r = f conn
         //TODO 此处无法使用Async.Start，未能知晓原因
-        Task.Run(fun _ -> reuseConn conn) |> ignore  
+        Task.Run(fun _ -> reuseConn conn) |> ignore
         //pool.recycleConnAsync conn |> ignore
         r
 
@@ -84,6 +102,7 @@ type PgSqlManaged private (msg, database, d, n, min, max) as managed =
     member self.delayQuery f = f .> ignore |> delayedQuery.Add
 
     member self.forceLeftDelayedQuery() =
+
         getDelayedQuery .> ifCanUnwrapOr
         <. fun q -> Option.Some(async { self.executeQuery q }, ())
         <. fun _ -> Option.None
@@ -96,7 +115,11 @@ type PgSqlManaged private (msg, database, d, n, min, max) as managed =
     member self.queueQuery f = f .> ignore |> queuedQuery.Enqueue
 
     member self.forceLeftQueuedQuery() =
-        getQueuedQuery .> ifCanUnwrapOr
+        Monitor.Enter(queuedQuery)
+
+        queuedQuery.TryDequeue
+        .> Option'.fromOkComma
+        .> ifCanUnwrapOr
         <. fun q -> Option.Some(async { managed.executeQuery q }, ())
         <. fun _ -> Option.None
         |> Seq.unfold
@@ -104,6 +127,8 @@ type PgSqlManaged private (msg, database, d, n, min, max) as managed =
         |> Async.Sequential
         |> Async.Ignore
         |> Async.RunSynchronously
+
+        Monitor.Exit(queuedQuery)
 
     interface IDisposable with
         member i.Dispose() = managed.Dispose()
