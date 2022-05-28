@@ -6,4 +6,11 @@
   &lt;Assembly Path="/home/thaumy/repo/palaflake/impl/fs/palaflake/bin/Debug/net5.0/palaflake.dll" /&gt;
   &lt;Assembly Path="/home/thaumy/repo/fsharper/bin/Debug/net6.0/fsharper.dll" /&gt;
   &lt;Assembly Path="/home/thaumy/.nuget/packages/npgsql/7.0.0-preview.3/lib/net6.0/Npgsql.dll" /&gt;
-&lt;/AssemblyExplorer&gt;</s:String></wpf:ResourceDictionary>
+&lt;/AssemblyExplorer&gt;</s:String>
+	<s:String x:Key="/Default/Environment/Highlighting/HighlightingSourceSnapshotLocation/@EntryValue">/home/thaumy/.cache/JetBrains/Rider2021.3/resharper-host/temp/Rider/vAny/CoverageData/_DbManaged.1957780356/Snapshot/snapshot.utdcvr</s:String>
+	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=3ff11d92_002D1941_002D409e_002Db504_002Db121c72e6c75/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" Name="All tests from test #2" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;
+  &lt;ProjectFolder&gt;7A1DBA5E-7C98-4BA2-BF99-2C173BE9C915/d:test&lt;/ProjectFolder&gt;
+&lt;/SessionState&gt;</s:String>
+	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=56f28d97_002Daa6b_002D48fb_002D8387_002D6b7ba72c9936/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" IsActive="True" Name="All tests from test" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;
+  &lt;ProjectFolder&gt;7A1DBA5E-7C98-4BA2-BF99-2C173BE9C915/d:test&lt;/ProjectFolder&gt;
+&lt;/SessionState&gt;</s:String></wpf:ResourceDictionary>

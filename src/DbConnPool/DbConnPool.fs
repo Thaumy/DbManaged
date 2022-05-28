@@ -6,6 +6,7 @@ open System.Threading
 open System.Threading.Tasks
 open System.Threading.Channels
 open System.Collections.Concurrent
+open Microsoft.FSharp.Collections
 open fsharper.op
 open fsharper.typ
 open fsharper.op.Eq
@@ -43,8 +44,8 @@ type internal DbConnPool
 
     let connCountLock = obj ()
     let mutable connCount = 0u //连接计数
-    
-(*
+
+    (*
     let getConnCountAndUp () =
         fun _ ->
             let r = connCount
@@ -52,7 +53,7 @@ type internal DbConnPool
             r
         |> lock connCountLock
 *)
-    
+
     let setConnCountDn () =
         lock connCountLock (fun _ -> connCount <- connCount - 1u)
 
@@ -85,19 +86,17 @@ type internal DbConnPool
     let openConnOrFreeConn () =
         Monitor.Enter(connCountLock)
 
-        let r =
-            if connCount < max then
-                connCount <- connCount + 1u
-                Monitor.Exit(connCountLock)
-                
-                let conn = DbConnectionConstructor(connStr)
-                conn.Open()
-                conn
-            else
-                Monitor.Exit(connCountLock)
-                getFreeConn().AsTask().Result
+        if connCount < max then
+            connCount <- connCount + 1u
+            Monitor.Exit(connCountLock)
 
-        r
+            let conn = DbConnectionConstructor(connStr)
+            conn.Open()
+            conn
+        else
+            Monitor.Exit(connCountLock)
+            getFreeConn().AsTask().Result
+
     (*
         if getConnCountAndUp () < max then
             let conn = DbConnectionConstructor(connStr)
@@ -117,6 +116,7 @@ type internal DbConnPool
                 Monitor.Exit(connCountLock)
 
                 let conn = DbConnectionConstructor(connStr)
+
                 let! _ = conn.OpenAsync()
                 return conn
             else
@@ -137,11 +137,13 @@ type internal DbConnPool
 
     let disposeConn (conn: DbConnection) =
         conn.Dispose()
+
         setConnCountDn ()
 
     let disposeConnAsync (conn: DbConnection) : Task =
         task {
             let! _ = conn.DisposeAsync()
+
             setConnCountDn ()
         }
 
@@ -161,6 +163,7 @@ type internal DbConnPool
         }
         |> Async.Start
 
+#if DEBUG
     let outputPoolStatus () =
         async {
             let occ = pool.occupancy.ToString("0.00")
@@ -176,6 +179,7 @@ type internal DbConnPool
             printfn $"[占用 {occ}: {freeAndBusy} /{max}] [压力 {pressure}: 忙{busy} 闲{free}]"
         }
         |> Async.Start
+#endif
 
     /// 注销后不应进行新的查询
     member self.Dispose() =
@@ -265,7 +269,9 @@ type internal DbConnPool
             disposeConnAsync conn |> ignore
             self.fetchConn () //进行下一轮尝试
         else
+#if DEBUG
             outputPoolStatus ()
+#endif
             conn
 
     /// 异步从连接池取用连接
@@ -293,7 +299,9 @@ type internal DbConnPool
                 disposeConnAsync conn |> ignore
                 return! self.fetchConnAsync () //进行下一轮尝试
             else
+#if DEBUG
                 outputPoolStatus ()
+#endif
                 return conn
         }
     (*
