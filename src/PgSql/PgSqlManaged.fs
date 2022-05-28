@@ -9,6 +9,7 @@ open System.Collections.Concurrent
 open Npgsql
 open fsharper.op
 open fsharper.typ
+open fsharper.op.Fmt
 open fsharper.op.Alias
 open fsharper.op.Async
 open DbManaged
@@ -42,21 +43,23 @@ type PgSqlManaged private (msg, database, d, n, min, max) as managed =
     /// * 连接池压力大于销毁阈值时
     /// * 查询队列为空时
     let reuseConn conn =
+        //Thread.CurrentThread.Priority <- ThreadPriority.Lowest
+
         let rec loop () =
+            //println $"loop {Thread.CurrentThread.ManagedThreadId}"
             //如果连接池压力小于阈值，调用回收后连接很有可能被销毁
             //为提高连接利用率，此时从延迟查询集合中取出查询任务复用该连接
             if pool.pressure < d then
                 //优先考虑延迟查询集合任务，因为它能实现更高的并行性
                 getDelayedQuery () |> ifCanUnwrapOr
                 <| fun q ->
-                    Console.WriteLine($"delay {Thread.CurrentThread.ManagedThreadId}")
+                    println $"delay {Thread.CurrentThread.ManagedThreadId} {Process.GetCurrentProcess().Threads.Count}"
+                    Thread.Yield() |> ignore
                     q conn
                     loop ()
                 <| (getQueuedQuery .> ifCanUnwrapOr
                     <. fun q ->
-                        //减小权重并出让调度权以缓解其他线程对getQueueQuery的阻塞
-                        Thread.CurrentThread.Priority <- ThreadPriority.BelowNormal
-                        Thread.Yield() |> ignore
+                        println $"queue {Thread.CurrentThread.ManagedThreadId} {Process.GetCurrentProcess().Threads.Count}"
                         q conn
                         Monitor.Exit(queuedQuery)
                         loop ()
@@ -94,7 +97,7 @@ type PgSqlManaged private (msg, database, d, n, min, max) as managed =
         task {
             let! conn = pool.fetchConnAsync ()
             let! r = f conn
-            Async.Start(async { reuseConn conn })
+            Task.Run(fun _ -> reuseConn conn) |> ignore
             //pool.recycleConnAsync conn |> ignore
             return r
         }

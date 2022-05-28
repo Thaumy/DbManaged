@@ -36,7 +36,7 @@ let queueQuery_test () =
         |> managed().executeQuery
         |> ignore
 
-    Thread.Sleep(3000) //wait for queue executing
+    Thread.Sleep(4000) //wait for queue executing
 
     //影响行数校验
     let count =
