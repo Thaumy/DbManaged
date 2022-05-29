@@ -4,6 +4,7 @@ open System
 open System.Threading
 open System.Threading.Tasks
 open fsharper.typ
+open fsharper.op.Async
 open fsharper.op.Boxing
 open DbManaged
 open NUnit.Framework
@@ -30,10 +31,14 @@ let delayQuery_test () =
         <| always true
         |> managed().delayQuery
 
-    for _ in 1 .. 20 do //用于触发执行
-        mkCmd().query "SELECT 1" <| always true
-        |> managed().executeQuery
-        |> ignore
+    [| for _ in 1 .. 20 do //用于触发执行
+           fun _ ->
+               mkCmd().query "SELECT 1" <| always true
+               |> managed().executeQuery
+               |> ignore
+           |> Task.Run |]
+    |> resultAll
+    |> ignore
 
     Thread.Sleep(2000) //wait for delay executing
 
