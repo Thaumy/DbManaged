@@ -4,6 +4,7 @@ open System
 open System.Threading
 open System.Threading.Tasks
 open fsharper.typ
+open fsharper.op.Async
 open fsharper.op.Coerce
 open fsharper.op.Boxing
 open DbManaged
@@ -31,12 +32,7 @@ let queueQuery_test () =
         <| always true
         |> managed().queueQuery
 
-    for _ in 1 .. 20 do //用于触发执行
-        mkCmd().query "SELECT 1" <| always true
-        |> managed().executeQuery
-        |> ignore
-
-    Thread.Sleep(4000) //wait for queue executing
+    Thread.Sleep(3000) //wait for queue executing
 
     //影响行数校验
     let count =
@@ -66,15 +62,18 @@ let forceLeftQueuedQuery_test () =
     let test_name =
         "dbm_test.PgSql.Set.queue.forceLeftQueuedQuery_test"
 
-    for i in 1 .. 2000 do
-        mkCmd()
-            .query $"INSERT INTO {tab1} (index, test_name, time, content)\
-                     VALUES ({i}, '{test_name}', CURRENT_TIMESTAMP, '_');"
-        <| always true
-        |> managed().queueQuery
+    fun _ ->
+        for i in 1 .. 2000 do
+            mkCmd()
+                .query $"INSERT INTO {tab1} (index, test_name, time, content)\
+                         VALUES ({i}, '{test_name}', CURRENT_TIMESTAMP, '_');"
+            <| always true
+            |> managed().queueQuery
+    |> Task.Run
+    |> wait
 
     managed().forceLeftQueuedQuery ()
-
+    
     //影响行数校验
     let count =
         mkCmd()

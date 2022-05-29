@@ -45,15 +45,6 @@ type internal DbConnPool
     let connCountLock = obj ()
     let mutable connCount = 0u //连接计数
 
-    (*
-    let getConnCountAndUp () =
-        fun _ ->
-            let r = connCount
-            connCount <- connCount + 1u
-            r
-        |> lock connCountLock
-*)
-
     let setConnCountDn () =
         lock connCountLock (fun _ -> connCount <- connCount - 1u)
 
@@ -116,7 +107,6 @@ type internal DbConnPool
                 Monitor.Exit(connCountLock)
 
                 let conn = DbConnectionConstructor(connStr)
-
                 let! _ = conn.OpenAsync()
                 return conn
             else
@@ -166,17 +156,15 @@ type internal DbConnPool
 #if DEBUG
     let outputPoolStatus () =
         async {
-            let occ = pool.occupancy.ToString("0.00")
-
+            let occupancy = pool.occupancy.ToString("0.00")
             let pressure = pool.pressure.ToString("0.00")
 
             let free = freeConns.Reader.Count.ToString("00")
-
             let busy = busyConns.Count.ToString("00")
 
-            let freeAndBusy = connCount.ToString("00")
+            let total = connCount.ToString("00")
 
-            printfn $"[占用 {occ}: {freeAndBusy} /{max}] [压力 {pressure}: 忙{busy} 闲{free}]"
+            printfn $"[占用 {occupancy}: {total} /{max}] [压力 {pressure}: 忙{busy} 闲{free}]"
         }
         |> Async.Start
 #endif
