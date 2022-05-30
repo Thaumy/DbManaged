@@ -33,16 +33,13 @@ type PgSqlManaged private (msg, database, d, n, min, max) as managed =
     let rec reuseConn conn =
         //如果连接池压力小于阈值，调用回收后连接很有可能被销毁
         //为提高连接利用率，此时从延迟查询集合中取出查询任务复用该连接
-        if pool.pressure < d then
+        if pool.pressure < d && delayedQuery.Reader.Count > 0 then
             delayedQuery.Reader.TryRead()
             |> Option'.fromOkComma
-            |> ifCanUnwrapOr
-            <| fun q ->
-                //为其他线程取得任务而出让调度权
-                Thread.Yield() |> ignore
-                q conn |> ignore
-                reuseConn conn
-            <| fun _ -> pool.recycleConnAsync conn |> ignore
+            |> ifCanUnwrap
+            <| fun q -> q conn |> ignore
+
+            reuseConn conn
         else
             pool.recycleConnAsync conn |> ignore
 
@@ -81,16 +78,16 @@ type PgSqlManaged private (msg, database, d, n, min, max) as managed =
         let conn = pool.fetchConn ()
         let r = f conn
         //TODO 此处无法使用Async.Start，未能知晓原因
-        //Task.RunIgnore(fun _ -> reuseConn conn)
-        pool.recycleConnAsync conn |> ignore
+        Task.RunIgnore(fun _ -> reuseConn conn)
+        //pool.recycleConnAsync conn |> ignore
         r
 
     member self.executeQueryAsync(f: DbConnection -> Task<'r>) =
         task {
             let! conn = pool.fetchConnAsync ()
             let! r = f conn
-            //Task.RunIgnore(fun _ -> reuseConn conn)
-            pool.recycleConnAsync conn |> ignore
+            Task.RunIgnore(fun _ -> reuseConn conn)
+            //pool.recycleConnAsync conn |> ignore
             return r
         }
 
@@ -105,7 +102,15 @@ type PgSqlManaged private (msg, database, d, n, min, max) as managed =
         delayedQuery.Reader.TryRead
         .> Option'.fromOkComma
         .> ifCanUnwrapOr
-        <. fun q -> Option.Some(async { self.executeQuery q |> ignore }, ())
+        <. fun q ->
+            Option.Some(
+                async {
+                    fun c -> task { return q c }
+                    |> self.executeQueryAsync
+                    |> ignore
+                },
+                ()
+            )
         <. fun _ -> Option.None
         |> Seq.unfold
         <| ()
@@ -122,26 +127,16 @@ type PgSqlManaged private (msg, database, d, n, min, max) as managed =
         |> wait
 
     member self.forceLeftQueuedQuery() =
+        //基准测试表明，使用自旋锁的开销要显著低于线程切换的开销
+        //故此处使用自旋
         if sema.CurrentCount = 0 then
             ()
         else
             Thread.Yield() |> ignore
             self.forceLeftQueuedQuery ()
 
-    (*
-        Console.WriteLine "loop"
-
-        if queuedQuery.Reader.TryPeek() |> fst then
-            //if Monitor.IsEntered queuedQuery then
-                //Monitor.Exit queuedQuery
-
-            Thread.Yield() |> ignore
-            self.forceLeftDelayedQuery ()
-        else
-            ()
-*)
-
     interface IDisposable with
+
         member i.Dispose() = managed.Dispose()
 
     interface IDbManaged with

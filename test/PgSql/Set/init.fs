@@ -31,21 +31,21 @@ let init () =
         [| for i in 1 .. 1000 ->
                fun _ ->
                    mkCmd()
-                       .query $"INSERT INTO {tab1} (index, test_name, time, content)\
+                       .queryAsync $"INSERT INTO {tab1} (index, test_name, time, content)\
                                      VALUES ({i}, 'init', '{ISO8601Now()}', 'ts1_insert');"
                    <| eq 1
-                   |> managed().executeQuery
-               |> Task.Run |]
+                   |> managed().executeQueryAsync
+               |> Task.Run<int> |]
 
     let as2 =
         [| for i in 1 .. 1000 ->
                fun _ ->
                    mkCmd()
-                       .query $"INSERT INTO {tab1} (index, test_name, time, content)\
+                       .queryAsync $"INSERT INTO {tab1} (index, test_name, time, content)\
                                      VALUES ({i}, 'init', '{ISO8601Now()}', 'ts2_insert');"
                    <| eq 1
-                   |> managed().executeQuery
-               |> Task.Run |]
+                   |> managed().executeQueryAsync
+               |> Task.Run<int> |]
 
     for result in resultAll as1 do
         if result <> 1 then
