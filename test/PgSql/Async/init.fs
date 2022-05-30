@@ -48,7 +48,9 @@ let init () =
                |> Task.Run<int> |]
 
     for result in resultAll as1 do
-        if result <> 1 then raise InitErrException
+        if result <> 1 then
+            raise InitErrException
 
     for result in resultAll as2 do
-        if result <> 1 then raise InitErrException
+        if result <> 1 then
+            raise InitErrException

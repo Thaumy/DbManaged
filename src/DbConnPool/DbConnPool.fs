@@ -66,8 +66,15 @@ type internal DbConnPool
     /// 添加到空闲连接表
     let mutable freeConnsAdd = freeConns.Writer.WriteAsync
 
+    let rec getFreeConn () =
+        match freeConns.Reader.TryRead() with
+        | true, c -> c
+        | _ ->
+            Thread.Yield() |> ignore
+            getFreeConn ()
+
     /// 取得空闲连接
-    let getFreeConn () = freeConns.Reader.ReadAsync()
+    let getFreeConnAsync () = freeConns.Reader.ReadAsync()
 
     /// 尝试取得空闲连接
     let rec tryGetFreeConn () =
@@ -86,18 +93,8 @@ type internal DbConnPool
             conn
         else
             Monitor.Exit(connCountLock)
-            getFreeConn().AsTask().Result
+            getFreeConn ()
 
-    (*
-        if getConnCountAndUp () < max then
-            let conn = DbConnectionConstructor(connStr)
-
-            conn.Open()
-            conn
-        else
-            setConnCountDn ()
-            getFreeConn().AsTask().Result
-        *)
     let openConnOrFreeConnAsync () =
         task {
             Monitor.Enter(connCountLock)
@@ -107,22 +104,12 @@ type internal DbConnPool
                 Monitor.Exit(connCountLock)
 
                 let conn = DbConnectionConstructor(connStr)
+
                 let! _ = conn.OpenAsync()
                 return conn
             else
                 Monitor.Exit(connCountLock)
-                return! getFreeConn().AsTask()
-
-        (*
-            if getConnCountAndUp () < max then
-                let conn = DbConnectionConstructor(connStr)
-
-                let! _ = conn.OpenAsync()
-                return conn
-            else
-                setConnCountDn ()
-                return! getFreeConn().AsTask()
-        *)
+                return! getFreeConnAsync ()
         }
 
     let disposeConn (conn: DbConnection) =
@@ -148,8 +135,7 @@ type internal DbConnPool
         //建立一部分连接以满足最小连接数
         async {
             for _ in 1 .. i32 min do
-                freeConnsAdd .> ignore
-                |> tryOpenConn().ifCanUnwrap
+                tryOpenConn().ifCanUnwrap (freeConnsAdd .> ignore)
         }
         |> Async.Start
 
@@ -248,7 +234,7 @@ type internal DbConnPool
                 tryGetFreeConn().unwrapOr openConnOrFreeConn
             else
                 //不允许进行新建连接的尝试，阻塞等待空闲连接
-                getFreeConn().AsTask().Result
+                getFreeConn ()
 
         //尝试加入忙碌列表
         let success = busyConnsTryAdd conn
@@ -278,7 +264,7 @@ type internal DbConnPool
                     <| openConnOrFreeConnAsync
                 else
                     //不允许进行新建连接的尝试，阻塞等待空闲连接
-                    getFreeConn().AsTask()
+                    getFreeConnAsync().AsTask()
 
             //尝试加入忙碌列表
             let success = busyConnsTryAdd conn
