@@ -28,7 +28,7 @@ let query_overload1_test () =
         [| for i in 1 .. 2000 do
                fun _ ->
                    mkCmd()
-                       .query $"INSERT INTO {tab1} (index, test_name, time, content)\
+                       .query $"INSERT INTO {tab1} (id, test_name, time, content)\
                                       VALUES ({i}, '{test_name}', '{ISO8601Now()}', '_');"
                    <| eq 1
                    |> managed().executeQuery
@@ -55,15 +55,15 @@ let query_overload2_test () =
         [| for i in 1 .. 2000 do
                fun _ ->
                    let paras: (string * obj) list =
-                       [ ("index", i)
+                       [ ("id", i)
                          ("test_name", test_name)
                          ("time", Now())
                          ("content", "_") ]
 
                    let sql =
                        normalizeSql
-                           $"INSERT INTO {tab1} (index,   test_name,  time,  content)\
-                                         VALUES (<index>,<test_name>,<time>,<content>);"
+                           $"INSERT INTO {tab1} (id,   test_name,  time,  content)\
+                                         VALUES (<id>,<test_name>,<time>,<content>);"
 
                    mkCmd().query (sql, paras) <| eq 1
                    |> managed().executeQuery

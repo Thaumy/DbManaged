@@ -22,7 +22,7 @@ let getFstCol_overload1_test () =
         [| for i in 1 .. 1000 do
                fun _ ->
                    mkCmd()
-                       .getFstCol $"SELECT content FROM {tab1} WHERE index = {i};"
+                       .getFstCol $"SELECT content FROM {tab1} WHERE id = {i};"
                    |> managed().executeQuery
                |> Task.Run<obj list> |]
 
@@ -38,10 +38,10 @@ let getFstCol_overload2_test () =
     let tasks =
         [| for i in 1 .. 1000 do
                fun _ ->
-                   let paras: (string * obj) list = [ ("index", i) ]
+                   let paras: (string * obj) list = [ ("id", i) ]
 
                    let sql =
-                       normalizeSql $"SELECT content FROM {tab1} WHERE index = <index>;"
+                       normalizeSql $"SELECT content FROM {tab1} WHERE id = <id>;"
 
                    mkCmd().getFstCol (sql, paras)
                    |> managed().executeQuery

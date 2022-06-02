@@ -2,55 +2,51 @@ module dbm_test.MySql.Set.delay
 
 open System
 open System.Threading
+open System.Threading.Tasks
+open fsharper.typ
+open fsharper.op.Async
+open fsharper.op.Boxing
 open DbManaged
 open NUnit.Framework
-open System.Threading.Tasks
+open dbm_test
 open dbm_test.MySql.com
-open dbm_test.MySql.Sync.init
-open fsharper.typ
-open fsharper.op.Boxing
+open dbm_test.MySql.Set.init
 
 [<OneTimeSetUp>]
 let OneTimeSetUp () = connect ()
 
 [<SetUp>]
-let SetUp () = init ()
+let SetUp () = initWithDelay ()
 
 [<Test>]
 let delayQuery_test () =
-
-    for i in 1 .. 1500 do
-        mkCmd()
-            .query $"INSERT INTO {tab1} (col1, col2, col3, col4)\
-                 VALUES (1, 'a', 'aaa', 'aaaa');"
-        <| always true
-        |> managed().delayQuery
-
-    let beforeCount =
-        mkCmd()
-            .getFstVal ($"SELECT COUNT(*) FROM {tab1};")
-        |> managed().executeQuery
-        |> unwrap2
-
-    Assert.AreEqual(100, beforeCount)
-
-    Thread.Sleep(5000)
-
+    //触发执行
+    [| for i in 1 .. 10000 ->
+           fun _ ->
+               mkCmd().queryAsync $"SELECT {i}" <| always true
+               |> managed().executeQueryAsync
+           |> Task.Run<int> |]
+    |> resultAll
+    |> ignore
+    
     let afterCount =
         mkCmd()
-            .getFstVal $"SELECT COUNT(*) FROM {tab1} WHERE col4 = 'aaaa';"
+            .getFstVal $"SELECT COUNT(*) FROM {tab1} WHERE content = 'init_with_delay';"
         |> managed().executeQuery
-        |> unwrap2
+        |> unwrap
 
-    Assert.AreEqual(1500, afterCount)
+    Assert.AreEqual(100, afterCount)
 
 [<Test>]
 let forceLeftDelayedQuery_test () =
-    
-    for i in 1 .. 1500 do
+
+    let test_name =
+        "dbm_test.MySql.Set.delay.forceLeftDelayedQuery_test"
+
+    for i in 1 .. 2000 do
         mkCmd()
-            .query $"INSERT INTO {tab1} (col1, col2, col3, col4)\
-                 VALUES (1, 'a', 'aaa', 'aaaa');"
+            .query $"INSERT INTO {tab1} (id, test_name, time, content)\
+                     VALUES ({i}, '{test_name}', '{ISO8601Now()}', '_');"
         <| always true
         |> managed().delayQuery
 
@@ -58,8 +54,8 @@ let forceLeftDelayedQuery_test () =
 
     let count =
         mkCmd()
-            .getFstVal $"SELECT COUNT(*) FROM {tab1} WHERE col4 = 'aaaa';"
+            .getFstVal $"SELECT COUNT(*) FROM {tab1} WHERE test_name = '{test_name}';"
         |> managed().executeQuery
-        |> unwrap2
+        |> unwrap
 
-    Assert.AreEqual(1500, count)
+    Assert.AreEqual(2000, count)

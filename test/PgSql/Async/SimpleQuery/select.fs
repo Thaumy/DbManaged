@@ -24,7 +24,7 @@ let select_overload1_test () =
         [| for i in 1 .. 1000 do
                fun _ ->
                    mkCmd()
-                       .selectAsync $"SELECT test_name, content FROM {tab1} WHERE index = {i};"
+                       .selectAsync $"SELECT test_name, content FROM {tab1} WHERE id = {i};"
                    |> managed().executeQueryAsync
                |> Task.Run<Option'<_>> |]
 
@@ -44,10 +44,10 @@ let select_overload2_test () =
     let tasks =
         [| for i in 1 .. 1000 do
                fun _ ->
-                   let paras: (string * obj) list = [ ("index", i) ]
+                   let paras: (string * obj) list = [ ("id", i) ]
 
                    let sql =
-                       normalizeSql $"SELECT test_name, content FROM {tab1} WHERE index = <index>;"
+                       normalizeSql $"SELECT test_name, content FROM {tab1} WHERE id = <id>;"
 
                    mkCmd().selectAsync (sql, paras)
                    |> managed().executeQueryAsync

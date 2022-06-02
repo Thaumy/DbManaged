@@ -16,14 +16,13 @@ let OneTimeSetUp () = connect ()
 [<SetUp>]
 let SetUp () = init ()
 
-
 [<Test>]
 let getFstRow_overload1_test () =
     let tasks =
         [| for i in 1 .. 1000 do
                fun _ ->
                    mkCmd()
-                       .getFstRow $"SELECT * FROM {tab1} WHERE index = {i};"
+                       .getFstRow $"SELECT * FROM {tab1} WHERE id = {i};"
                    |> managed().executeQuery
                |> Task.Run<Option'<_>> |]
 
@@ -36,10 +35,10 @@ let getFstRow_overload2_test () =
     let tasks =
         [| for i in 1 .. 1000 do
                fun _ ->
-                   let paras: (string * obj) list = [ ("index", i) ]
+                   let paras: (string * obj) list = [ ("id", i) ]
 
                    let sql =
-                       normalizeSql $"SELECT * FROM {tab1} WHERE index = <index>;"
+                       normalizeSql $"SELECT * FROM {tab1} WHERE id = <id>;"
 
                    mkCmd().getFstRow (sql, paras)
                    |> managed().executeQuery

@@ -25,7 +25,7 @@ let getFstVal_overload1_test () =
         [| for i in 1 .. 1000 do
                fun _ ->
                    mkCmd()
-                       .getFstValAsync $"SELECT content FROM {tab1} WHERE index = {i};"
+                       .getFstValAsync $"SELECT content FROM {tab1} WHERE id = {i};"
                    |> managed().executeQueryAsync
                |> Task.Run<Option'<_>> |]
 
@@ -37,10 +37,10 @@ let getFstVal_overload2_test () =
     let tasks =
         [| for i in 1 .. 1000 do
                fun _ ->
-                   let paras: (string * obj) list = [ ("index", i) ]
+                   let paras: (string * obj) list = [ ("id", i) ]
 
                    let sql =
-                       normalizeSql $"SELECT content FROM {tab1} WHERE index = <index>;"
+                       normalizeSql $"SELECT content FROM {tab1} WHERE id = <id>;"
 
                    mkCmd().getFstValAsync (sql, paras)
                    |> managed().executeQueryAsync
@@ -56,7 +56,7 @@ let getFstVal_overload3_test () =
         [| for i in 1 .. 1000 do
                fun _ ->
                    mkCmd()
-                       .getFstValAsync (tab1, "content", "index", i)
+                       .getFstValAsync (tab1, "content", "id", i)
                    |> managed().executeQueryAsync
                |> Task.Run<Option'<_>> |]
 

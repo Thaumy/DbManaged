@@ -28,7 +28,7 @@ let insert_test () =
         [| for i in 1 .. 2000 ->
                fun _ ->
                    let paras: (string * obj) list =
-                       [ ("index", i)
+                       [ ("id", i)
                          ("test_name", test_name)
                          ("time", Now())
                          ("content", "_") ]

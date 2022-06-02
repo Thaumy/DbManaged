@@ -5,10 +5,10 @@ open System.Threading
 open System.Data.Common
 open System.Threading.Tasks
 open System.Threading.Channels
+open System.Threading.Tasks.Dataflow
 open Npgsql
 open fsharper.op
 open fsharper.typ
-open fsharper.op.Fmt
 open fsharper.op.Alias
 open fsharper.op.Async
 open DbManaged
@@ -18,48 +18,66 @@ type PgSqlManaged private (msg, database, d, n, min, max) as managed =
     let pool =
         new DbConnPool(msg, database, (fun s -> new NpgsqlConnection(s)), d, n, min, max)
 
-    let sema = new SemaphoreSlim(0)
+    let queueSema = new SemaphoreSlim(0)//用于队列查询任务的完成精确计数
+    let queueQueryConn = pool.fetchConnAsync().Result//用于队列查询的专用连接
 
     let queuedQuery =
-        Channel.CreateUnbounded<DbConnection -> obj>()
+        fun q ->
+            q queueQueryConn |> ignore
+            queueSema.Wait()
+        |> ActionBlock<DbConnection -> obj>
 
     let delayedQuery =
         Channel.CreateUnbounded<DbConnection -> obj>()
 
-    /// 复用连接
-    /// 该函数会在如下情况时真正回收连接并返回：
-    /// * 连接池压力大于销毁阈值时
-    /// * 查询队列为空时
-    let rec reuseConn conn =
-        //如果连接池压力小于阈值，调用回收后连接很有可能被销毁
-        //为提高连接利用率，此时从延迟查询集合中取出查询任务复用该连接
-        if pool.pressure < d && delayedQuery.Reader.Count > 0 then
-            delayedQuery.Reader.TryRead()
-            |> Option'.fromOkComma
-            |> ifCanUnwrap
-            <| fun q -> q conn |> ignore
+    let usedConn = Channel.CreateUnbounded<DbConnection>()//复用池
 
-            reuseConn conn
-        else
-            pool.recycleConnAsync conn |> ignore
-
+    let realPoolPressure () =
+        pool.pressure
+        - (f64 usedConn.Reader.Count
+           / (f64 max * pool.occupancy))
+        
+#if DEBUG
+    let outputManagedStatus () =
+        async {
+            let leftQueue = queuedQuery.InputCount.ToString("00")
+            let leftDelay = delayedQuery.Reader.Count.ToString("00")
+            let usedConn = usedConn.Reader.Count.ToString("00")
+            let rp = realPoolPressure().ToString("0.00")
+            Console.WriteLine $"    队列{leftQueue} 延迟{leftDelay} | 待重用{usedConn} | 真实压力{rp}"
+        }
+        |> Async.Start
+#endif
 
     do
-        fun _ ->
-            task {
-                let! conn = pool.fetchConnAsync ()
+        let rec loop conn =
+            if realPoolPressure () < d
+               && delayedQuery.Reader.Count > 0 then
+                let q =
+                    delayedQuery.Reader.ReadAsync().AsTask().Result
 
-                while true do
-                    let! q = queuedQuery.Reader.ReadAsync()
-                    q conn |> ignore
-                    let! _ = sema.WaitAsync()
-                    ()
+                q conn |> ignore
+                loop conn
+            else
+                pool.recycleConnAsync conn |> ignore
 
-            }
-        |> Task.RunIgnore
+        async {
+            //TODO 在通道可用时持续处理
+            //TODO 任务取消的异常处理
+            while true do
+                let conn =
+                    usedConn.Reader.ReadAsync().AsTask().Result
+
+                if realPoolPressure () < d
+                   && delayedQuery.Reader.Count > 0 then
+                    Task.Run(fun _ -> loop conn) |> ignore
+                else
+                    pool.recycleConnAsync conn |> ignore
+        }
+        |> Async.Start
 
     /// 以连接信息构造，并指定使用的数据库和连接池大小
-    new(msg, database, poolSize: u32) = new PgSqlManaged(msg, database, 0.1, 0.7, u32 (f64 poolSize * 0.1), poolSize)
+    new(msg, database, poolSize: u32) = new PgSqlManaged(msg, database, 0.2, 0.7, u32 (f64 poolSize * 0.1), poolSize)
     /// 以连接信息构造，并指定连接池大小
     new(msg, poolSize) = new PgSqlManaged(msg, "", poolSize)
     /// 以连接信息构造，并指定使用的数据库
@@ -68,37 +86,60 @@ type PgSqlManaged private (msg, database, d, n, min, max) as managed =
     new(msg: DbConnMsg) = new PgSqlManaged(msg, "", 100u)
 
     member self.Dispose() =
-        self.forceLeftQueuedQuery ()
+        usedConn.Writer.Complete()
+        delayedQuery.Writer.Complete()
+        queuedQuery.Complete()
+        
         self.forceLeftDelayedQuery ()
+        
+        self.forceLeftQueuedQuery ()
+        queueSema.Dispose()
+        pool.recycleConnAsync queueQueryConn
+        |> asTask
+        |> wait
+       
         pool.Dispose()
 
     member self.mkCmd() = new NpgsqlCommand()
 
-    member self.executeQuery f =
-        let conn = pool.fetchConn ()
+    member self.executeQuery(f: DbConnection -> 'r) : 'r =
+        let conn =
+            usedConn.Reader.TryRead()
+            |> Option'.fromOkComma
+            |> unwrapOr
+            <| pool.fetchConn
+
         let r = f conn
-        //TODO 此处无法使用Async.Start，未能知晓原因
-        Task.RunIgnore(fun _ -> reuseConn conn)
-        //pool.recycleConnAsync conn |> ignore
+
+        usedConn.Writer.WriteAsync conn |> ignore
+#if DEBUG
+        outputManagedStatus ()
+#endif
         r
 
     member self.executeQueryAsync(f: DbConnection -> Task<'r>) =
         task {
-            let! conn = pool.fetchConnAsync ()
+            let! conn =
+                usedConn.Reader.TryRead()
+                |> Option'.fromOkComma
+                |> ifCanUnwrapOr
+                <| fun c -> task { return c }
+                <| pool.fetchConnAsync
+
             let! r = f conn
-            Task.RunIgnore(fun _ -> reuseConn conn)
-            //pool.recycleConnAsync conn |> ignore
+
+            usedConn.Writer.WriteAsync conn |> ignore
+#if DEBUG
+            outputManagedStatus ()
+#endif
             return r
         }
 
     member self.delayQuery f =
-        fun c -> f c :> obj
-        |> delayedQuery.Writer.WriteAsync
-        |> asTask
-        |> wait
+        delayedQuery.Writer.WriteAsync(fun c -> f c :> obj)
+        |> ignore
 
     member self.forceLeftDelayedQuery() =
-
         delayedQuery.Reader.TryRead
         .> Option'.fromOkComma
         .> ifCanUnwrapOr
@@ -107,7 +148,7 @@ type PgSqlManaged private (msg, database, d, n, min, max) as managed =
                 async {
                     fun c -> task { return q c }
                     |> self.executeQueryAsync
-                    |> ignore
+                    |> wait
                 },
                 ()
             )
@@ -119,17 +160,13 @@ type PgSqlManaged private (msg, database, d, n, min, max) as managed =
         |> Async.RunSynchronously
 
     member self.queueQuery f =
-        sema.Release() |> ignore
-
-        fun c -> f c :> obj
-        |> queuedQuery.Writer.WriteAsync
-        |> asTask
-        |> wait
+        queuedQuery.Post(fun c -> f c :> obj) |> ignore
+        queueSema.Release() |> ignore
 
     member self.forceLeftQueuedQuery() =
         //基准测试表明，使用自旋锁的开销要显著低于线程切换的开销
         //故此处使用自旋
-        if sema.CurrentCount = 0 then
+        if queueSema.CurrentCount = 0 then
             ()
         else
             Thread.Yield() |> ignore

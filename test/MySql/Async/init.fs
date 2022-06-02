@@ -1,70 +1,56 @@
 module dbm_test.MySql.Async.init
 
+open System
 open System.Threading.Tasks
 open fsharper.typ
-open fsharper.op.Fmt
 open fsharper.typ.Ord
 open fsharper.op.Async
-open dbm_test.MySql.com
 open DbManaged
+open dbm_test
+open dbm_test.MySql.com
 
 let init () =
-
-    mkCmd().query $"drop table if exists {tab1};"
+    mkCmd().queryAsync $"drop table if exists {tab1};"
     <| always true
-    |> managed().executeQuery
-    |> ignore
+    |> managed().executeQueryAsync
+    |> wait
 
     mkCmd()
-        .query $"create table {tab1}\
-                        (\
-                            col1 int         null,\
-                            col2 char        null,\
-                            col3 varchar(32) null,\
-                            col4 text        null\
-                        );"
+        .queryAsync $"create table {tab1}
+                 (
+                     id        int          null,
+                     test_name varchar(256) null,
+                     time      datetime(6)  null,
+                     content   text         null
+                 )"
     <| always true
-    |> managed().executeQuery
-    |> ignore
+    |> managed().executeQueryAsync
+    |> wait
 
-    println "INTO CONCURRENT DO"
+    let as1 =
+        [| for i in 1 .. 1000 ->
+               fun _ ->
+                   mkCmd()
+                       .queryAsync $"INSERT INTO {tab1} (id, test_name, time, content)\
+                                     VALUES ({i}, 'init', '{ISO8601Now()}', 'ts1_insert');"
+                   <| eq 1
+                   |> managed().executeQueryAsync
+               |> Task.Run<int> |]
 
-    let ts1 =
-        Task.Run
-            (fun _ ->
-                [| for i in 1 .. 50 do
-                       mkCmd()
-                           .queryAsync $"INSERT INTO {tab1} (col1, col2, col3, col4)\
-                                         VALUES (0, 'i', 'init[001,050]', 'initinit');"
-                       <| eq 1
-                       |> managed().executeQueryAsync
-                       :> Task |]
-                |> waitAll)
+    let as2 =
+        [| for i in 1 .. 1000 ->
+               fun _ ->
+                   mkCmd()
+                       .queryAsync $"INSERT INTO {tab1} (id, test_name, time, content)\
+                                     VALUES ({i}, 'init', '{ISO8601Now()}', 'ts2_insert');"
+                   <| eq 1
+                   |> managed().executeQueryAsync
+               |> Task.Run<int> |]
 
-    let ts2 =
-        Task.Run
-            (fun _ ->
-                [| for i in 1 .. 50 do
-                       mkCmd()
-                           .queryAsync $"INSERT INTO {tab1} (col1, col2, col3, col4)\
-                                         VALUES (0, 'i', 'init[050,100]', 'initinit');"
-                       <| eq 1
-                       |> managed().executeQueryAsync
-                       :> Task |]
-                |> waitAll)
+    for result in resultAll as1 do
+        if result <> 1 then
+            raise InitErrException
 
-    let ts3 =
-        Task.Run
-            (fun _ ->
-                [| for i in 1 .. 3000 do
-                       mkCmd().queryAsync $"SELECT * FROM {tab1}" <| eq 1
-                       |> managed().executeQueryAsync
-                       :> Task |]
-                |> waitAll)
-
-    wait ts1
-    wait ts2
-    wait ts3
-
-
-    println "EXIT CONCURRENT DO"
+    for result in resultAll as2 do
+        if result <> 1 then
+            raise InitErrException

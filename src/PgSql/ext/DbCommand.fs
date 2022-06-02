@@ -2,7 +2,6 @@
 module DbManaged.PgSql.ext_DbCommand
 
 open System.Data.Common
-open System.Runtime.CompilerServices
 open fsharper.typ
 open DbManaged
 

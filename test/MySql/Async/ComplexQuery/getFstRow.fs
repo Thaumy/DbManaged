@@ -1,11 +1,12 @@
 module dbm_test.MySql.Async.ComplexQuery.getFstRow
 
-open NUnit.Framework
+open System
+open System.Threading.Tasks
 open fsharper.typ
-open fsharper.typ.Ord
-open fsharper.op.Boxing
+open fsharper.op.Async
 open DbManaged
 open DbManaged.MySql.ext.String
+open NUnit.Framework
 open dbm_test.MySql.com
 open dbm_test.MySql.Async.init
 
@@ -18,25 +19,32 @@ let SetUp () = init ()
 
 [<Test>]
 let getFstRow_overload1_test () =
-    let result =
-        mkCmd().getFstRow $"SELECT col1,col2 FROM {tab1}"
-        |> managed().executeQuery
-        |> unwrap2
+    let tasks =
+        [| for i in 1 .. 1000 do
+               fun _ ->
+                   mkCmd()
+                       .getFstRowAsync $"SELECT * FROM {tab1} WHERE id = {i};"
+                   |> managed().executeQueryAsync
+               |> Task.Run<Option'<_>> |]
 
-    Assert.AreEqual(0, result.["col1"])
-    Assert.AreEqual("i", result.["col2"])
-
-
+    for r in resultAll tasks do
+        let row = r.unwrap ()
+        Assert.Contains(row.["content"], [| "ts1_insert"; "ts2_insert" |])
 
 [<Test>]
 let getFstRow_overload2_test () =
-    let result =
-        let paras: (string * obj) list = [ ("col3", "init[050,100]") ]
+    let tasks =
+        [| for i in 1 .. 1000 do
+               fun _ ->
+                   let paras: (string * obj) list = [ ("id", i) ]
 
-        mkCmd()
-            .getFstRow (normalizeSql $"SELECT col1,col2 FROM {tab1} WHERE col3 = <col3>", paras)
-        |> managed().executeQuery
-        |> unwrap2
+                   let sql =
+                       normalizeSql $"SELECT * FROM {tab1} WHERE id = <id>;"
 
-    Assert.AreEqual(0, result.["col1"])
-    Assert.AreEqual("i", result.["col2"])
+                   mkCmd().getFstRowAsync (sql, paras)
+                   |> managed().executeQueryAsync
+               |> Task.Run<Option'<_>> |]
+
+    for r in resultAll tasks do
+        let row = r.unwrap ()
+        Assert.Contains(row.["content"], [| "ts1_insert"; "ts2_insert" |])
