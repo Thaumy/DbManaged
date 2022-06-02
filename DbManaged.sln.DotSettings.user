@@ -6,4 +6,13 @@
   &lt;Assembly Path="/home/thaumy/repo/palaflake/impl/fs/palaflake/bin/Debug/net5.0/palaflake.dll" /&gt;
   &lt;Assembly Path="/home/thaumy/repo/fsharper/bin/Debug/net6.0/fsharper.dll" /&gt;
   &lt;Assembly Path="/home/thaumy/.nuget/packages/npgsql/7.0.0-preview.3/lib/net6.0/Npgsql.dll" /&gt;
-&lt;/AssemblyExplorer&gt;</s:String></wpf:ResourceDictionary>
+&lt;/AssemblyExplorer&gt;</s:String>
+	<s:String x:Key="/Default/Environment/Highlighting/HighlightingSourceSnapshotLocation/@EntryValue">/home/thaumy/.cache/JetBrains/Rider2021.3/resharper-host/temp/Rider/vAny/CoverageData/_DbManaged.1957780356/Snapshot/snapshot.utdcvr</s:String>
+	
+	
+	
+	
+	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=91ba6070_002D1d1e_002D4136_002Dad5a_002D3353db0096c8/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" IsActive="True" Name="All tests from test" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;
+  &lt;ProjectFolder&gt;7A1DBA5E-7C98-4BA2-BF99-2C173BE9C915/d:test&lt;/ProjectFolder&gt;
+&lt;/SessionState&gt;</s:String>
+	<s:String x:Key="/Default/Housekeeping/UnitTestingMru/UnitTestRunner/HangingTestRunnerResponse/@EntryValue">KillProcess</s:String></wpf:ResourceDictionary>
