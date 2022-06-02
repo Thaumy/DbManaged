@@ -19,7 +19,8 @@ type DbCommand with
               WHERE  {whereKey} = {paraMark}whereVal"
 
         cmd.letQuery(sql).addParas(
-            [ ("setVal", setVal :> obj); ("whereVal", whereVal :> obj) ]
+            [ ("setVal", setVal :> obj)
+              ("whereVal", whereVal :> obj) ]
         )
             .commitWhen
     /// 将 table 中 key 等于 oldValue 的行的 key 更新为 newValue
@@ -38,7 +39,8 @@ type DbCommand with
               WHERE  {whereKey} = {paraMark}whereVal"
 
         cmd.letQuery(sql).addParas(
-            [ ("setVal", setVal :> obj); ("whereVal", whereVal :> obj) ]
+            [ ("setVal", setVal :> obj)
+              ("whereVal", whereVal :> obj) ]
         )
             .commitWhenAsync
     /// TODO exp async api

@@ -18,7 +18,7 @@ let init () =
     mkCmd()
         .query $"create table {tab1}
                  (
-                     index     integer,
+                     id     integer,
                      test_name varchar(256),
                      time      timestamptz,
                      content   text
@@ -31,21 +31,21 @@ let init () =
         [| for i in 1 .. 1000 ->
                fun _ ->
                    mkCmd()
-                       .query $"INSERT INTO {tab1} (index, test_name, time, content)\
+                       .query $"INSERT INTO {tab1} (id, test_name, time, content)\
                                      VALUES ({i}, 'init', '{ISO8601Now()}', 'ts1_insert');"
                    <| eq 1
                    |> managed().executeQuery
-               |> Task.Run<int> |]
+               |> Task.Run |]
 
     let as2 =
         [| for i in 1 .. 1000 ->
                fun _ ->
                    mkCmd()
-                       .query $"INSERT INTO {tab1} (index, test_name, time, content)\
-                                     VALUES ({i}, 'init', '{ISO8601Now()}', 'ts2_insert');"
+                       .query $"INSERT INTO {tab1} (id, test_name, time, content)\
+                                VALUES ({i}, 'init', '{ISO8601Now()}', 'ts2_insert');"
                    <| eq 1
                    |> managed().executeQuery
-               |> Task.Run<int> |]
+               |> Task.Run |]
 
     for result in resultAll as1 do
         if result <> 1 then

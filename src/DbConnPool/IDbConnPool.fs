@@ -26,11 +26,9 @@ type internal IDbConnPool =
     /// 获取数据库连接
     abstract member fetchConn : unit -> DbConnection
 
-    /// TODO exp async api
     /// 异步获取数据库连接
     abstract member fetchConnAsync : unit -> Task<DbConnection>
 
-    /// TODO exp async api
     /// 异步回收数据库连接
     abstract member recycleConnAsync : DbConnection -> ValueTask
 

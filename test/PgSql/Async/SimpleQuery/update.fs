@@ -26,7 +26,7 @@ let update_overload1_test () =
         [| for i in 1 .. 1000 do
                fun _ ->
                    mkCmd()
-                       .updateAsync ($"{tab1}", ("content", test_name), ("index", i))
+                       .updateAsync ($"{tab1}", ("content", test_name), ("id", i))
                    <| eq 2
                    |> managed().executeQueryAsync
                |> Task.Run<int> |]
@@ -38,7 +38,7 @@ let update_overload1_test () =
         [| for i in 1 .. 1000 do
                fun _ ->
                    mkCmd()
-                       .selectAsync $"SELECT content FROM {tab1} WHERE index = '{i}';"
+                       .selectAsync $"SELECT content FROM {tab1} WHERE id = '{i}';"
                    |> managed().executeQueryAsync
                |> Task.Run<Option'<_>> |]
 
@@ -57,7 +57,7 @@ let update_overload2_test () =
         [| for i in 1 .. 1000 do
                fun _ ->
                    mkCmd()
-                       .updateAsync ($"{tab1}", "index", i + 114514, i)
+                       .updateAsync ($"{tab1}", "id", i + 114514, i)
                    <| eq 2
                    |> managed().executeQueryAsync
                |> Task.Run<int> |]
@@ -69,7 +69,7 @@ let update_overload2_test () =
         [| for i in 1 .. 1000 do
                fun _ ->
                    mkCmd()
-                       .getFstValAsync $"SELECT COUNT(*) FROM {tab1} WHERE index = '{i + 114514}';"
+                       .getFstValAsync $"SELECT COUNT(*) FROM {tab1} WHERE id = '{i + 114514}';"
                    |> managed().executeQueryAsync
                |> Task.Run<Option'<_>> |]
 

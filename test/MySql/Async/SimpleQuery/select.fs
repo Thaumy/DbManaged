@@ -1,15 +1,14 @@
 module dbm_test.MySql.Async.SimpleQuery.select
 
 open System.Data
+open System.Threading.Tasks
+open fsharper.typ
+open fsharper.op.Async
+open DbManaged
+open DbManaged.MySql.ext.String
 open NUnit.Framework
 open dbm_test.MySql.com
 open dbm_test.MySql.Async.init
-open fsharper.typ
-open fsharper.op.Async
-open fsharper.op.Boxing
-open DbManaged
-open DbManaged.MySql
-open DbManaged.MySql.ext.String
 
 [<OneTimeSetUp>]
 let OneTimeSetUp () = connect ()
@@ -21,29 +20,44 @@ let SetUp () = init ()
 [<Test>]
 let select_overload1_test () =
 
-        let table =
-            mkCmd()
-                .selectAsync $"SELECT col1,col2 FROM {tab1}"
-            |> managed().executeQueryAsync
-            |> result
-            |> unwrap2
+    let tasks =
+        [| for i in 1 .. 1000 do
+               fun _ ->
+                   mkCmd()
+                       .selectAsync $"SELECT test_name, content FROM {tab1} WHERE id = {i};"
+                   |> managed().executeQueryAsync
+               |> Task.Run<Option'<_>> |]
+
+    for r in resultAll tasks do
+        let table = r.unwrap ()
+
+        Assert.AreEqual(2, table.Rows.Count)
 
         for row in table.Rows do
-            Assert.AreEqual(0, row.["col1"])
-            Assert.AreEqual("i", row.["col2"])
-    
+            Assert.AreEqual("init", row.["test_name"])
+            Assert.Contains(row.["content"], [| "ts1_insert"; "ts2_insert" |])
+
 
 [<Test>]
 let select_overload2_test () =
-    let table =
-        let paras: (string * obj) list = [ ("col3", "init[050,100]") ]
 
-        mkCmd()
-            .selectAsync (normalizeSql $"SELECT col1,col2 FROM {tab1} WHERE col3 = <col3>", paras)
-        |> managed().executeQueryAsync
-        |> result
-        |> unwrap2
+    let tasks =
+        [| for i in 1 .. 1000 do
+               fun _ ->
+                   let paras: (string * obj) list = [ ("id", i) ]
 
-    for row in table.Rows do
-        Assert.AreEqual(0, row.["col1"])
-        Assert.AreEqual("i", row.["col2"])
+                   let sql =
+                       normalizeSql $"SELECT test_name, content FROM {tab1} WHERE id = <id>;"
+
+                   mkCmd().selectAsync (sql, paras)
+                   |> managed().executeQueryAsync
+               |> Task.Run<Option'<_>> |]
+
+    for r in resultAll tasks do
+        let table = r.unwrap ()
+
+        Assert.AreEqual(2, table.Rows.Count)
+
+        for row in table.Rows do
+            Assert.AreEqual("init", row.["test_name"])
+            Assert.Contains(row.["content"], [| "ts1_insert"; "ts2_insert" |])

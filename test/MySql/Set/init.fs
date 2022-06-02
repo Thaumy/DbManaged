@@ -1,41 +1,90 @@
 module dbm_test.MySql.Set.init
 
-open DbManaged
-open dbm_test.MySql.com
-open fsharper.typ.Ord
+open System
+open System.Threading.Tasks
 open fsharper.typ
+open fsharper.typ.Ord
+open fsharper.op.Async
+open DbManaged
+open dbm_test
+open dbm_test.MySql.com
 
-let init () =
-
+let ddl_prepare () =
+    
     mkCmd().query $"drop table if exists {tab1};"
     <| always true
     |> managed().executeQuery
     |> ignore
 
     mkCmd()
-        .query $"create table {tab1}\
-                        (\
-                            col1 int         null,\
-                            col2 char        null,\
-                            col3 varchar(32) null,\
-                            col4 text        null\
-                        );"
+        .query $"create table {tab1}
+                (
+                    id        int          null,
+                    test_name varchar(256) null,
+                    time      datetime(6)  null,
+                    content   text         null
+                )"
     <| always true
     |> managed().executeQuery
     |> ignore
 
-    for _ in 1 .. 50 do
-        mkCmd()
-            .query $"INSERT INTO {tab1} (col1, col2, col3, col4)\
-                 VALUES (0, 'i', 'init[001,050]', 'initinit');"
-        <| eq 1
-        |> managed().executeQuery
-        |> ignore
+let dml_prepare () =
 
-    for _ in 1 .. 50 do
+    let as1 =
+        [| for i in 1 .. 1000 ->
+               fun _ ->
+                   mkCmd()
+                       .queryAsync $"INSERT INTO {tab1} (id, test_name, time, content)\
+                                     VALUES ({i}, 'init', '{ISO8601Now()}', 'ts1_insert');"
+                   <| eq 1
+                   |> managed().executeQueryAsync
+               |> Task.Run<int> |]
+
+    let as2 =
+        [| for i in 1 .. 1000 ->
+               fun _ ->
+                   mkCmd()
+                       .queryAsync $"INSERT INTO {tab1} (id, test_name, time, content)\
+                                     VALUES ({i}, 'init', '{ISO8601Now()}', 'ts2_insert');"
+                   <| eq 1
+                   |> managed().executeQueryAsync
+               |> Task.Run<int> |]
+
+    for result in resultAll as1 do
+        if result <> 1 then
+            raise InitErrException
+
+    for result in resultAll as2 do
+        if result <> 1 then
+            raise InitErrException
+
+let initNormal () =
+
+    ddl_prepare ()
+    dml_prepare ()
+
+let initWithQueue () =
+    
+    ddl_prepare ()
+
+    for i in 1 .. 100 do
         mkCmd()
-            .query $"INSERT INTO {tab1} (col1, col2, col3, col4)\
-                 VALUES (0, 'i', 'init[050,100]', 'initinit');"
-        <| eq 1
-        |> managed().executeQuery
-        |> ignore
+            .query $"INSERT INTO {tab1} (id, test_name, time, content)\
+                     VALUES ({i}, 'init_with_queue', CURRENT_TIMESTAMP(6), 'init_with_queue');"
+        <| always true
+        |> managed().queueQuery
+
+    dml_prepare ()
+
+let initWithDelay () =
+    
+    ddl_prepare ()
+
+    for i in 1 .. 100 do
+        mkCmd()
+            .query $"INSERT INTO {tab1} (id, test_name, time, content)\
+                     VALUES ({i}, 'init_with_delay', '{ISO8601Now()}', 'init_with_delay');"
+        <| always true
+        |> managed().delayQuery
+
+    dml_prepare ()

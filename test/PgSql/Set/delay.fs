@@ -16,39 +16,26 @@ open dbm_test.PgSql.Set.init
 let OneTimeSetUp () = connect ()
 
 [<SetUp>]
-let SetUp () = init ()
+let SetUp () = initWithDelay ()
 
 [<Test>]
 let delayQuery_test () =
-
-    let test_name =
-        "dbm_test.PgSql.Set.delay.delayQuery_test"
-
-    for i in 1 .. 2000 do
-        mkCmd()
-            .query $"INSERT INTO {tab1} (index, test_name, time, content)\
-                     VALUES ({i}, '{test_name}', '{ISO8601Now()}', '_');"
-        <| always true
-        |> managed().delayQuery
-
-    [| for _ in 1 .. 20 do //用于触发执行
+    //触发执行
+    [| for i in 1 .. 10000 ->
            fun _ ->
-               mkCmd().query "SELECT 1" <| always true
-               |> managed().executeQuery
-               |> ignore
-           |> Task.Run |]
+               mkCmd().queryAsync $"SELECT {i}" <| always true
+               |> managed().executeQueryAsync
+           |> Task.Run<int> |]
     |> resultAll
     |> ignore
 
-    Thread.Sleep(2000) //wait for delay executing
-
     let afterCount =
         mkCmd()
-            .getFstVal $"SELECT COUNT(*) FROM {tab1} WHERE test_name = '{test_name}';"
+            .getFstVal $"SELECT COUNT(*) FROM {tab1} WHERE content = 'init_with_delay';"
         |> managed().executeQuery
         |> unwrap
 
-    Assert.AreEqual(2000, afterCount)
+    Assert.AreEqual(100, afterCount)
 
 [<Test>]
 let forceLeftDelayedQuery_test () =
@@ -58,7 +45,7 @@ let forceLeftDelayedQuery_test () =
 
     for i in 1 .. 2000 do
         mkCmd()
-            .query $"INSERT INTO {tab1} (index, test_name, time, content)\
+            .query $"INSERT INTO {tab1} (id, test_name, time, content)\
                      VALUES ({i}, '{test_name}', '{ISO8601Now()}', '_');"
         <| always true
         |> managed().delayQuery

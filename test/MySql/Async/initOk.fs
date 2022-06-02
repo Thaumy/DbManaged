@@ -1,18 +1,18 @@
-module dbm_test.PgSql.Set.initOk
+module dbm_test.MySql.Async.initOk
 
 open System
 open fsharper.op.Async
 open fsharper.op.Boxing
 open DbManaged
 open NUnit.Framework
-open dbm_test.PgSql.com
-open dbm_test.PgSql.Set.init
+open dbm_test.MySql.com
+open dbm_test.MySql.Async.init
 
 [<OneTimeSetUp>]
 let OneTimeSetUp () = connect ()
 
 [<SetUp>]
-let SetUp () = initNormal ()
+let SetUp () = init ()
 
 [<Test>]
 let initOk_test () =

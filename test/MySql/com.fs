@@ -1,13 +1,13 @@
 module dbm_test.MySql.com
 
-open DbManaged
-open DbManaged.MySql
 open fsharper.typ
 open fsharper.op.Boxing
+open DbManaged
+open DbManaged.MySql
 open dbm_test
 
 let tab1 = "tab1"
-let size = 100u
+let size = 80u
 let mutable private msgResult = Err ManagedNotInitException
 let mutable private managedResult: Result'<IDbManaged, exn> = Err ManagedNotInitException
 let managed () = managedResult.unwrap ()
