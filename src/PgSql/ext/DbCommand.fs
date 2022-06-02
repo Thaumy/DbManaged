@@ -11,6 +11,7 @@ type DbCommand with
 
     /// 将 table 中 whereKey 等于 whereKeyVal 的行的 setKey 更新为 setKeyVal
     /// 返回的闭包用于检测受影响的行数，当断言成立时闭包会提交事务并返回受影响的行数
+    [<CompiledName("update")>]
     member cmd.update(table: string, (setKey: string, setVal: 's), (whereKey: string, whereVal: 'w)) =
         let sql =
             $"UPDATE {table} \
@@ -24,11 +25,13 @@ type DbCommand with
             .commitWhen
     /// 将 table 中 key 等于 oldValue 的行的 key 更新为 newValue
     /// 返回的闭包用于检测受影响的行数，当断言成立时闭包会提交事务并返回受影响的行数
+    [<CompiledName("update")>]
     member cmd.update(table, key, newValue: 'v, oldValue: 'v) =
         (table, (key, newValue), (key, oldValue))
         |> cmd.update
 
     /// TODO exp async api
+    [<CompiledName("updateAsync")>]
     member cmd.updateAsync(table: string, (setKey: string, setVal: 's), (whereKey: string, whereVal: 'w)) =
         let sql =
             $"UPDATE {table} \
@@ -41,6 +44,7 @@ type DbCommand with
         )
             .commitWhenAsync
     /// TODO exp async api
+    [<CompiledName("updateAsync")>]
     member cmd.updateAsync(table, key, newValue: 'v, oldValue: 'v) =
         (table, (key, newValue), (key, oldValue))
         |> cmd.updateAsync
@@ -49,6 +53,7 @@ type DbCommand with
 
     /// 在 table 中插入一行
     /// 返回的闭包用于检测受影响的行数，当断言成立时闭包会提交事务并返回受影响的行数
+    [<CompiledName("insert")>]
     member cmd.insert(table: string, pairs) =
 
         let keys, values =
@@ -73,6 +78,7 @@ type DbCommand with
         cmd.letQuery(sql).commitWhen
 
     /// TODO exp async api
+    [<CompiledName("insertAsync")>]
     member cmd.insertAsync(table: string, pairs) =
 
         let keys, values =
@@ -100,6 +106,7 @@ type DbCommand with
 
     /// 删除 table 中 whereKey 等于 whereKeyVal 的行
     /// 返回的闭包用于检测受影响的行数，当断言成立时闭包会提交事务并返回受影响的行数
+    [<CompiledName("delete")>]
     member cmd.delete(table: string, whereKey: string, whereVal) =
         let sql =
             $"DELETE FROM {table} WHERE {whereKey} = {paraMark}whereVal"
@@ -111,6 +118,7 @@ type DbCommand with
             .commitWhen
 
     /// TODO exp async api
+    [<CompiledName("deleteAsync")>]
     member cmd.deleteAsync(table: string, whereKey: string, whereVal) =
         let sql =
             $"DELETE FROM {table} WHERE {whereKey} = {paraMark}whereVal"
@@ -124,7 +132,8 @@ type DbCommand with
 type DbCommand with
 
     /// 参数化查询到第一个值
-    member cmd.getFstVal(table: string, targetKey: string, (whereKey: string, whereVal: 'v)) =
+    [<CompiledName("getFstVal")>]
+    member cmd.getFstVal(table: string, targetKey: string, whereKey: string, whereVal: 'v) =
         cmd
             .letQuery(
                 $"SELECT {targetKey} FROM {table} WHERE {whereKey} = {paraMark}whereVal"
@@ -136,7 +145,8 @@ type DbCommand with
             .commitForScalar
 
     /// TODO exp async api
-    member cmd.getFstValAsync(table: string, targetKey: string, (whereKey: string, whereVal: 'v)) =
+    [<CompiledName("getFstValAsync")>]
+    member cmd.getFstValAsync(table: string, targetKey: string, whereKey: string, whereVal: 'v) =
         cmd
             .letQuery(
                 $"SELECT {targetKey} FROM {table} WHERE {whereKey} = {paraMark}whereVal"
