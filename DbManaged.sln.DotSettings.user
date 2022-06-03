@@ -6,6 +6,8 @@
   &lt;Assembly Path="/home/thaumy/repo/palaflake/impl/fs/palaflake/bin/Debug/net5.0/palaflake.dll" /&gt;
   &lt;Assembly Path="/home/thaumy/repo/fsharper/bin/Debug/net6.0/fsharper.dll" /&gt;
   &lt;Assembly Path="/home/thaumy/.nuget/packages/npgsql/7.0.0-preview.3/lib/net6.0/Npgsql.dll" /&gt;
+  &lt;Assembly Path="/usr/share/dotnet/packs/Microsoft.NETCore.App.Ref/6.0.5/ref/net6.0/System.Collections.NonGeneric.dll" /&gt;
+  &lt;Assembly Path="/usr/share/dotnet/packs/Microsoft.NETCore.App.Ref/6.0.5/ref/net6.0/System.Collections.dll" /&gt;
 &lt;/AssemblyExplorer&gt;</s:String>
 	<s:String x:Key="/Default/Environment/Highlighting/HighlightingSourceSnapshotLocation/@EntryValue">/home/thaumy/.cache/JetBrains/Rider2021.3/resharper-host/temp/Rider/vAny/CoverageData/_DbManaged.1957780356/Snapshot/snapshot.utdcvr</s:String>
 	
