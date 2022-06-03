@@ -151,11 +151,11 @@ type internal DbCommand with
     member cmd.commitForAffectedAsync conn =
         cmd.useConn(conn).ExecuteNonQueryAsync()
 
-    member cmd.commitForScalarAsync conn =
+    member cmd.commitForScalarAsync conn : Task<Option'<obj>> =
         cmd
             .useConn(conn)
             .ExecuteScalarAsync()
-            .ContinueWith(fun (t: Task<_>) -> t.Result |> Option'.fromNullable)
+            .Then(fun (t: Task<_>) -> t.Result |> Option'.fromNullable)
 
     member cmd.commitForReaderAsync conn = cmd.useConn(conn).ExecuteReaderAsync()
 
@@ -246,27 +246,16 @@ type internal DbCommand with
                 let! n = cmd.useConn(conn).useTx(tx).ExecuteNonQueryAsync() //耗时操作
 
                 let release () =
-                    tx
-                        .DisposeAsync()
-                        .AsTask()
-                        .ContinueWith(fun _ -> cmd.DisposeAsync())
+                    tx.DisposeAsync().AsTask().Then(cmd.DisposeAsync)
                     |> ignore
 
                 let affected =
                     if p n then
                         //符合期望影响行数规则则提交
-                        tx
-                            .CommitAsync()
-                            .ContinueWith(fun _ ->
-                                release ()
-                                n)
+                        tx.CommitAsync().Then(release .> always n)
                     else
                         //否则回滚
-                        tx
-                            .RollbackAsync()
-                            .ContinueWith(fun _ ->
-                                release ()
-                                0)
+                        tx.RollbackAsync().Then(release .> always 0)
 
                 return affected
             }
