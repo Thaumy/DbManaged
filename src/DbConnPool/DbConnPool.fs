@@ -19,8 +19,11 @@ open DbManaged
 /// d为销毁连接系数，n为新建连接系数，min为最小连接数，max为最大连接数
 type internal DbConnPool
     (
-        msg: DbConnMsg,
-        database,
+        host: string,
+        port: u16,
+        usr: string,
+        pwd: string,
+        database: string,
         DbConnectionConstructor: string -> DbConnection,
         d,
         n,
@@ -30,17 +33,12 @@ type internal DbConnPool
 
     /// 连接字符串
     let connStr =
-        $"\
-                 Host = {msg.Host};\
-                 Port = {msg.Port};\
-               UserID = {msg.User};\
-             Password = {msg.Password};\
-              Pooling = False;\
-       "
-        + if database = "" then
-              ""
-          else
-              $"DataBase = {database};"
+        $"Host = {host};\
+          Port = {port};\
+        UserID = {usr};\
+      Password = {pwd};\
+      Database = {database};\
+       Pooling = False;"
 
     let connLeft = new SemaphoreSlim(i32 max)
 
@@ -67,7 +65,7 @@ type internal DbConnPool
         match freeConns.Reader.TryRead() with
         | true, c -> c
         | _ -> getFreeConn ()
-        
+
     let getFreeConnAsync () = freeConns.Reader.ReadAsync()
 
     /// 生成新连接
