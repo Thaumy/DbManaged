@@ -8,6 +8,10 @@ type DbConnMsg =
       /// 端口
       Port: u16
       /// 用户名
-      User: string
+      Usr: string
       /// 密码
-      Password: string }
+      Pwd: string
+      /// 数据库名
+      Database: string
+      /// 连接池大小
+      Pooling: u16 }
