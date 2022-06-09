@@ -7,7 +7,6 @@ open DbManaged.MySql
 open dbm_test
 
 let tab1 = "tab1"
-let size = 80u
 let mutable private msgResult = Err ManagedNotInitException
 let mutable private managedResult: Result'<IDbManaged, exn> = Err ManagedNotInitException
 let managed () = managedResult.unwrap ()
@@ -20,13 +19,12 @@ let connect () =
             Ok
                 { Host = "localhost"
                   Port = 3306us
-                  User = "root"
-                  Password = "65a1561425f744e2b541303f628963f8" }
+                  Usr = "root"
+                  Pwd = "65a1561425f744e2b541303f628963f8"
+                  Database = "dbm_test"
+                  Pooling = 80us }
     | _ -> ()
 
     match managedResult with
-    | Err _ ->
-        managedResult <-
-            Ok
-            <| new MySqlManaged(unwrap msgResult, "dbm_test", size)
+    | Err _ -> managedResult <- Ok <| new MySqlManaged(unwrap msgResult)
     | _ -> ()

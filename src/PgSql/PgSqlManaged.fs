@@ -14,12 +14,23 @@ open fsharper.op.Async
 open DbManaged
 
 /// PgSql数据库管理器
-type PgSqlManaged private (msg, database, d, n, min, max) as managed =
+type PgSqlManaged private (msg, d, n, min, max) as managed =
     let pool =
-        new DbConnPool(msg, database, (fun s -> new NpgsqlConnection(s)), d, n, min, max)
+        new DbConnPool(
+            msg.Host,
+            msg.Port,
+            msg.Usr,
+            msg.Pwd,
+            msg.Database,
+            (fun s -> new NpgsqlConnection(s)),
+            d,
+            n,
+            min,
+            max
+        )
 
-    let queueSema = new SemaphoreSlim(0)//用于队列查询任务的完成精确计数
-    let queueQueryConn = pool.fetchConnAsync().Result//用于队列查询的专用连接
+    let queueSema = new SemaphoreSlim(0) //用于队列查询任务的完成精确计数
+    let queueQueryConn = pool.fetchConnAsync().Result
 
     let queuedQuery =
         fun q ->
@@ -30,13 +41,13 @@ type PgSqlManaged private (msg, database, d, n, min, max) as managed =
     let delayedQuery =
         Channel.CreateUnbounded<DbConnection -> obj>()
 
-    let usedConn = Channel.CreateUnbounded<DbConnection>()//复用池
+    let usedConn = Channel.CreateUnbounded<DbConnection>() //复用池
 
     let realPoolPressure () =
         pool.pressure
         - (f64 usedConn.Reader.Count
            / (f64 max * pool.occupancy))
-        
+
 #if DEBUG
     let outputManagedStatus () =
         async {
@@ -76,28 +87,22 @@ type PgSqlManaged private (msg, database, d, n, min, max) as managed =
         }
         |> Async.Start
 
-    /// 以连接信息构造，并指定使用的数据库和连接池大小
-    new(msg, database, poolSize: u32) = new PgSqlManaged(msg, database, 0.2, 0.7, u32 (f64 poolSize * 0.1), poolSize)
-    /// 以连接信息构造，并指定连接池大小
-    new(msg, poolSize) = new PgSqlManaged(msg, "", poolSize)
-    /// 以连接信息构造，并指定使用的数据库
-    new(msg, database) = new PgSqlManaged(msg, database, 100u)
-    /// 以连接信息构造
-    new(msg: DbConnMsg) = new PgSqlManaged(msg, "", 100u)
+    new(msg: DbConnMsg) = new PgSqlManaged(msg, 0.2, 0.7, u32 (f64 msg.Pooling * 0.1), u32 msg.Pooling)
 
     member self.Dispose() =
         usedConn.Writer.Complete()
         delayedQuery.Writer.Complete()
         queuedQuery.Complete()
-        
+
         self.forceLeftDelayedQuery ()
-        
+
         self.forceLeftQueuedQuery ()
         queueSema.Dispose()
+
         pool.recycleConnAsync queueQueryConn
         |> asTask
         |> wait
-       
+
         pool.Dispose()
 
     member self.mkCmd() = new NpgsqlCommand()
