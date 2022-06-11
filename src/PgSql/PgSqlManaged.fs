@@ -16,18 +16,7 @@ open DbManaged
 /// PgSql数据库管理器
 type PgSqlManaged private (msg, d, n, min, max) as managed =
     let pool =
-        new DbConnPool(
-            msg.Host,
-            msg.Port,
-            msg.Usr,
-            msg.Pwd,
-            msg.Database,
-            (fun s -> new NpgsqlConnection(s)),
-            d,
-            n,
-            min,
-            max
-        )
+        new DbConnPool(msg.host, msg.port, msg.usr, msg.pwd, msg.db, (fun s -> new NpgsqlConnection(s)), d, n, min, max)
 
     let queueSema = new SemaphoreSlim(0) //用于队列查询任务的完成精确计数
     let queueQueryConn = pool.fetchConnAsync().Result
@@ -87,7 +76,7 @@ type PgSqlManaged private (msg, d, n, min, max) as managed =
         }
         |> Async.Start
 
-    new(msg: DbConnMsg) = new PgSqlManaged(msg, 0.2, 0.7, u32 (f64 msg.Pooling * 0.1), u32 msg.Pooling)
+    new(msg: DbConnMsg, pooling: u16) = new PgSqlManaged(msg, 0.2, 0.7, u32 (f64 pooling * 0.1), u32 pooling)
 
     member self.Dispose() =
         usedConn.Writer.Complete()
