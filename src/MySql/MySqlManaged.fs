@@ -144,19 +144,18 @@ type MySqlManaged private (msg, d, n, min, max) as managed =
         fun c ->
             let result = f c
 
-            if not <| queryResult.TryAdd(qId, result) then
-                failwith "Unable to add delayed result to queryResults"
+            queryResult.TryAdd(qId, result) |> mustTrue
 
             sema.Release() |> ignore
         |> delayedQuery.Writer.WriteAsync
         |> ignore
 
         fun () ->
-            match queryResult.TryGetValue qId with
-            | true, r ->
-                sema.Dispose()
-                coerce r
-            | _ -> failwith "Unable to get delayed result from queryResults"
+            let ok, r = queryResult.TryGetValue qId
+            mustTrue ok
+            sema.Dispose()
+            queryResult.TryRemove qId |> fst |> mustTrue
+            coerce r
         |> sema.WaitAsync().Then
 
     member self.forceLeftDelayedQuery() =
@@ -186,8 +185,7 @@ type MySqlManaged private (msg, d, n, min, max) as managed =
         fun c ->
             let result = f c
 
-            if not <| queryResult.TryAdd(qId, result) then
-                failwith "Unable to add queued result to queryResults"
+            queryResult.TryAdd(qId, result) |> mustTrue
 
             sema.Release() |> ignore
         |> queuedQuery.Post
@@ -196,11 +194,10 @@ type MySqlManaged private (msg, d, n, min, max) as managed =
         queueSema.Release() |> ignore
 
         fun () ->
-            match queryResult.TryGetValue qId with
-            | true, r ->
-                sema.Dispose()
-                coerce r
-            | _ -> failwith "Unable to get queued result from queryResults"
+            let ok, r = queryResult.TryGetValue qId
+            mustTrue ok
+            sema.Dispose()
+            coerce r
         |> sema.WaitAsync().Then
 
     member self.forceLeftQueuedQuery() =
