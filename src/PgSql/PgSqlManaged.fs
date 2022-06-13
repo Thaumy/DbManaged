@@ -1,6 +1,7 @@
 ﻿namespace DbManaged.PgSql
 
 open System
+open System.Collections.Concurrent
 open System.Threading
 open System.Data.Common
 open System.Threading.Tasks
@@ -11,35 +12,29 @@ open fsharper.op
 open fsharper.typ
 open fsharper.op.Alias
 open fsharper.op.Async
+open pilipala.util.palaflake
 open DbManaged
 
 /// PgSql数据库管理器
 type PgSqlManaged private (msg, d, n, min, max) as managed =
     let pool =
-        new DbConnPool(
-            msg.Host,
-            msg.Port,
-            msg.Usr,
-            msg.Pwd,
-            msg.Database,
-            (fun s -> new NpgsqlConnection(s)),
-            d,
-            n,
-            min,
-            max
-        )
+        new DbConnPool(msg.host, msg.port, msg.usr, msg.pwd, msg.db, (fun s -> new NpgsqlConnection(s)), d, n, min, max)
 
     let queueSema = new SemaphoreSlim(0) //用于队列查询任务的完成精确计数
     let queueQueryConn = pool.fetchConnAsync().Result
 
     let queuedQuery =
         fun q ->
-            q queueQueryConn |> ignore
+            q queueQueryConn
             queueSema.Wait()
-        |> ActionBlock<DbConnection -> obj>
+        |> ActionBlock<DbConnection -> unit>
+
+    let palaflake = Generator(0uy, u16 DateTime.Now.Year)
+
+    let queryResult = ConcurrentDictionary<u64, obj>()
 
     let delayedQuery =
-        Channel.CreateUnbounded<DbConnection -> obj>()
+        Channel.CreateUnbounded<DbConnection -> unit>()
 
     let usedConn = Channel.CreateUnbounded<DbConnection>() //复用池
 
@@ -67,11 +62,13 @@ type PgSqlManaged private (msg, d, n, min, max) as managed =
                 let q =
                     delayedQuery.Reader.ReadAsync().AsTask().Result
 
-                q conn |> ignore
+                q conn
+
                 loop conn
             else
                 pool.recycleConnAsync conn |> ignore
 
+        //用于处理延迟查询
         async {
             //TODO 在通道可用时持续处理
             //TODO 任务取消的异常处理
@@ -87,7 +84,7 @@ type PgSqlManaged private (msg, d, n, min, max) as managed =
         }
         |> Async.Start
 
-    new(msg: DbConnMsg) = new PgSqlManaged(msg, 0.2, 0.7, u32 (f64 msg.Pooling * 0.1), u32 msg.Pooling)
+    new(msg: DbConnMsg, pooling: u16) = new PgSqlManaged(msg, 0.2, 0.7, u32 (f64 pooling * 0.1), u32 pooling)
 
     member self.Dispose() =
         usedConn.Writer.Complete()
@@ -140,9 +137,26 @@ type PgSqlManaged private (msg, d, n, min, max) as managed =
             return r
         }
 
-    member self.delayQuery f =
-        delayedQuery.Writer.WriteAsync(fun c -> f c :> obj)
+    member self.delayQuery(f: DbConnection -> 'r) : Task<'r> =
+        let qId = palaflake.Next()
+        let sema = new SemaphoreSlim(0)
+
+        fun c ->
+            let result = f c
+
+            queryResult.TryAdd(qId, result) |> mustTrue
+
+            sema.Release() |> ignore
+        |> delayedQuery.Writer.WriteAsync
         |> ignore
+
+        fun () ->
+            let ok, r = queryResult.TryGetValue qId
+            mustTrue ok
+            sema.Dispose()
+            queryResult.TryRemove qId |> fst |> mustTrue
+            coerce r
+        |> sema.WaitAsync().Then
 
     member self.forceLeftDelayedQuery() =
         delayedQuery.Reader.TryRead
@@ -164,9 +178,27 @@ type PgSqlManaged private (msg, d, n, min, max) as managed =
         |> Async.Ignore
         |> Async.RunSynchronously
 
-    member self.queueQuery f =
-        queuedQuery.Post(fun c -> f c :> obj) |> ignore
+    member self.queueQuery(f: DbConnection -> 'r) : Task<'r> =
+        let qId = palaflake.Next()
+        let sema = new SemaphoreSlim(0)
+
+        fun c ->
+            let result = f c
+
+            queryResult.TryAdd(qId, result) |> mustTrue
+
+            sema.Release() |> ignore
+        |> queuedQuery.Post
+        |> ignore
+
         queueSema.Release() |> ignore
+
+        fun () ->
+            let ok, r = queryResult.TryGetValue qId
+            mustTrue ok
+            sema.Dispose()
+            coerce r
+        |> sema.WaitAsync().Then
 
     member self.forceLeftQueuedQuery() =
         //基准测试表明，使用自旋锁的开销要显著低于线程切换的开销

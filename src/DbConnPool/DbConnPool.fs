@@ -23,7 +23,7 @@ type internal DbConnPool
         port: u16,
         usr: string,
         pwd: string,
-        database: string,
+        db: string,
         DbConnectionConstructor: string -> DbConnection,
         d,
         n,
@@ -37,7 +37,7 @@ type internal DbConnPool
           Port = {port};\
         UserID = {usr};\
       Password = {pwd};\
-      Database = {database};\
+      Database = {db};\
        Pooling = False;"
 
     let connLeft = new SemaphoreSlim(i32 max)

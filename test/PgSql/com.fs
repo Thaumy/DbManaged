@@ -17,14 +17,13 @@ let connect () =
     | Err _ ->
         msgResult <-
             Ok
-                { Host = "localhost"
-                  Port = 5432us
-                  Usr = "postgres"
-                  Pwd = "65a1561425f744e2b541303f628963f8"
-                  Database = "dbm_test"
-                  Pooling = 80us }
+                { host = "localhost"
+                  port = 5432us
+                  usr = "postgres"
+                  pwd = "65a1561425f744e2b541303f628963f8"
+                  db = "dbm_test" }
     | _ -> ()
 
     match managedResult with
-    | Err _ -> managedResult <- Ok <| new PgSqlManaged(unwrap msgResult)
+    | Err _ -> managedResult <- Ok <| new PgSqlManaged(unwrap msgResult, 80us)
     | _ -> ()
