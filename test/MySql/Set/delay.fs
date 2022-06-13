@@ -16,26 +16,42 @@ open dbm_test.MySql.Set.init
 let OneTimeSetUp () = connect ()
 
 [<SetUp>]
-let SetUp () = initWithDelay ()
+let SetUp () = initNormal ()
 
 [<Test>]
 let delayQuery_test () =
-    //触发执行
-    [| for i in 1 .. 10000 ->
-           fun _ ->
-               mkCmd().queryAsync $"SELECT {i}" <| always true
-               |> managed().executeQueryAsync
-           |> Task.Run<int> |]
-    |> resultAll
-    |> ignore
-    
+    let delayedQueries =
+        [| for i in 1 .. 2000 do
+               mkCmd()
+                   .query $"INSERT INTO {tab1} (id, test_name, time, content)\
+                     VALUES ({i}, 'init_with_delay', '{ISO8601Now()}', 'init_with_delay');"
+               <| always true
+               |> managed().delayQuery |]
+
+    for q in delayedQueries do
+        let rec loop () =
+            if not q.IsCompleted then
+                [| for i in 1 .. 100 do
+                       fun _ ->
+                           mkCmd().queryAsync $"SELECT {i}" <| always true
+                           |> managed().executeQueryAsync
+                       |> Task.Run<int> |]
+                |> resultAll
+                |> ignore
+                |> loop
+
+        loop ()
+
+    for r in delayedQueries |> resultAll do
+        Assert.AreEqual(1, r)
+
     let afterCount =
         mkCmd()
             .getFstVal $"SELECT COUNT(*) FROM {tab1} WHERE content = 'init_with_delay';"
         |> managed().executeQuery
         |> unwrap
 
-    Assert.AreEqual(100, afterCount)
+    Assert.AreEqual(2000, afterCount)
 
 [<Test>]
 let forceLeftDelayedQuery_test () =
@@ -43,14 +59,18 @@ let forceLeftDelayedQuery_test () =
     let test_name =
         "dbm_test.MySql.Set.delay.forceLeftDelayedQuery_test"
 
-    for i in 1 .. 2000 do
-        mkCmd()
-            .query $"INSERT INTO {tab1} (id, test_name, time, content)\
+    let delayedQueries =
+        [| for i in 1 .. 2000 do
+               mkCmd()
+                   .query $"INSERT INTO {tab1} (id, test_name, time, content)\
                      VALUES ({i}, '{test_name}', '{ISO8601Now()}', '_');"
-        <| always true
-        |> managed().delayQuery
+               <| always true
+               |> managed().delayQuery |]
 
     managed().forceLeftDelayedQuery ()
+
+    for r in delayedQueries |> resultAll do
+        Assert.AreEqual(1, r)
 
     let count =
         mkCmd()
