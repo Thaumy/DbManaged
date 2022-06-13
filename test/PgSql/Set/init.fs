@@ -63,6 +63,7 @@ let initNormal () =
     ddl_prepare ()
     dml_prepare ()
 
+(*
 let initWithQueue () =
     
     ddl_prepare ()
@@ -88,3 +89,4 @@ let initWithDelay () =
         |> managed().delayQuery
 
     dml_prepare ()
+*)

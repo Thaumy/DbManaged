@@ -4,14 +4,12 @@ open fsharper.op.Alias
 
 type DbConnMsg =
     { /// 主机（数据源）
-      Host: string
+      host: string
       /// 端口
-      Port: u16
+      port: u16
       /// 用户名
-      Usr: string
+      usr: string
       /// 密码
-      Pwd: string
+      pwd: string
       /// 数据库名
-      Database: string
-      /// 连接池大小
-      Pooling: u16 }
+      db: string }

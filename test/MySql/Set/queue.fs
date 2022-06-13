@@ -17,18 +17,34 @@ open dbm_test.MySql.Set.init
 let OneTimeSetUp () = connect ()
 
 [<SetUp>]
-let SetUp () = initWithQueue ()
+let SetUp () = initNormal ()
 
 [<Test>]
 let queueQuery_test () =
-    //触发执行
-    [| for i in 1 .. 10000 ->
-           fun _ ->
-               mkCmd().queryAsync $"SELECT {i}" <| always true
-               |> managed().executeQueryAsync
-           |> Task.Run<int> |]
-    |> resultAll
-    |> ignore
+    let queuedQueries =
+        [| for i in 1 .. 2000 do
+               mkCmd()
+                   .query $"INSERT INTO {tab1} (id, test_name, time, content)\
+                     VALUES ({i}, 'init_with_queue', NOW(), 'init_with_queue');"
+               <| always true
+               |> managed().queueQuery |]
+
+    for q in queuedQueries do
+        let rec loop () =
+            if not q.IsCompleted then
+                [| for i in 1 .. 100 do
+                       fun _ ->
+                           mkCmd().queryAsync $"SELECT {i}" <| always true
+                           |> managed().executeQueryAsync
+                       |> Task.Run<int> |]
+                |> resultAll
+                |> ignore
+                |> loop
+
+        loop ()
+
+    for r in queuedQueries |> resultAll do
+        Assert.AreEqual(1, r)
 
     //影响行数校验
     let count =
@@ -37,7 +53,7 @@ let queueQuery_test () =
         |> managed().executeQuery
         |> unwrap
 
-    Assert.AreEqual(100, count)
+    Assert.AreEqual(2000, count)
 
     //执行顺序校验
     let col =
@@ -56,14 +72,20 @@ let queueQuery_test () =
 let forceLeftQueuedQuery_test () =
 
     let test_name =
-        "dbm_test.PgSql.Set.queue.forceLeftQueuedQuery_test"
+        "dbm_test.MySql.Set.queue.forceLeftQueuedQuery_test"
 
-    for i in 1 .. 2000 do
-        mkCmd()
-            .query $"INSERT INTO {tab1} (id, test_name, time, content)\
+    let queuedQueries =
+        [| for i in 1 .. 2000 do
+               mkCmd()
+                   .query $"INSERT INTO {tab1} (id, test_name, time, content)\
                      VALUES ({i}, '{test_name}', NOW(), '_');"
-        <| always true
-        |> managed().queueQuery
+               <| always true
+               |> managed().queueQuery |]
+
+    managed().forceLeftQueuedQuery ()
+
+    for r in queuedQueries |> resultAll do
+        Assert.AreEqual(1, r)
 
     managed().forceLeftQueuedQuery ()
 
