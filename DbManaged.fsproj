@@ -80,15 +80,13 @@
         <Compile Include="test\MySql\Sync\ComplexQuery\getFstRow.fs" />
         <Compile Include="test\MySql\Sync\ComplexQuery\getFstCol.fs" />
         <Compile Include="test\MySql\Sync\ComplexQuery\getFstVal.fs" />
-        
-        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.2.0" />
         <PackageReference Include="NUnit" Version="3.13.3" />
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Update="FSharp.Core" Version="6.0.4-beta.22181.2" />
-        <PackageReference Include="MySql.Data" Version="8.0.28" />
-        <PackageReference Include="Npgsql" Version="7.0.0-preview.3" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.3.0-preview-20220612-01" />
+        <PackageReference Include="MySql.Data" Version="8.0.29" />
+        <PackageReference Include="Npgsql" Version="7.0.0-preview.4" />
     </ItemGroup>
 
     <ItemGroup>
