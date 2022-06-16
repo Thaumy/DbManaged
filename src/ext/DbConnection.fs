@@ -5,16 +5,13 @@ open System.Data.Common
 
 type DbConnection with
 
-    member conn.CreateCommand(sql) =
-        let cmd = conn.CreateCommand()
-        cmd.CommandText <- sql
-        cmd
-
     member conn.CreateCommand(sql, paras) =
         let cmd = conn.CreateCommand()
         cmd.CommandText <- sql
         cmd.Parameters.AddRange paras
         cmd
+
+    member conn.CreateCommand(sql) = conn.CreateCommand(sql, [||])
 
 type DbConnection with
 
@@ -67,4 +64,3 @@ type internal DbConnection with
                     tx.DisposeAsync() |> ignore
                     result
         }
-

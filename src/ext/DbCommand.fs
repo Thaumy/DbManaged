@@ -264,106 +264,107 @@ type internal DbCommand with
 
 type DbCommand with
 
-    /// 查询到表
-    [<CompiledName("select")>]
-    member cmd.select(sql) = cmd.letQuery(sql).commitForTable
     /// 参数化查询到表
     [<CompiledName("select")>]
     member cmd.select(sql, paras: (string * 't) list) =
         cmd.letQuery(sql).addParas(paras).commitForTable
+    /// 查询到表
+    [<CompiledName("select")>]
+    member cmd.select(sql) = cmd.select (sql, [])
 
-    /// TODO exp async api
-    [<CompiledName("selectAsync")>]
-    member cmd.selectAsync(sql) = cmd.letQuery(sql).commitForTableAsync
-    /// TODO exp async api
+    /// 参数化查询到表
     [<CompiledName("selectAsync")>]
     member cmd.selectAsync(sql, paras: (string * 't) list) =
         cmd.letQuery(sql).addParas(
             paras
         )
             .commitForTableAsync
+    /// 异步查询到表
+    [<CompiledName("selectAsync")>]
+    member cmd.selectAsync(sql) = cmd.selectAsync (sql, [])
 
 type DbCommand with
 
-    /// 执行任意查询
-    /// 返回的闭包用于检测受影响的行数，当断言成立时闭包会提交事务并返回受影响的行数
-    /// 低级操作：查询执行完成后应注意注销该连接以避免连接泄漏
-    [<CompiledName("query")>]
-    member cmd.query sql = cmd.letQuery(sql).commitWhen
     /// 执行任意参数化查询
     /// 返回的闭包用于检测受影响的行数，当断言成立时闭包会提交事务并返回受影响的行数
     /// 低级操作：查询执行完成后应注意注销该连接以避免连接泄漏
     [<CompiledName("query")>]
     member cmd.query(sql, paras: (string * 't) list) =
         cmd.letQuery(sql).addParas(paras).commitWhen
+    /// 执行任意查询
+    /// 返回的闭包用于检测受影响的行数，当断言成立时闭包会提交事务并返回受影响的行数
+    /// 低级操作：查询执行完成后应注意注销该连接以避免连接泄漏
+    [<CompiledName("query")>]
+    member cmd.query sql = cmd.query (sql, [])
 
-    /// TODO exp async api
-    [<CompiledName("queryAsync")>]
-    member cmd.queryAsync sql = cmd.letQuery(sql).commitWhenAsync
-    /// TODO exp async api
+    /// 异步执行任意查询
     [<CompiledName("queryAsync")>]
     member cmd.queryAsync(sql, paras: (string * 't) list) =
         cmd.letQuery(sql).addParas(paras).commitWhenAsync
+    /// 异步执行任意参数化查询
+    [<CompiledName("queryAsync")>]
+    member cmd.queryAsync sql = cmd.queryAsync (sql, [])
 
 type DbCommand with
 
-    /// 查询到第一个值
-    [<CompiledName("getFstVal")>]
-    member cmd.getFstVal sql = cmd.letQuery(sql).commitForScalar
     /// 参数化查询到第一个值
     [<CompiledName("getFstVal")>]
     member cmd.getFstVal(sql, paras: (string * 't) list) =
         cmd.letQuery(sql).addParas(paras).commitForScalar
+    /// 查询到第一个值
+    [<CompiledName("getFstVal")>]
+    member cmd.getFstVal sql = cmd.getFstVal (sql, [])
 
-    /// TODO exp async api
-    [<CompiledName("getFstValAsync")>]
-    member cmd.getFstValAsync sql = cmd.letQuery(sql).commitForScalarAsync
-    /// TODO exp async api
+    /// 异步参数化查询到第一个值
     [<CompiledName("getFstValAsync")>]
     member cmd.getFstValAsync(sql, paras: (string * 't) list) =
         cmd.letQuery(sql).addParas(
             paras
         )
             .commitForScalarAsync
+    /// 异步查询到第一个值
+    [<CompiledName("getFstValAsync")>]
+    member cmd.getFstValAsync sql = cmd.letQuery(sql).commitForScalarAsync
 
 type DbCommand with
 
-    /// 查询到第一行
-    [<CompiledName("getFstRow")>]
-    member cmd.getFstRow sql = cmd.letQuery(sql).commitForFstRow
     /// 参数化查询到第一行
     [<CompiledName("getFstRow")>]
     member cmd.getFstRow(sql, paras: (string * 't) list) =
         cmd.letQuery(sql).addParas(paras).commitForFstRow
+    /// 查询到第一行
+    [<CompiledName("getFstRow")>]
+    member cmd.getFstRow sql = cmd.getFstRow (sql, [])
 
-    /// TODO exp async api
-    [<CompiledName("getFstRowAsync")>]
-    member cmd.getFstRowAsync sql = cmd.letQuery(sql).commitForFstRowAsync
-    /// TODO exp async api
+    /// 异步参数化查询到第一行
     [<CompiledName("getFstRowAsync")>]
     member cmd.getFstRowAsync(sql, paras: (string * 't) list) =
         cmd.letQuery(sql).addParas(
             paras
         )
             .commitForFstRowAsync
+    /// 异步查询到第一行
+    [<CompiledName("getFstRowAsync")>]
+    member cmd.getFstRowAsync sql = cmd.getFstRowAsync (sql, [])
 
 type DbCommand with
 
-    /// 查询到第一列
-    [<CompiledName("getFstCol")>]
-    member cmd.getFstCol(sql) = cmd.letQuery(sql).commitForFstCol
     /// 参数化查询到第一列
     [<CompiledName("getFstCol")>]
     member cmd.getFstCol(sql, paras: (string * 't) list) =
         cmd.letQuery(sql).addParas(paras).commitForFstCol
+    /// 查询到第一列
+    [<CompiledName("getFstCol")>]
+    member cmd.getFstCol(sql) = cmd.getFstCol (sql, [])
 
-    /// TODO exp async api
-    [<CompiledName("getFstColAsync")>]
-    member cmd.getFstColAsync(sql) = cmd.letQuery(sql).commitForFstColAsync
-    /// TODO exp async api
+
+    /// 异步查询到第一列
     [<CompiledName("getFstColAsync")>]
     member cmd.getFstColAsync(sql, paras: (string * 't) list) =
         cmd.letQuery(sql).addParas(
             paras
         )
             .commitForFstColAsync
+    /// 异步参数化查询到第一行
+    [<CompiledName("getFstColAsync")>]
+    member cmd.getFstColAsync(sql) = cmd.getFstColAsync (sql, [])
