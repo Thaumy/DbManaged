@@ -5,7 +5,7 @@ open System.Threading.Tasks
 open fsharper.typ
 open fsharper.op.Async
 open DbManaged
-open DbManaged.PgSql.ext.String
+
 open NUnit.Framework
 open dbm_test.PgSql.com
 open dbm_test.PgSql.Async.init
@@ -47,7 +47,7 @@ let select_overload2_test () =
                    let paras: (string * obj) list = [ ("id", i) ]
 
                    let sql =
-                       normalizeSql $"SELECT test_name, content FROM {tab1} WHERE id = <id>;"
+                       managed().normalizeSql $"SELECT test_name, content FROM {tab1} WHERE id = <id>;"
 
                    mkCmd().selectAsync (sql, paras)
                    |> managed().executeQueryAsync

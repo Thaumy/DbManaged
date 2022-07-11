@@ -21,7 +21,7 @@ let SetUp () = initNormal ()
 [<Test>]
 let delayQuery_test () =
     let delayedQueries =
-        [| for i in 1 .. 2000 do
+        [| for i in 1..2000 do
                mkCmd()
                    .query $"INSERT INTO {tab1} (id, test_name, time, content)\
                      VALUES ({i}, 'init_with_delay', '{ISO8601Now()}', 'init_with_delay');"
@@ -31,7 +31,7 @@ let delayQuery_test () =
     for q in delayedQueries do
         let rec loop () =
             if not q.IsCompleted then
-                [| for i in 1 .. 100 do
+                [| for i in 1..100 do
                        fun _ ->
                            mkCmd().queryAsync $"SELECT {i}" <| always true
                            |> managed().executeQueryAsync
@@ -60,7 +60,7 @@ let forceLeftDelayedQuery_test () =
         "dbm_test.MySql.Set.delay.forceLeftDelayedQuery_test"
 
     let delayedQueries =
-        [| for i in 1 .. 2000 do
+        [| for i in 1..2000 do
                mkCmd()
                    .query $"INSERT INTO {tab1} (id, test_name, time, content)\
                      VALUES ({i}, '{test_name}', '{ISO8601Now()}', '_');"

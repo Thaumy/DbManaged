@@ -18,10 +18,8 @@
         <Compile Include="src\DbConnPool\IDbConnPool.fs" />
         <Compile Include="src\DbConnPool\DbConnPool.fs" />
         <Compile Include="src\DbManaged\IDbManaged.fs" />
-        <Compile Include="src\PgSql\ext\String.fs" />
         <Compile Include="src\PgSql\ext\DbCommand.fs" />
         <Compile Include="src\PgSql\PgSqlManaged.fs" />
-        <Compile Include="src\MySql\ext\String.fs" />
         <Compile Include="src\MySql\ext\DbCommand.fs" />
         <Compile Include="src\MySql\MySqlManaged.fs" />
     </ItemGroup>

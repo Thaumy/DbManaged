@@ -5,7 +5,7 @@ open System.Threading.Tasks
 open fsharper.typ
 open fsharper.op.Async
 open DbManaged
-open DbManaged.PgSql.ext.String
+
 open NUnit.Framework
 open dbm_test.PgSql.com
 open dbm_test.PgSql.Sync.init
@@ -38,7 +38,7 @@ let getFstRow_overload2_test () =
                    let paras: (string * obj) list = [ ("id", i) ]
 
                    let sql =
-                       normalizeSql $"SELECT * FROM {tab1} WHERE id = <id>;"
+                       managed().normalizeSql $"SELECT * FROM {tab1} WHERE id = <id>;"
 
                    mkCmd().getFstRow (sql, paras)
                    |> managed().executeQuery
