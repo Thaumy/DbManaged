@@ -1,18 +1,19 @@
 ﻿namespace DbManaged.PgSql
 
 open System
-open System.Collections.Concurrent
 open System.Threading
 open System.Data.Common
 open System.Threading.Tasks
 open System.Threading.Channels
+open System.Collections.Concurrent
+open System.Text.RegularExpressions
 open System.Threading.Tasks.Dataflow
-open Npgsql
 open fsharper.op
 open fsharper.typ
 open fsharper.op.Alias
 open fsharper.op.Async
 open pilipala.util.palaflake
+open Npgsql
 open DbManaged
 
 /// PgSql数据库管理器
@@ -21,7 +22,9 @@ type PgSqlManaged private (msg, d, n, min, max) as managed =
         new DbConnPool(msg.host, msg.port, msg.usr, msg.pwd, msg.db, (fun s -> new NpgsqlConnection(s)), d, n, min, max)
 
     let queueSema = new SemaphoreSlim(0) //用于队列查询任务的完成精确计数
-    let queueQueryConn = pool.fetchConnAsync().Result
+
+    let queueQueryConn =
+        pool.fetchConnAsync().Result
 
     let queuedQuery =
         fun q ->
@@ -29,14 +32,17 @@ type PgSqlManaged private (msg, d, n, min, max) as managed =
             queueSema.Wait()
         |> ActionBlock<DbConnection -> unit>
 
-    let palaflake = Generator(0uy, u16 DateTime.Now.Year)
+    let palaflake =
+        Generator(0uy, u16 DateTime.Now.Year)
 
-    let queryResult = ConcurrentDictionary<u64, obj>()
+    let queryResult =
+        ConcurrentDictionary<u64, obj>()
 
     let delayedQuery =
         Channel.CreateUnbounded<DbConnection -> unit>()
 
-    let usedConn = Channel.CreateUnbounded<DbConnection>() //复用池
+    let usedConn =
+        Channel.CreateUnbounded<DbConnection>() //复用池
 
     let realPoolPressure () =
         pool.pressure
@@ -46,9 +52,15 @@ type PgSqlManaged private (msg, d, n, min, max) as managed =
 #if DEBUG
     let outputManagedStatus () =
         async {
-            let leftQueue = queuedQuery.InputCount.ToString("00")
-            let leftDelay = delayedQuery.Reader.Count.ToString("00")
-            let usedConn = usedConn.Reader.Count.ToString("00")
+            let leftQueue =
+                queuedQuery.InputCount.ToString("00")
+
+            let leftDelay =
+                delayedQuery.Reader.Count.ToString("00")
+
+            let usedConn =
+                usedConn.Reader.Count.ToString("00")
+
             let rp = realPoolPressure().ToString("0.00")
             Console.WriteLine $"    队列{leftQueue} 延迟{leftDelay} | 待重用{usedConn} | 真实压力{rp}"
         }
@@ -228,3 +240,7 @@ type PgSqlManaged private (msg, d, n, min, max) as managed =
         member i.queueQuery f = managed.queueQuery f
 
         member i.forceLeftQueuedQuery() = managed.forceLeftQueuedQuery ()
+
+        member self.normalizeSql sql =
+            let mark = ":"
+            Regex.Replace(sql, "<([0-9a-zA-Z_]*)>", $"{mark}$1")

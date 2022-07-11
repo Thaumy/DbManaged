@@ -18,7 +18,7 @@ let SetUp () = init ()
 
 [<Test>]
 let delete_test () =
-    
+
     let query =
         mkCmd()
             .deleteAsync ($"{tab1}", "content", "ts1_insert")

@@ -6,7 +6,7 @@ open fsharper.typ.Ord
 open fsharper.op.Async
 open fsharper.op.Boxing
 open DbManaged
-open DbManaged.MySql.ext.String
+
 open NUnit.Framework
 open dbm_test
 open dbm_test.MySql.com
@@ -25,7 +25,7 @@ let query_overload1_test () =
         "dbm_test.MySql.Async.SimpleQuery.query.query_overload1_test"
 
     let tasks =
-        [| for i in 1 .. 2000 do
+        [| for i in 1..2000 do
                fun _ ->
                    mkCmd()
                        .query $"INSERT INTO {tab1} (id, test_name, time, content)\
@@ -52,7 +52,7 @@ let query_overload2_test () =
         "dbm_test.MySql.Async.SimpleQuery.query.query_overload2_test"
 
     let tasks =
-        [| for i in 1 .. 2000 do
+        [| for i in 1..2000 do
                fun _ ->
                    let paras: (string * obj) list =
                        [ ("id", i)
@@ -61,8 +61,8 @@ let query_overload2_test () =
                          ("content", "_") ]
 
                    let sql =
-                       normalizeSql
-                           $"INSERT INTO {tab1} (id,   test_name,  time,  content)\
+                       managed()
+                           .normalizeSql $"INSERT INTO {tab1} (id,   test_name,  time,  content)\
                                          VALUES (<id>,<test_name>,<time>,<content>);"
 
                    mkCmd().query (sql, paras) <| eq 1

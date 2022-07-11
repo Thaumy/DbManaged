@@ -28,7 +28,7 @@ let init () =
     |> ignore
 
     let as1 =
-        [| for i in 1 .. 1000 ->
+        [| for i in 1..1000 ->
                fun _ ->
                    mkCmd()
                        .query $"INSERT INTO {tab1} (id, test_name, time, content)\
@@ -38,7 +38,7 @@ let init () =
                |> Task.Run |]
 
     let as2 =
-        [| for i in 1 .. 1000 ->
+        [| for i in 1..1000 ->
                fun _ ->
                    mkCmd()
                        .query $"INSERT INTO {tab1} (id, test_name, time, content)\

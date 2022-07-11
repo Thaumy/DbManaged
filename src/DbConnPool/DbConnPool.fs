@@ -1,12 +1,11 @@
 namespace DbManaged
 
 open System
-open System.Data.Common
 open System.Threading
+open System.Data.Common
 open System.Threading.Tasks
 open System.Threading.Channels
 open System.Collections.Concurrent
-open Microsoft.FSharp.Collections
 open fsharper.op
 open fsharper.typ
 open fsharper.op.Eq
