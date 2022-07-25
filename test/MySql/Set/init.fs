@@ -10,7 +10,7 @@ open dbm_test
 open dbm_test.MySql.com
 
 let ddl_prepare () =
-    
+
     mkCmd().query $"drop table if exists {tab1};"
     <| always true
     |> managed().executeQuery
@@ -31,7 +31,7 @@ let ddl_prepare () =
 let dml_prepare () =
 
     let as1 =
-        [| for i in 1 .. 1000 ->
+        [| for i in 1..1000 ->
                fun _ ->
                    mkCmd()
                        .queryAsync $"INSERT INTO {tab1} (id, test_name, time, content)\
@@ -41,7 +41,7 @@ let dml_prepare () =
                |> Task.Run<int> |]
 
     let as2 =
-        [| for i in 1 .. 1000 ->
+        [| for i in 1..1000 ->
                fun _ ->
                    mkCmd()
                        .queryAsync $"INSERT INTO {tab1} (id, test_name, time, content)\
@@ -65,7 +65,7 @@ let initNormal () =
 
 (*
 let initWithQueue () =
-    
+
     ddl_prepare ()
 
     for i in 1 .. 100 do
@@ -78,7 +78,7 @@ let initWithQueue () =
     dml_prepare ()
 
 let initWithDelay () =
-    
+
     ddl_prepare ()
 
     for i in 1 .. 100 do

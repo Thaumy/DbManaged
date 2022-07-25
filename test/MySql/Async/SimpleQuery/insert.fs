@@ -25,7 +25,7 @@ let insert_test () =
         "dbm_test.MySql.Async.SimpleQuery.insert.insert_test"
 
     let tasks =
-        [| for i in 1 .. 2000 ->
+        [| for i in 1..2000 ->
                fun _ ->
                    let paras: (string * obj) list =
                        [ ("id", i)

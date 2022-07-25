@@ -6,7 +6,7 @@ open fsharper.typ.Ord
 open fsharper.op.Async
 open fsharper.op.Boxing
 open DbManaged
-open DbManaged.PgSql.ext.String
+
 open NUnit.Framework
 open dbm_test
 open dbm_test.PgSql.com
@@ -61,7 +61,7 @@ let query_overload2_test () =
                          ("content", "_") ]
 
                    let sql =
-                       normalizeSql
+                       managed().normalizeSql
                            $"INSERT INTO {tab1} (id,   test_name,  time,  content)\
                                          VALUES (<id>,<test_name>,<time>,<content>);"
 

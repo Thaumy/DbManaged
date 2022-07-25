@@ -33,6 +33,6 @@ let getRowFrom (table: DataTable) whereKey whereKeyVal =
         && table.Columns.Contains(whereKey)
     then
         [ for r in table.Rows -> r ]
-        |> filterOne (fun (row: DataRow) -> row.[whereKey].ToString() = whereKeyVal.ToString())
+        |> filterOnce (fun (row: DataRow) -> row.[whereKey].ToString() = whereKeyVal.ToString())
     else
         None

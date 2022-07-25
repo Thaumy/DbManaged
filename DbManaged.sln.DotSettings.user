@@ -10,7 +10,7 @@
   &lt;Assembly Path="/usr/share/dotnet/packs/Microsoft.NETCore.App.Ref/6.0.5/ref/net6.0/System.Collections.NonGeneric.dll" /&gt;
   &lt;Assembly Path="/usr/share/dotnet/packs/Microsoft.NETCore.App.Ref/6.0.5/ref/net6.0/System.Collections.dll" /&gt;
 &lt;/AssemblyExplorer&gt;</s:String>
-	<s:String x:Key="/Default/Environment/Highlighting/HighlightingSourceSnapshotLocation/@EntryValue">/home/thaumy/.cache/JetBrains/Rider2021.3/resharper-host/temp/Rider/vAny/CoverageData/_DbManaged.1957780356/Snapshot/snapshot.utdcvr</s:String>
+	
 	
 	
 	
