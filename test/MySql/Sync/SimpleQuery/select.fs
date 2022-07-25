@@ -6,7 +6,7 @@ open fsharper.typ
 open fsharper.op.Async
 open fsharper.op.Boxing
 open DbManaged
-open DbManaged.MySql.ext.String
+
 open NUnit.Framework
 open dbm_test.MySql.com
 open dbm_test.MySql.Sync.init
@@ -22,7 +22,7 @@ let SetUp () = init ()
 let select_overload1_test () =
 
     let tasks =
-        [| for i in 1 .. 1000 do
+        [| for i in 1..1000 do
                fun _ ->
                    mkCmd()
                        .select $"SELECT test_name, content FROM {tab1} WHERE id = {i};"
@@ -43,12 +43,14 @@ let select_overload1_test () =
 let select_overload2_test () =
 
     let tasks =
-        [| for i in 1 .. 1000 do
+        [| for i in 1..1000 do
                fun _ ->
-                   let paras: (string * obj) list = [ ("id", i) ]
+                   let paras: (string * obj) list =
+                       [ ("id", i) ]
 
                    let sql =
-                       normalizeSql $"SELECT test_name, content FROM {tab1} WHERE id = <id>;"
+                       managed()
+                           .normalizeSql $"SELECT test_name, content FROM {tab1} WHERE id = <id>;"
 
                    mkCmd().select (sql, paras)
                    |> managed().executeQuery

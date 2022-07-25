@@ -5,7 +5,7 @@ open System.Threading.Tasks
 open fsharper.op.Async
 open DbManaged
 open DbManaged.PgSql
-open DbManaged.PgSql.ext.String
+
 open NUnit.Framework
 open dbm_test.PgSql.com
 open dbm_test.PgSql.Sync.init
@@ -39,7 +39,7 @@ let getFstVal_overload2_test () =
                    let paras: (string * obj) list = [ ("id", i) ]
 
                    let sql =
-                       normalizeSql $"SELECT content FROM {tab1} WHERE id = <id>;"
+                       managed().normalizeSql $"SELECT content FROM {tab1} WHERE id = <id>;"
 
                    mkCmd().getFstVal (sql, paras)
                    |> managed().executeQuery

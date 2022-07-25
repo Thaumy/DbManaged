@@ -15,7 +15,7 @@ let SetUp () = init ()
 
 [<Test>]
 let initOk_test () =
-   
+
     let ts1_count =
         mkCmd()
             .getFstVal $"SELECT COUNT(*) FROM {tab1} WHERE test_name = 'init' AND content = 'ts1_insert';"

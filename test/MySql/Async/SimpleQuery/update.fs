@@ -23,7 +23,7 @@ let update_overload1_test () =
         "dbm_test.MySql.Async.SimpleQuery.update.update_overload1_test"
 
     let tasks =
-        [| for i in 1 .. 1000 do
+        [| for i in 1..1000 do
                fun _ ->
                    mkCmd()
                        .updateAsync ($"{tab1}", ("content", test_name), ("id", i))
@@ -35,7 +35,7 @@ let update_overload1_test () =
         Assert.AreEqual(2, r)
 
     let selects =
-        [| for i in 1 .. 1000 do
+        [| for i in 1..1000 do
                fun _ ->
                    mkCmd()
                        .selectAsync $"SELECT content FROM {tab1} WHERE id = '{i}';"
@@ -54,7 +54,7 @@ let update_overload1_test () =
 let update_overload2_test () =
 
     let tasks =
-        [| for i in 1 .. 1000 do
+        [| for i in 1..1000 do
                fun _ ->
                    mkCmd()
                        .updateAsync ($"{tab1}", "id", i + 114514, i)
@@ -66,7 +66,7 @@ let update_overload2_test () =
         Assert.AreEqual(2, r)
 
     let selects =
-        [| for i in 1 .. 1000 do
+        [| for i in 1..1000 do
                fun _ ->
                    mkCmd()
                        .getFstValAsync $"SELECT COUNT(*) FROM {tab1} WHERE id = '{i + 114514}';"
@@ -74,4 +74,4 @@ let update_overload2_test () =
                |> Task.Run<Option'<_>> |]
 
     for r in resultAll selects do
-        Assert.AreEqual(2, r.unwrap())
+        Assert.AreEqual(2, r.unwrap ())

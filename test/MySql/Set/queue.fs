@@ -22,7 +22,7 @@ let SetUp () = initNormal ()
 [<Test>]
 let queueQuery_test () =
     let queuedQueries =
-        [| for i in 1 .. 2000 do
+        [| for i in 1..2000 do
                mkCmd()
                    .query $"INSERT INTO {tab1} (id, test_name, time, content)\
                      VALUES ({i}, 'init_with_queue', NOW(), 'init_with_queue');"
@@ -32,7 +32,7 @@ let queueQuery_test () =
     for q in queuedQueries do
         let rec loop () =
             if not q.IsCompleted then
-                [| for i in 1 .. 100 do
+                [| for i in 1..100 do
                        fun _ ->
                            mkCmd().queryAsync $"SELECT {i}" <| always true
                            |> managed().executeQueryAsync
@@ -75,7 +75,7 @@ let forceLeftQueuedQuery_test () =
         "dbm_test.MySql.Set.queue.forceLeftQueuedQuery_test"
 
     let queuedQueries =
-        [| for i in 1 .. 2000 do
+        [| for i in 1..2000 do
                mkCmd()
                    .query $"INSERT INTO {tab1} (id, test_name, time, content)\
                      VALUES ({i}, '{test_name}', NOW(), '_');"
