@@ -23,6 +23,7 @@ type DbCommand with
               ("whereVal", whereVal :> obj) ]
         )
             .commitWhen
+
     /// 将 table 中 key 等于 oldValue 的行的 key 更新为 newValue
     /// 返回的闭包用于检测受影响的行数，当断言成立时闭包会提交事务并返回受影响的行数
     [<CompiledName("update")>]
@@ -43,6 +44,7 @@ type DbCommand with
               ("whereVal", whereVal :> obj) ]
         )
             .commitWhenAsync
+
     /// TODO exp async api
     [<CompiledName("updateAsync")>]
     member cmd.updateAsync(table, key, newValue: 'v, oldValue: 'v) =
@@ -156,3 +158,31 @@ type DbCommand with
             whereVal
         )
             .commitForScalarAsync
+
+type DbCommand with
+
+    /// 参数化查询到第一行
+    [<CompiledName("getFstRow")>]
+    member cmd.getFstRow(table: string, whereKey: string, whereVal: 'v) =
+        cmd
+            .letQuery(
+                $"SELECT * FROM {table} WHERE {whereKey} = {paraMark}whereVal LIMIT 1"
+            )
+            .addPara(
+            "whereVal",
+            whereVal
+        )
+            .commitForFstRow
+
+    /// TODO exp async api
+    [<CompiledName("getFstRowAsync")>]
+    member cmd.getFstRowAsync(table: string, whereKey: string, whereVal: 'v) =
+        cmd
+            .letQuery(
+                $"SELECT * FROM {table} WHERE {whereKey} = {paraMark}whereVal LIMIT 1"
+            )
+            .addPara(
+            "whereVal",
+            whereVal
+        )
+            .commitForFstRowAsync
