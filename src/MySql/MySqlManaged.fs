@@ -33,10 +33,10 @@ type MySqlManaged private (msg, d, n, min, max) as managed =
         |> ActionBlock<DbConnection -> unit>
 
     let palaflake =
-        Generator(0uy, u16 DateTime.Now.Year)
+        palaflake.Generator(0uy, u16 DateTime.Now.Year)
 
     let queryResult =
-        ConcurrentDictionary<u64, obj>()
+        ConcurrentDictionary<i64, obj>()
 
     let delayedQuery =
         Channel.CreateUnbounded<DbConnection -> unit>()
@@ -174,7 +174,8 @@ type MySqlManaged private (msg, d, n, min, max) as managed =
         delayedQuery.Reader.TryRead
         .> Option'.fromOkComma
         .> ifCanUnwrapOr
-        <. fun q ->
+        |> flip //infix
+        <| fun q ->
             Option.Some(
                 async {
                     fun c -> task { return q c }
@@ -183,7 +184,8 @@ type MySqlManaged private (msg, d, n, min, max) as managed =
                 },
                 ()
             )
-        <. fun _ -> Option.None
+        |> flip //infix
+        <| fun _ -> Option.None
         |> Seq.unfold
         <| ()
         |> fun s -> Async.Parallel(s, i32 max)
