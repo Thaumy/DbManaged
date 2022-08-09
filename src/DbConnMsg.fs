@@ -1,6 +1,6 @@
 namespace DbManaged
 
-open fsharper.op.Alias
+open fsharper.alias
 
 type DbConnMsg =
     { /// 主机（数据源）

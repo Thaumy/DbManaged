@@ -7,7 +7,7 @@ open System.Data.Common
 open System.Threading.Tasks
 open fsharper.op
 open fsharper.typ
-open fsharper.op.Alias
+open fsharper.alias
 open fsharper.op.Async
 
 type internal DbCommand with
@@ -89,9 +89,21 @@ type internal DbCommand with
 
     //提交并取得第一列
     member cmd.commitForFstCol conn =
+        //由于一次性seq的通用性较低，且为seq添加缓存容易产生并发安全问题，故暂停惰性版本的实现
+        (*
+        let reader = cmd.commitForReader conn
+        Seq.unfold
+        <| fun (reader: DbDataReader) ->
+            if reader.Read() then
+                Option.Some(reader.[0], reader)
+            else
+                reader.Dispose()
+                Option.None
+        <| reader
+        *)
         use reader = cmd.commitForReader conn
 
-        let rec loop () = //因为第一次读取过，所以采用do while形式
+        let rec loop () =
             if reader.Read() then
                 reader.[0] :: loop ()
             else
@@ -268,6 +280,7 @@ type DbCommand with
     [<CompiledName("select")>]
     member cmd.select(sql, paras: (string * 't) list) =
         cmd.letQuery(sql).addParas(paras).commitForTable
+
     /// 查询到表
     [<CompiledName("select")>]
     member cmd.select(sql) = cmd.select (sql, [])
@@ -279,6 +292,7 @@ type DbCommand with
             paras
         )
             .commitForTableAsync
+
     /// 异步查询到表
     [<CompiledName("selectAsync")>]
     member cmd.selectAsync(sql) = cmd.selectAsync (sql, [])
@@ -291,6 +305,7 @@ type DbCommand with
     [<CompiledName("query")>]
     member cmd.query(sql, paras: (string * 't) list) =
         cmd.letQuery(sql).addParas(paras).commitWhen
+
     /// 执行任意查询
     /// 返回的闭包用于检测受影响的行数，当断言成立时闭包会提交事务并返回受影响的行数
     /// 低级操作：查询执行完成后应注意注销该连接以避免连接泄漏
@@ -301,6 +316,7 @@ type DbCommand with
     [<CompiledName("queryAsync")>]
     member cmd.queryAsync(sql, paras: (string * 't) list) =
         cmd.letQuery(sql).addParas(paras).commitWhenAsync
+
     /// 异步执行任意参数化查询
     [<CompiledName("queryAsync")>]
     member cmd.queryAsync sql = cmd.queryAsync (sql, [])
@@ -311,6 +327,7 @@ type DbCommand with
     [<CompiledName("getFstVal")>]
     member cmd.getFstVal(sql, paras: (string * 't) list) =
         cmd.letQuery(sql).addParas(paras).commitForScalar
+
     /// 查询到第一个值
     [<CompiledName("getFstVal")>]
     member cmd.getFstVal sql = cmd.getFstVal (sql, [])
@@ -322,6 +339,7 @@ type DbCommand with
             paras
         )
             .commitForScalarAsync
+
     /// 异步查询到第一个值
     [<CompiledName("getFstValAsync")>]
     member cmd.getFstValAsync sql = cmd.letQuery(sql).commitForScalarAsync
@@ -332,6 +350,7 @@ type DbCommand with
     [<CompiledName("getFstRow")>]
     member cmd.getFstRow(sql, paras: (string * 't) list) =
         cmd.letQuery(sql).addParas(paras).commitForFstRow
+
     /// 查询到第一行
     [<CompiledName("getFstRow")>]
     member cmd.getFstRow sql = cmd.getFstRow (sql, [])
@@ -343,6 +362,7 @@ type DbCommand with
             paras
         )
             .commitForFstRowAsync
+
     /// 异步查询到第一行
     [<CompiledName("getFstRowAsync")>]
     member cmd.getFstRowAsync sql = cmd.getFstRowAsync (sql, [])
@@ -353,6 +373,7 @@ type DbCommand with
     [<CompiledName("getFstCol")>]
     member cmd.getFstCol(sql, paras: (string * 't) list) =
         cmd.letQuery(sql).addParas(paras).commitForFstCol
+
     /// 查询到第一列
     [<CompiledName("getFstCol")>]
     member cmd.getFstCol(sql) = cmd.getFstCol (sql, [])
@@ -365,6 +386,7 @@ type DbCommand with
             paras
         )
             .commitForFstColAsync
+
     /// 异步参数化查询到第一行
     [<CompiledName("getFstColAsync")>]
     member cmd.getFstColAsync(sql) = cmd.getFstColAsync (sql, [])

@@ -9,7 +9,7 @@ open System.Collections.Concurrent
 open fsharper.op
 open fsharper.typ
 open fsharper.op.Eq
-open fsharper.op.Alias
+open fsharper.alias
 open fsharper.op.Async
 open DbManaged
 

@@ -5,7 +5,7 @@ open System.Data.Common
 open System.Threading.Tasks
 open fsharper.op
 open fsharper.typ
-open fsharper.op.Alias
+open fsharper.alias
 
 /// 数据库连接池
 type internal IDbConnPool =
