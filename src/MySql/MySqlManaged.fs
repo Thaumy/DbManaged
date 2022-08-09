@@ -10,7 +10,7 @@ open System.Text.RegularExpressions
 open System.Threading.Tasks.Dataflow
 open fsharper.op
 open fsharper.typ
-open fsharper.op.Alias
+open fsharper.alias
 open fsharper.op.Async
 open pilipala.util.id
 open MySql.Data.MySqlClient
