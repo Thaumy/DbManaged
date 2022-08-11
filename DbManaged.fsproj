@@ -5,87 +5,93 @@
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <LangVersion>preview</LangVersion>
         <RootNamespace>DbManaged</RootNamespace>
+        <Configurations>Debug;Release;Test</Configurations>
+        <Platforms>AnyCPU</Platforms>
+
+        <!--test-->
+        <!--<OtherFlags>-d:Test</OtherFlags>-->
     </PropertyGroup>
 
     <!--src-->
     <ItemGroup>
-        <Compile Include="src\ext\DataTable.fs" />
-        <Compile Include="src\ext\DbConnection.fs" />
-        <Compile Include="src\ext\DbCommand.fs" />
+        <Compile Include="src\ext\DataTable.fs"/>
+        <Compile Include="src\ext\DbConnection.fs"/>
+        <Compile Include="src\ext\DbCommand.fs"/>
 
-        <Compile Include="src\DbConnMsg.fs" />
+        <Compile Include="src\DbConnMsg.fs"/>
 
-        <Compile Include="src\DbConnPool\IDbConnPool.fs" />
-        <Compile Include="src\DbConnPool\DbConnPool.fs" />
-        <Compile Include="src\DbManaged\IDbManaged.fs" />
-        <Compile Include="src\PgSql\ext\DbCommand.fs" />
-        <Compile Include="src\PgSql\PgSqlManaged.fs" />
-        <Compile Include="src\MySql\ext\DbCommand.fs" />
-        <Compile Include="src\MySql\MySqlManaged.fs" />
+        <Compile Include="src\DbConnPool\IDbConnPool.fs"/>
+        <Compile Include="src\DbConnPool\DbConnPool.fs"/>
+        <Compile Include="src\DbManaged\IDbManaged.fs"/>
+
+        <Compile Include="src\PgSql\ext\DbCommand.fs"/>
+        <Compile Include="src\PgSql\PgSqlManaged.fs"/>
+        <Compile Include="src\MySql\ext\DbCommand.fs"/>
+        <Compile Include="src\MySql\MySqlManaged.fs"/>
     </ItemGroup>
-    
+
     <!--test-->
-    <ItemGroup Condition="'$(Configuration)'=='Debug'">
-        <Compile Include="test\err.fs" />
-        <Compile Include="test\util.fs" />
-        <Compile Include="test\PgSql\com.fs" />
-        <Compile Include="test\PgSql\Async\init.fs" />
-        <Compile Include="test\PgSql\Async\initOk.fs" />
-        <Compile Include="test\PgSql\Async\ComplexQuery\getFstCol.fs" />
-        <Compile Include="test\PgSql\Async\ComplexQuery\getFstRow.fs" />
-        <Compile Include="test\PgSql\Async\ComplexQuery\getFstVal.fs" />
-        <Compile Include="test\PgSql\Async\SimpleQuery\delete.fs" />
-        <Compile Include="test\PgSql\Async\SimpleQuery\insert.fs" />
-        <Compile Include="test\PgSql\Async\SimpleQuery\query.fs" />
-        <Compile Include="test\PgSql\Async\SimpleQuery\select.fs" />
-        <Compile Include="test\PgSql\Async\SimpleQuery\update.fs" />
-        <Compile Include="test\PgSql\Set\init.fs" />
-        <Compile Include="test\PgSql\Set\initOk.fs" />
-        <Compile Include="test\PgSql\Set\delay.fs" />
-        <Compile Include="test\PgSql\Set\queue.fs" />
-        <Compile Include="test\PgSql\Sync\init.fs" />
-        <Compile Include="test\PgSql\Sync\initOk.fs" />
-        <Compile Include="test\PgSql\Sync\ComplexQuery\getFstCol.fs" />
-        <Compile Include="test\PgSql\Sync\ComplexQuery\getFstRow.fs" />
-        <Compile Include="test\PgSql\Sync\ComplexQuery\getFstVal.fs" />
-        <Compile Include="test\PgSql\Sync\SimpleQuery\delete.fs" />
-        <Compile Include="test\PgSql\Sync\SimpleQuery\insert.fs" />
-        <Compile Include="test\PgSql\Sync\SimpleQuery\query.fs" />
-        <Compile Include="test\PgSql\Sync\SimpleQuery\select.fs" />
-        <Compile Include="test\PgSql\Sync\SimpleQuery\update.fs" />
-        <Compile Include="test\MySql\com.fs" />
-        <Compile Include="test\MySql\Async\init.fs" />
-        <Compile Include="test\MySql\Async\initOk.fs" />
-        <Compile Include="test\MySql\Async\SimpleQuery\insert.fs" />
-        <Compile Include="test\MySql\Async\SimpleQuery\delete.fs" />
-        <Compile Include="test\MySql\Async\SimpleQuery\select.fs" />
-        <Compile Include="test\MySql\Async\SimpleQuery\update.fs" />
-        <Compile Include="test\MySql\Async\SimpleQuery\query.fs" />
-        <Compile Include="test\MySql\Async\ComplexQuery\getFstRow.fs" />
-        <Compile Include="test\MySql\Async\ComplexQuery\getFstCol.fs" />
-        <Compile Include="test\MySql\Async\ComplexQuery\getFstVal.fs" />
-        <Compile Include="test\MySql\Set\init.fs" />
-        <Compile Include="test\MySql\Set\initOk.fs" />
-        <Compile Include="test\MySql\Set\delay.fs" />
-        <Compile Include="test\MySql\Set\queue.fs" />
-        <Compile Include="test\MySql\Sync\init.fs" />
-        <Compile Include="test\MySql\Sync\initOk.fs" />
-        <Compile Include="test\MySql\Sync\SimpleQuery\insert.fs" />
-        <Compile Include="test\MySql\Sync\SimpleQuery\delete.fs" />
-        <Compile Include="test\MySql\Sync\SimpleQuery\select.fs" />
-        <Compile Include="test\MySql\Sync\SimpleQuery\update.fs" />
-        <Compile Include="test\MySql\Sync\SimpleQuery\query.fs" />
-        <Compile Include="test\MySql\Sync\ComplexQuery\getFstRow.fs" />
-        <Compile Include="test\MySql\Sync\ComplexQuery\getFstCol.fs" />
-        <Compile Include="test\MySql\Sync\ComplexQuery\getFstVal.fs" />
-        <PackageReference Include="NUnit" Version="3.13.3" />
-        <PackageReference Update="FSharp.Core" Version="6.0.5" />
+    <ItemGroup Condition="'$(Configuration)'=='Test'">
+        <Compile Include="test\err.fs"/>
+        <Compile Include="test\util.fs"/>
+        <Compile Include="test\PgSql\com.fs"/>
+        <Compile Include="test\PgSql\Async\init.fs"/>
+        <Compile Include="test\PgSql\Async\initOk.fs"/>
+        <Compile Include="test\PgSql\Async\ComplexQuery\getFstCol.fs"/>
+        <Compile Include="test\PgSql\Async\ComplexQuery\getFstRow.fs"/>
+        <Compile Include="test\PgSql\Async\ComplexQuery\getFstVal.fs"/>
+        <Compile Include="test\PgSql\Async\SimpleQuery\delete.fs"/>
+        <Compile Include="test\PgSql\Async\SimpleQuery\insert.fs"/>
+        <Compile Include="test\PgSql\Async\SimpleQuery\query.fs"/>
+        <Compile Include="test\PgSql\Async\SimpleQuery\select.fs"/>
+        <Compile Include="test\PgSql\Async\SimpleQuery\update.fs"/>
+        <Compile Include="test\PgSql\Set\init.fs"/>
+        <Compile Include="test\PgSql\Set\initOk.fs"/>
+        <Compile Include="test\PgSql\Set\delay.fs"/>
+        <Compile Include="test\PgSql\Set\queue.fs"/>
+        <Compile Include="test\PgSql\Sync\init.fs"/>
+        <Compile Include="test\PgSql\Sync\initOk.fs"/>
+        <Compile Include="test\PgSql\Sync\ComplexQuery\getFstCol.fs"/>
+        <Compile Include="test\PgSql\Sync\ComplexQuery\getFstRow.fs"/>
+        <Compile Include="test\PgSql\Sync\ComplexQuery\getFstVal.fs"/>
+        <Compile Include="test\PgSql\Sync\SimpleQuery\delete.fs"/>
+        <Compile Include="test\PgSql\Sync\SimpleQuery\insert.fs"/>
+        <Compile Include="test\PgSql\Sync\SimpleQuery\query.fs"/>
+        <Compile Include="test\PgSql\Sync\SimpleQuery\select.fs"/>
+        <Compile Include="test\PgSql\Sync\SimpleQuery\update.fs"/>
+        <Compile Include="test\MySql\com.fs"/>
+        <Compile Include="test\MySql\Async\init.fs"/>
+        <Compile Include="test\MySql\Async\initOk.fs"/>
+        <Compile Include="test\MySql\Async\SimpleQuery\insert.fs"/>
+        <Compile Include="test\MySql\Async\SimpleQuery\delete.fs"/>
+        <Compile Include="test\MySql\Async\SimpleQuery\select.fs"/>
+        <Compile Include="test\MySql\Async\SimpleQuery\update.fs"/>
+        <Compile Include="test\MySql\Async\SimpleQuery\query.fs"/>
+        <Compile Include="test\MySql\Async\ComplexQuery\getFstRow.fs"/>
+        <Compile Include="test\MySql\Async\ComplexQuery\getFstCol.fs"/>
+        <Compile Include="test\MySql\Async\ComplexQuery\getFstVal.fs"/>
+        <Compile Include="test\MySql\Set\init.fs"/>
+        <Compile Include="test\MySql\Set\initOk.fs"/>
+        <Compile Include="test\MySql\Set\delay.fs"/>
+        <Compile Include="test\MySql\Set\queue.fs"/>
+        <Compile Include="test\MySql\Sync\init.fs"/>
+        <Compile Include="test\MySql\Sync\initOk.fs"/>
+        <Compile Include="test\MySql\Sync\SimpleQuery\insert.fs"/>
+        <Compile Include="test\MySql\Sync\SimpleQuery\delete.fs"/>
+        <Compile Include="test\MySql\Sync\SimpleQuery\select.fs"/>
+        <Compile Include="test\MySql\Sync\SimpleQuery\update.fs"/>
+        <Compile Include="test\MySql\Sync\SimpleQuery\query.fs"/>
+        <Compile Include="test\MySql\Sync\ComplexQuery\getFstRow.fs"/>
+        <Compile Include="test\MySql\Sync\ComplexQuery\getFstCol.fs"/>
+        <Compile Include="test\MySql\Sync\ComplexQuery\getFstVal.fs"/>
+        <PackageReference Include="NUnit" Version="3.13.3"/>
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.3.0"/>
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.2.0" />
-        <PackageReference Include="MySql.Data" Version="8.0.30" />
-        <PackageReference Include="Npgsql" Version="7.0.0-preview.6" />
+        <PackageReference Update="FSharp.Core" Version="6.0.5"/>
+        <PackageReference Include="MySql.Data" Version="8.0.30"/>
+        <PackageReference Include="Npgsql" Version="7.0.0-preview.6"/>
     </ItemGroup>
 
     <ItemGroup>
@@ -93,8 +99,7 @@
             <HintPath>..\fsharper\bin\Debug\net6.0\fsharper.dll</HintPath>
         </Reference>
         <Reference Include="palaflake">
-          <HintPath>..\palaflake\fs_impl\palaflake\bin\Debug\net6.0\palaflake.dll</HintPath>
+            <HintPath>..\palaflake\fs_impl\palaflake\bin\Debug\net6.0\palaflake.dll</HintPath>
         </Reference>
     </ItemGroup>
-
 </Project>

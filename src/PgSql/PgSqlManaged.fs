@@ -49,7 +49,7 @@ type PgSqlManaged private (msg, d, n, min, max) as managed =
         - (f64 usedConn.Reader.Count
            / (f64 max * pool.occupancy))
 
-#if DEBUG
+#if Test
     let outputManagedStatus () =
         async {
             let leftQueue =
@@ -126,7 +126,7 @@ type PgSqlManaged private (msg, d, n, min, max) as managed =
         let r = f conn
 
         usedConn.Writer.WriteAsync conn |> ignore
-#if DEBUG
+#if Test
         outputManagedStatus ()
 #endif
         r
@@ -143,7 +143,7 @@ type PgSqlManaged private (msg, d, n, min, max) as managed =
             let! r = f conn
 
             usedConn.Writer.WriteAsync conn |> ignore
-#if DEBUG
+#if Test
             outputManagedStatus ()
 #endif
             return r
