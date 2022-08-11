@@ -1,6 +1,7 @@
 ﻿namespace DbManaged.MySql
 
 open System
+open System.Diagnostics
 open System.Threading
 open System.Data.Common
 open System.Threading.Tasks
@@ -49,7 +50,7 @@ type MySqlManaged private (msg, d, n, min, max) as managed =
         - (f64 usedConn.Reader.Count
            / (f64 max * pool.occupancy))
 
-#if DEBUG
+#if Test
     let outputManagedStatus () =
         async {
             let leftQueue =
@@ -126,7 +127,7 @@ type MySqlManaged private (msg, d, n, min, max) as managed =
         let r = f conn
 
         usedConn.Writer.WriteAsync conn |> ignore
-#if DEBUG
+#if Test
         outputManagedStatus ()
 #endif
         r
@@ -143,7 +144,7 @@ type MySqlManaged private (msg, d, n, min, max) as managed =
             let! r = f conn
 
             usedConn.Writer.WriteAsync conn |> ignore
-#if DEBUG
+#if Test
             outputManagedStatus ()
 #endif
             return r
