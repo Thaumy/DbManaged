@@ -57,7 +57,8 @@ type internal DbConnPool
     let busyConnsTryRm (conn: DbConnection) = busyConns.TryRemove(conn.GetHashCode())
 
     /// 添加到空闲连接表
-    let mutable freeConnsAddAsync = freeConns.Writer.WriteAsync
+    let mutable freeConnsAddAsync =
+        freeConns.Writer.WriteAsync
 
     /// 取得空闲连接
     let rec getFreeConn () =
@@ -94,7 +95,7 @@ type internal DbConnPool
         }
 
     let tryReducePressure () =
-        for _ in 1 .. 2 do
+        for _ in 1..2 do
             fun _ ->
                 task {
                     if connLeft.CurrentCount > 0 && pool.pressure > n then
@@ -108,13 +109,18 @@ type internal DbConnPool
         for _ in 1 .. i32 min do
             openConn () |> freeConnsAddAsync |> ignore
 
-#if DEBUG
+#if Test
     let outputPoolStatus () =
         async {
-            let occupancy = pool.occupancy.ToString("0.00")
-            let pressure = pool.pressure.ToString("0.00")
+            let occupancy =
+                pool.occupancy.ToString("0.00")
 
-            let free = freeConns.Reader.Count.ToString("00")
+            let pressure =
+                pool.pressure.ToString("0.00")
+
+            let free =
+                freeConns.Reader.Count.ToString("00")
+
             let busy = busyConns.Count.ToString("00")
 
             let total =
@@ -213,7 +219,7 @@ type internal DbConnPool
             disposeConnAsync conn |> ignore
             self.fetchConn () //进行下一轮尝试
         else
-#if DEBUG
+#if Test
             outputPoolStatus ()
 #endif
             conn
@@ -234,7 +240,7 @@ type internal DbConnPool
                 disposeConnAsync conn |> ignore
                 return! self.fetchConnAsync () //进行下一轮尝试
             else
-#if DEBUG
+#if Test
                 outputPoolStatus ()
 #endif
                 return conn
