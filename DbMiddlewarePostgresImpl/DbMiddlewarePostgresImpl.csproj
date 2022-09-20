@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Reference Include="DbManaged">
+            <HintPath>..\..\repo\DbManaged\bin\Debug\net6.0\DbManaged.dll</HintPath>
+        </Reference>
+        <Reference Include="DbMiddleware">
+            <HintPath>..\DbMiddleware\bin\Debug\net6.0\DbMiddleware.dll</HintPath>
+        </Reference>
+        <Reference Include="fsharper">
+            <HintPath>..\..\repo\fsharper\bin\Debug\net6.0\fsharper.dll</HintPath>
+        </Reference>
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="FSharp.Core" Version="6.0.5"/>
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.3.1"/>
+        <PackageReference Include="Npgsql" Version="7.0.0-preview.7"/>
+        <PackageReference Include="NUnit" Version="3.13.3"/>
+    </ItemGroup>
+
+    <ItemGroup>
+    </ItemGroup>
+
+</Project>
