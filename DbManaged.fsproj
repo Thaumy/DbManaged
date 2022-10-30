@@ -89,22 +89,18 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Update="FSharp.Core" Version="6.0.5"/>
-        <PackageReference Include="MySql.Data" Version="8.0.30"/>
-        <PackageReference Include="Npgsql" Version="7.0.0-preview.6"/>
+        <PackageReference Update="FSharp.Core" Version="6.0.6"/>
+        <PackageReference Include="MySql.Data" Version="8.0.31"/>
+        <PackageReference Include="Npgsql" Version="7.0.0-rc.2"/>
     </ItemGroup>
 
     <ItemGroup Condition="'$(Configuration)'=='Test'">
         <PackageReference Include="NUnit" Version="3.13.3"/>
-        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.3.0"/>
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.3.2"/>
     </ItemGroup>
 
     <ItemGroup>
-        <Reference Include="fsharper, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null">
-            <HintPath>..\fsharper\bin\Debug\net6.0\fsharper.dll</HintPath>
-        </Reference>
-        <Reference Include="palaflake">
-            <HintPath>..\palaflake\fs_impl\palaflake\bin\Debug\net6.0\palaflake.dll</HintPath>
-        </Reference>
+        <ProjectReference Include="..\fsharper\fsharper.fsproj"/>
+        <ProjectReference Include="..\palaflake\fs_impl\palaflake\palaflake.fsproj" PrivateAssets="All"/>
     </ItemGroup>
 </Project>
