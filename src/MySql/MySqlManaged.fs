@@ -121,7 +121,7 @@ type MySqlManaged private (msg, d, n, min, max) as managed =
         let conn =
             usedConn.Reader.TryRead()
             |> Option'.fromOkComma
-            |> unwrapOr
+            |> unwrapOrEval
             <| pool.fetchConn
 
         let r = f conn
