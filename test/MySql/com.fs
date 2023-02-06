@@ -15,7 +15,7 @@ let mutable private managedResult: Result'<IDbManaged, exn> =
     Err ManagedNotInitException
 
 let managed () = managedResult.unwrap ()
-let mkCmd () = managed().mkCmd ()
+let makeCmd () = managed().makeCmd ()
 
 let connect () =
     match msgResult with

@@ -26,7 +26,7 @@ let update_overload1_test () =
     let tasks =
         [| for i in 1 .. 1000 do
                fun _ ->
-                   mkCmd()
+                   makeCmd()
                        .update ($"{tab1}", ("content", test_name), ("id", i))
                    <| eq 2
                    |> managed().executeQuery
@@ -38,7 +38,7 @@ let update_overload1_test () =
     let selects =
         [| for i in 1 .. 1000 do
                fun _ ->
-                   mkCmd()
+                   makeCmd()
                        .select $"SELECT content FROM {tab1} WHERE id = '{i}';"
                    |> managed().executeQuery
                |> Task.Run<Option'<_>> |]
@@ -57,7 +57,7 @@ let update_overload2_test () =
     let tasks =
         [| for i in 1 .. 1000 do
                fun _ ->
-                   mkCmd()
+                   makeCmd()
                        .update ($"{tab1}", "id", i + 114514, i)
                    <| eq 2
                    |> managed().executeQuery
@@ -69,7 +69,7 @@ let update_overload2_test () =
     let selects =
         [| for i in 1 .. 1000 do
                fun _ ->
-                   mkCmd()
+                   makeCmd()
                        .getFstVal $"SELECT COUNT(*) FROM {tab1} WHERE id = '{i + 114514}';"
                    |> managed().executeQuery
                |> Task.Run<Option'<_>> |]

@@ -11,12 +11,12 @@ open dbm_test.PgSql.com
 
 let ddl_prepare () =
     
-    mkCmd().query $"drop table if exists {tab1};"
+    makeCmd().query $"drop table if exists {tab1};"
     <| always true
     |> managed().executeQuery
     |> ignore
 
-    mkCmd()
+    makeCmd()
         .query $"create table {tab1}
                  (
                      id     integer,
@@ -33,7 +33,7 @@ let dml_prepare () =
     let as1 =
         [| for i in 1 .. 1000 ->
                fun _ ->
-                   mkCmd()
+                   makeCmd()
                        .queryAsync $"INSERT INTO {tab1} (id, test_name, time, content)\
                                      VALUES ({i}, 'init', '{ISO8601Now()}', 'ts1_insert');"
                    <| eq 1
@@ -43,7 +43,7 @@ let dml_prepare () =
     let as2 =
         [| for i in 1 .. 1000 ->
                fun _ ->
-                   mkCmd()
+                   makeCmd()
                        .queryAsync $"INSERT INTO {tab1} (id, test_name, time, content)\
                                      VALUES ({i}, 'init', '{ISO8601Now()}', 'ts2_insert');"
                    <| eq 1
@@ -69,7 +69,7 @@ let initWithQueue () =
     ddl_prepare ()
 
     for i in 1 .. 100 do
-        mkCmd()
+        makeCmd()
             .query $"INSERT INTO {tab1} (id, test_name, time, content)\
                      VALUES ({i}, 'init_with_queue', CURRENT_TIMESTAMP, 'init_with_queue');"
         <| always true
@@ -82,7 +82,7 @@ let initWithDelay () =
     ddl_prepare ()
 
     for i in 1 .. 100 do
-        mkCmd()
+        makeCmd()
             .query $"INSERT INTO {tab1} (id, test_name, time, content)\
                      VALUES ({i}, 'init_with_delay', '{ISO8601Now()}', 'init_with_delay');"
         <| always true

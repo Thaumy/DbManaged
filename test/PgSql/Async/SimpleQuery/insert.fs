@@ -33,7 +33,7 @@ let insert_test () =
                          ("time", Now())
                          ("content", "_") ]
 
-                   mkCmd().insertAsync ($"{tab1}", paras) <| eq 1
+                   makeCmd().insertAsync ($"{tab1}", paras) <| eq 1
                    |> managed().executeQueryAsync
                |> Task.Run<int> |]
 
@@ -41,7 +41,7 @@ let insert_test () =
         Assert.AreEqual(1, r)
 
     let count =
-        mkCmd()
+        makeCmd()
             .getFstValAsync $"SELECT COUNT(*) FROM {tab1} WHERE test_name = '{test_name}';"
         |> managed().executeQueryAsync
         |> result

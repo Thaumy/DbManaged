@@ -23,7 +23,7 @@ let SetUp () = initNormal ()
 let queueQuery_test () =
     let queuedQueries =
         [| for i in 1..2000 do
-               mkCmd()
+               makeCmd()
                    .query $"INSERT INTO {tab1} (id, test_name, time, content)\
                      VALUES ({i}, 'init_with_queue', NOW(), 'init_with_queue');"
                <| always true
@@ -34,7 +34,7 @@ let queueQuery_test () =
             if not q.IsCompleted then
                 [| for i in 1..100 do
                        fun _ ->
-                           mkCmd().queryAsync $"SELECT {i}" <| always true
+                           makeCmd().queryAsync $"SELECT {i}" <| always true
                            |> managed().executeQueryAsync
                        |> Task.Run<int> |]
                 |> resultAll
@@ -48,7 +48,7 @@ let queueQuery_test () =
 
     //影响行数校验
     let count =
-        mkCmd()
+        makeCmd()
             .getFstVal $"SELECT COUNT(*) FROM {tab1} WHERE content = 'init_with_queue';"
         |> managed().executeQuery
         |> unwrap
@@ -57,7 +57,7 @@ let queueQuery_test () =
 
     //执行顺序校验
     let col =
-        mkCmd()
+        makeCmd()
             .getFstCol $"SELECT id FROM {tab1} WHERE content = 'init_with_queue' ORDER BY time ASC;"
         |> managed().executeQuery
 
@@ -76,7 +76,7 @@ let forceLeftQueuedQuery_test () =
 
     let queuedQueries =
         [| for i in 1..2000 do
-               mkCmd()
+               makeCmd()
                    .query $"INSERT INTO {tab1} (id, test_name, time, content)\
                      VALUES ({i}, '{test_name}', NOW(), '_');"
                <| always true
@@ -91,7 +91,7 @@ let forceLeftQueuedQuery_test () =
 
     //影响行数校验
     let count =
-        mkCmd()
+        makeCmd()
             .getFstVal $"SELECT COUNT(*) FROM {tab1} WHERE test_name = '{test_name}';"
         |> managed().executeQuery
         |> unwrap
@@ -100,7 +100,7 @@ let forceLeftQueuedQuery_test () =
 
     //执行顺序校验
     let col =
-        mkCmd()
+        makeCmd()
             .getFstCol $"SELECT id FROM {tab1} WHERE test_name = '{test_name}' ORDER BY time ASC;"
         |> managed().executeQuery
 

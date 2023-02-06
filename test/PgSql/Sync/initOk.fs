@@ -17,7 +17,7 @@ let SetUp () = init ()
 let initOk_test () =
    
     let ts1_count =
-        mkCmd()
+        makeCmd()
             .getFstVal $"SELECT COUNT(*) FROM {tab1} WHERE test_name = 'init' AND content = 'ts1_insert';"
         |> managed().executeQuery
         |> unwrap
@@ -25,7 +25,7 @@ let initOk_test () =
     Assert.AreEqual(1000, ts1_count)
 
     let ts2_count =
-        mkCmd()
+        makeCmd()
             .getFstVal $"SELECT COUNT(*) FROM {tab1} WHERE test_name = 'init' AND content = 'ts2_insert';"
         |> managed().executeQuery
         |> unwrap

@@ -20,7 +20,7 @@ let SetUp () = init ()
 let delete_test () =
 
     let query =
-        mkCmd()
+        makeCmd()
             .delete ($"{tab1}", "content", "ts1_insert")
         <| eq 1000
         |> managed().executeQuery
@@ -28,7 +28,7 @@ let delete_test () =
     Assert.AreEqual(1000, query)
 
     let ts1_count =
-        mkCmd()
+        makeCmd()
             .getFstVal $"SELECT COUNT(*) FROM {tab1} WHERE content = 'ts1_insert';"
         |> managed().executeQuery
         |> unwrap
@@ -36,7 +36,7 @@ let delete_test () =
     Assert.AreEqual(0, ts1_count)
 
     let ts2_count =
-        mkCmd()
+        makeCmd()
             .getFstVal $"SELECT COUNT(*) FROM {tab1} WHERE content = 'ts2_insert';"
         |> managed().executeQuery
         |> unwrap

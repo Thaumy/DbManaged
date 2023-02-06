@@ -20,7 +20,7 @@ let SetUp () = init ()
 let delete_test () =
     
     let query =
-        mkCmd()
+        makeCmd()
             .deleteAsync ($"{tab1}", "content", "ts1_insert")
         <| eq 1000
         |> managed().executeQueryAsync
@@ -29,7 +29,7 @@ let delete_test () =
     Assert.AreEqual(1000, query)
 
     let ts1_count =
-        mkCmd()
+        makeCmd()
             .getFstValAsync $"SELECT COUNT(*) FROM {tab1} WHERE content = 'ts1_insert';"
         |> managed().executeQueryAsync
         |> result
@@ -38,7 +38,7 @@ let delete_test () =
     Assert.AreEqual(0, ts1_count)
 
     let ts2_count =
-        mkCmd()
+        makeCmd()
             .getFstValAsync $"SELECT COUNT(*) FROM {tab1} WHERE content = 'ts2_insert';"
         |> managed().executeQueryAsync
         |> result

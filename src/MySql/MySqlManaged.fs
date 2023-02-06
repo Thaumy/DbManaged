@@ -115,7 +115,7 @@ type MySqlManaged private (msg, d, n, min, max) as managed =
 
         pool.Dispose()
 
-    member self.mkCmd() = new MySqlCommand()
+    member self.makeCmd() = new MySqlCommand()
 
     member self.executeQuery(f: DbConnection -> 'r) : 'r =
         let conn =
@@ -230,7 +230,7 @@ type MySqlManaged private (msg, d, n, min, max) as managed =
 
     interface IDbManaged with
 
-        member i.mkCmd() = managed.mkCmd ()
+        member i.makeCmd() = managed.makeCmd ()
 
         member i.executeQuery f = managed.executeQuery f
 
