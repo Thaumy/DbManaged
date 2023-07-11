@@ -89,9 +89,9 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Update="FSharp.Core" Version="7.0.0" />
-        <PackageReference Include="MySql.Data" Version="8.0.31" />
-        <PackageReference Include="Npgsql" Version="7.0.1" />
+        <PackageReference Update="FSharp.Core" Version="7.0.300" />
+        <PackageReference Include="MySql.Data" Version="8.0.33" />
+        <PackageReference Include="Npgsql" Version="7.0.4" />
     </ItemGroup>
 
     <ItemGroup Condition="'$(Configuration)'=='Test'">
@@ -100,7 +100,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\fsharper\fsharper.fsproj" />
-        <ProjectReference Include="..\palaflake\palaflake\palaflake.fsproj" PrivateAssets="All" />
+        <ProjectReference Include="..\..\thaumy\fsharper\fsharper.fsproj" />
+        <ProjectReference Include="..\..\palaworks\palaflake\palaflake\palaflake.fsproj" />
     </ItemGroup>
 </Project>

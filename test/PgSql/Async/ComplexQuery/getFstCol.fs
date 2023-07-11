@@ -19,7 +19,7 @@ let getFstCol_overload1_test () =
     let tasks =
         [| for i in 1..1000 do
                fun _ ->
-                   mkCmd()
+                   makeCmd()
                        .getFstColAsync $"SELECT content FROM {tab1} WHERE id = {i};"
                    |> managed().executeQueryAsync
                |> Task.Run<obj list> |]
@@ -44,7 +44,7 @@ let getFstCol_overload2_test () =
                        managed()
                            .normalizeSql $"SELECT content FROM {tab1} WHERE id = <id>;"
 
-                   mkCmd().getFstColAsync (sql, paras)
+                   makeCmd().getFstColAsync (sql, paras)
                    |> managed().executeQueryAsync
                |> Task.Run<obj list> |]
 

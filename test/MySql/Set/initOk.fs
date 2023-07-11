@@ -18,7 +18,7 @@ let SetUp () = initNormal ()
 let initOk_test () =
 
     let ts1_count =
-        mkCmd()
+        makeCmd()
             .getFstValAsync $"SELECT COUNT(*) FROM {tab1} WHERE test_name = 'init' AND content = 'ts1_insert';"
         |> managed().executeQueryAsync
         |> result
@@ -27,7 +27,7 @@ let initOk_test () =
     Assert.AreEqual(1000, ts1_count)
 
     let ts2_count =
-        mkCmd()
+        makeCmd()
             .getFstValAsync $"SELECT COUNT(*) FROM {tab1} WHERE test_name = 'init' AND content = 'ts2_insert';"
         |> managed().executeQueryAsync
         |> result

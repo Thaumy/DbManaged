@@ -12,7 +12,6 @@ open fsharper.op
 open fsharper.typ
 open fsharper.alias
 open fsharper.op.Async
-open pilipala.util.id
 open Npgsql
 open DbManaged
 
@@ -33,7 +32,7 @@ type PgSqlManaged private (msg, d, n, min, max) as managed =
         |> ActionBlock<DbConnection -> unit>
 
     let palaflake =
-        palaflake.Generator(0uy, u16 DateTime.Now.Year)
+        Palaflake.Generator(0uy, u16 DateTime.Now.Year)
 
     let queryResult =
         ConcurrentDictionary<i64, obj>()
@@ -114,13 +113,13 @@ type PgSqlManaged private (msg, d, n, min, max) as managed =
 
         pool.Dispose()
 
-    member self.mkCmd() = new NpgsqlCommand()
+    member self.makeCmd() = new NpgsqlCommand()
 
     member self.executeQuery(f: DbConnection -> 'r) : 'r =
         let conn =
             usedConn.Reader.TryRead()
             |> Option'.fromOkComma
-            |> unwrapOr
+            |> unwrapOrEval
             <| pool.fetchConn
 
         let r = f conn
@@ -229,7 +228,7 @@ type PgSqlManaged private (msg, d, n, min, max) as managed =
 
     interface IDbManaged with
 
-        member i.mkCmd() = managed.mkCmd ()
+        member i.makeCmd() = managed.makeCmd ()
 
         member i.executeQuery f = managed.executeQuery f
 

@@ -7,7 +7,7 @@ open fsharper.typ
 /// PgSql数据库管理器
 type IDbManaged =
 
-    abstract member mkCmd: unit -> DbCommand
+    abstract member makeCmd: unit -> DbCommand
 
     abstract member executeQuery: f: (DbConnection -> 'r) -> 'r
     abstract member executeQueryAsync: f: (DbConnection -> Task<'r>) -> Task<'r>

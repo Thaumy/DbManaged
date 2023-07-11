@@ -1,7 +1,6 @@
 ﻿namespace DbManaged.MySql
 
 open System
-open System.Diagnostics
 open System.Threading
 open System.Data.Common
 open System.Threading.Tasks
@@ -13,7 +12,6 @@ open fsharper.op
 open fsharper.typ
 open fsharper.alias
 open fsharper.op.Async
-open pilipala.util.id
 open MySql.Data.MySqlClient
 open DbManaged
 
@@ -34,7 +32,7 @@ type MySqlManaged private (msg, d, n, min, max) as managed =
         |> ActionBlock<DbConnection -> unit>
 
     let palaflake =
-        palaflake.Generator(0uy, u16 DateTime.Now.Year)
+        Palaflake.Generator(0uy, u16 DateTime.Now.Year)
 
     let queryResult =
         ConcurrentDictionary<i64, obj>()
@@ -115,13 +113,13 @@ type MySqlManaged private (msg, d, n, min, max) as managed =
 
         pool.Dispose()
 
-    member self.mkCmd() = new MySqlCommand()
+    member self.makeCmd() = new MySqlCommand()
 
     member self.executeQuery(f: DbConnection -> 'r) : 'r =
         let conn =
             usedConn.Reader.TryRead()
             |> Option'.fromOkComma
-            |> unwrapOr
+            |> unwrapOrEval
             <| pool.fetchConn
 
         let r = f conn
@@ -230,7 +228,7 @@ type MySqlManaged private (msg, d, n, min, max) as managed =
 
     interface IDbManaged with
 
-        member i.mkCmd() = managed.mkCmd ()
+        member i.makeCmd() = managed.makeCmd ()
 
         member i.executeQuery f = managed.executeQuery f
 

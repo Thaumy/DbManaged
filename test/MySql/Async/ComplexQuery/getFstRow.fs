@@ -23,7 +23,7 @@ let getFstRow_overload1_test () =
     let tasks =
         [| for i in 1..1000 do
                fun _ ->
-                   mkCmd()
+                   makeCmd()
                        .getFstRowAsync $"SELECT * FROM {tab1} WHERE id = {i};"
                    |> managed().executeQueryAsync
                |> Task.Run<Option'<_>> |]
@@ -44,7 +44,7 @@ let getFstRow_overload2_test () =
                        managed()
                            .normalizeSql $"SELECT * FROM {tab1} WHERE id = <id>;"
 
-                   mkCmd().getFstRowAsync (sql, paras)
+                   makeCmd().getFstRowAsync (sql, paras)
                    |> managed().executeQueryAsync
                |> Task.Run<Option'<_>> |]
 
@@ -57,7 +57,7 @@ let getFstRow_overload3_test () =
     let tasks =
         [| for i in 1..1000 do
                fun _ ->
-                   mkCmd().getFstRowAsync (tab1, "id", i)
+                   makeCmd().getFstRowAsync (tab1, "id", i)
                    |> managed().executeQueryAsync
                |> Task.Run<Option'<_>> |]
 

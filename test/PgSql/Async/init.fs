@@ -10,12 +10,12 @@ open dbm_test
 open dbm_test.PgSql.com
 
 let init () =
-    mkCmd().queryAsync $"drop table if exists {tab1};"
+    makeCmd().queryAsync $"drop table if exists {tab1};"
     <| always true
     |> managed().executeQueryAsync
     |> wait
 
-    mkCmd()
+    makeCmd()
         .queryAsync $"create table {tab1}
                  (
                      id     integer,
@@ -30,7 +30,7 @@ let init () =
     let as1 =
         [| for i in 1 .. 1000 ->
                fun _ ->
-                   mkCmd()
+                   makeCmd()
                        .queryAsync $"INSERT INTO {tab1} (id, test_name, time, content)\
                                      VALUES ({i}, 'init', '{ISO8601Now()}', 'ts1_insert');"
                    <| eq 1
@@ -40,7 +40,7 @@ let init () =
     let as2 =
         [| for i in 1 .. 1000 ->
                fun _ ->
-                   mkCmd()
+                   makeCmd()
                        .queryAsync $"INSERT INTO {tab1} (id, test_name, time, content)\
                                      VALUES ({i}, 'init', '{ISO8601Now()}', 'ts2_insert');"
                    <| eq 1

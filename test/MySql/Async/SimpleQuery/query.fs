@@ -27,7 +27,7 @@ let query_overload1_test () =
     let tasks =
         [| for i in 1..2000 do
                fun _ ->
-                   mkCmd()
+                   makeCmd()
                        .queryAsync $"INSERT INTO {tab1} (id, test_name, time, content)\
                                       VALUES ({i}, '{test_name}', '{ISO8601Now()}', '_');"
                    <| eq 1
@@ -38,7 +38,7 @@ let query_overload1_test () =
         Assert.AreEqual(1, r)
 
     let count =
-        mkCmd()
+        makeCmd()
             .getFstValAsync $"SELECT COUNT(*) FROM {tab1} WHERE test_name = '{test_name}';"
         |> managed().executeQueryAsync
         |> result
@@ -66,7 +66,7 @@ let query_overload2_test () =
                            .normalizeSql $"INSERT INTO {tab1} (id,   test_name,  time,  content)\
                                          VALUES (<id>,<test_name>,<time>,<content>);"
 
-                   mkCmd().queryAsync (sql, paras) <| eq 1
+                   makeCmd().queryAsync (sql, paras) <| eq 1
                    |> managed().executeQueryAsync
                |> Task.Run<int> |]
 
@@ -74,7 +74,7 @@ let query_overload2_test () =
         Assert.AreEqual(1, r)
 
     let count =
-        mkCmd()
+        makeCmd()
             .getFstValAsync $"SELECT COUNT(*) FROM {tab1} WHERE test_name = '{test_name}';"
         |> managed().executeQueryAsync
         |> result

@@ -22,7 +22,7 @@ let getFstVal_overload1_test () =
     let tasks =
         [| for i in 1..1000 do
                fun _ ->
-                   mkCmd()
+                   makeCmd()
                        .getFstValAsync $"SELECT content FROM {tab1} WHERE id = {i};"
                    |> managed().executeQueryAsync
                |> Task.Run<Option'<_>> |]
@@ -42,7 +42,7 @@ let getFstVal_overload2_test () =
                        managed()
                            .normalizeSql $"SELECT content FROM {tab1} WHERE id = <id>;"
 
-                   mkCmd().getFstValAsync (sql, paras)
+                   makeCmd().getFstValAsync (sql, paras)
                    |> managed().executeQueryAsync
                |> Task.Run<Option'<_>> |]
 
@@ -55,7 +55,7 @@ let getFstVal_overload3_test () =
     let tasks =
         [| for i in 1..1000 do
                fun _ ->
-                   mkCmd().getFstValAsync (tab1, "content", "id", i)
+                   makeCmd().getFstValAsync (tab1, "content", "id", i)
                    |> managed().executeQueryAsync
                |> Task.Run<Option'<_>> |]
 

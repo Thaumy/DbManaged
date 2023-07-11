@@ -22,7 +22,7 @@ let SetUp () = initNormal ()
 let delayQuery_test () =
     let delayedQueries =
         [| for i in 1 .. 2000 do
-               mkCmd()
+               makeCmd()
                    .query $"INSERT INTO {tab1} (id, test_name, time, content)\
                      VALUES ({i}, 'init_with_delay', '{ISO8601Now()}', 'init_with_delay');"
                <| always true
@@ -33,7 +33,7 @@ let delayQuery_test () =
             if not q.IsCompleted then
                 [| for i in 1 .. 100 do
                        fun _ ->
-                           mkCmd().queryAsync $"SELECT {i}" <| always true
+                           makeCmd().queryAsync $"SELECT {i}" <| always true
                            |> managed().executeQueryAsync
                        |> Task.Run<int> |]
                 |> resultAll
@@ -46,7 +46,7 @@ let delayQuery_test () =
         Assert.AreEqual(1, r)
 
     let afterCount =
-        mkCmd()
+        makeCmd()
             .getFstVal $"SELECT COUNT(*) FROM {tab1} WHERE content = 'init_with_delay';"
         |> managed().executeQuery
         |> unwrap
@@ -61,7 +61,7 @@ let forceLeftDelayedQuery_test () =
 
     let delayedQueries =
         [| for i in 1 .. 2000 do
-               mkCmd()
+               makeCmd()
                    .query $"INSERT INTO {tab1} (id, test_name, time, content)\
                      VALUES ({i}, '{test_name}', '{ISO8601Now()}', '_');"
                <| always true
@@ -73,7 +73,7 @@ let forceLeftDelayedQuery_test () =
         Assert.AreEqual(1, r)
 
     let count =
-        mkCmd()
+        makeCmd()
             .getFstVal $"SELECT COUNT(*) FROM {tab1} WHERE test_name = '{test_name}';"
         |> managed().executeQuery
         |> unwrap
