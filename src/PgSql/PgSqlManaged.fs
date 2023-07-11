@@ -12,7 +12,6 @@ open fsharper.op
 open fsharper.typ
 open fsharper.alias
 open fsharper.op.Async
-open pilipala.util.id
 open Npgsql
 open DbManaged
 
@@ -33,7 +32,7 @@ type PgSqlManaged private (msg, d, n, min, max) as managed =
         |> ActionBlock<DbConnection -> unit>
 
     let palaflake =
-        palaflake.Generator(0uy, u16 DateTime.Now.Year)
+        Palaflake.Generator(0uy, u16 DateTime.Now.Year)
 
     let queryResult =
         ConcurrentDictionary<i64, obj>()

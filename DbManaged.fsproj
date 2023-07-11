@@ -100,7 +100,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\fsharper\fsharper.fsproj" />
-        <ProjectReference Include="..\palaflake\palaflake\palaflake.fsproj" PrivateAssets="All" />
+        <ProjectReference Include="..\..\thaumy\fsharper\fsharper.fsproj" />
+        <ProjectReference Include="..\..\palaworks\palaflake\palaflake\palaflake.fsproj" />
     </ItemGroup>
 </Project>

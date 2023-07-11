@@ -4,7 +4,7 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "DbManaged", "DbManaged.fspr
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "fsharper", "..\fsharper\fsharper.fsproj", "{5A4D4697-A13E-49CA-BE97-043402D5D746}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "palaflake", "..\palaflake\palaflake\palaflake.fsproj", "{A66233DF-D621-42C0-985B-23A614A107EC}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "palaflake", "..\..\palaworks\palaflake\palaflake\palaflake.fsproj", "{46F2FF8D-19CA-48BB-B89F-1DE83BAA53EB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -25,11 +25,11 @@ Global
 		{5A4D4697-A13E-49CA-BE97-043402D5D746}.Release|Any CPU.Build.0 = Release|Any CPU
 		{5A4D4697-A13E-49CA-BE97-043402D5D746}.Test|Any CPU.ActiveCfg = Debug|Any CPU
 		{5A4D4697-A13E-49CA-BE97-043402D5D746}.Test|Any CPU.Build.0 = Debug|Any CPU
-		{A66233DF-D621-42C0-985B-23A614A107EC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{A66233DF-D621-42C0-985B-23A614A107EC}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{A66233DF-D621-42C0-985B-23A614A107EC}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{A66233DF-D621-42C0-985B-23A614A107EC}.Release|Any CPU.Build.0 = Release|Any CPU
-		{A66233DF-D621-42C0-985B-23A614A107EC}.Test|Any CPU.ActiveCfg = Debug|Any CPU
-		{A66233DF-D621-42C0-985B-23A614A107EC}.Test|Any CPU.Build.0 = Debug|Any CPU
+		{46F2FF8D-19CA-48BB-B89F-1DE83BAA53EB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{46F2FF8D-19CA-48BB-B89F-1DE83BAA53EB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{46F2FF8D-19CA-48BB-B89F-1DE83BAA53EB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{46F2FF8D-19CA-48BB-B89F-1DE83BAA53EB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{46F2FF8D-19CA-48BB-B89F-1DE83BAA53EB}.Test|Any CPU.ActiveCfg = Debug|Any CPU
+		{46F2FF8D-19CA-48BB-B89F-1DE83BAA53EB}.Test|Any CPU.Build.0 = Debug|Any CPU
 	EndGlobalSection
 EndGlobal
