@@ -90,7 +90,7 @@
 
     <ItemGroup>
         <PackageReference Update="FSharp.Core" Version="7.0.300" />
-        <PackageReference Include="MySql.Data" Version="8.0.33" />
+        <PackageReference Include="MySql.Data" Version="8.1.0" />
         <PackageReference Include="Npgsql" Version="7.0.4" />
     </ItemGroup>
 
